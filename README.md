@@ -74,17 +74,18 @@ release candidate, not a usable database engine.
 
 | Capability | Status | Target |
 | --- | --- | --- |
-| Durable WAL | Planned | `v0.7.0` through `v0.9.0`. |
-| Immutable segment persistence | Planned | `v0.10.0` through `v0.13.0`. |
-| Strict serializable transactions | Planned | `v0.14.0` through `v0.16.0`. |
-| Native query parser and execution | Planned | `v0.18.0` through `v0.21.0`. |
-| Rebuildable projections | Planned | `v0.22.0` through `v0.24.0`. |
-| Crypto-agile manifest signatures | Planned | `v0.25.0`. |
-| Audit proofs and backup/restore | Planned | `v0.26.0` through `v0.27.0`. |
-| CMS release primitives | Planned | `v0.30.0` through `v0.31.0`. |
-| AI artifact provenance | Planned | `v0.32.0`. |
-| Local-first worlds and mission capsules | Planned | `v0.33.0` through `v0.34.0`. |
-| Fuzz/property baseline and hardening | Planned | `v0.35.0` through `v0.37.0`. |
+| Encryption control plane | Planned | `v0.7.0` through `v0.13.0`. |
+| Durable WAL | Planned | `v0.14.0` through `v0.16.0`. |
+| Immutable segment persistence | Planned | `v0.17.0` through `v0.20.0`. |
+| Strict serializable transactions | Planned | `v0.21.0` through `v0.23.0`. |
+| Native query parser and execution | Planned | `v0.25.0` through `v0.28.0`. |
+| Rebuildable projections | Planned | `v0.29.0` through `v0.32.0`. |
+| Crypto-agile manifest signatures | Planned | `v0.33.0`. |
+| Audit proofs and backup/restore | Planned | `v0.34.0` through `v0.36.0`. |
+| CMS release primitives | Planned | `v0.39.0` through `v0.40.0`. |
+| AI artifact provenance | Planned | `v0.41.0`. |
+| Local-first worlds and mission capsules | Planned | `v0.42.0` through `v0.43.0`. |
+| Fuzz/property baseline, operations, and hardening | Planned | `v0.44.0` through `v0.52.0`. |
 
 ## Why skrifheim
 
@@ -195,6 +196,7 @@ Tags are created only when explicitly requested.
 - [Implementation Plan](docs/IMPLEMENTATION_PLAN.md)
 - [Version Plan](docs/VERSION_PLAN.md)
 - [Engineering Policy](docs/engineering-policy.md)
+- [Encryption Architecture](docs/encryption-architecture.md)
 - [Security Controls](docs/security-controls.md)
 - [Threat Model](docs/threat-model.md)
 - [CMS 1.0 Target](docs/cms-1-0-target.md)

@@ -104,13 +104,23 @@ Build crypto-agile metadata before hard-coding any final algorithm:
 
 - algorithm registry,
 - signature envelopes,
+- key hierarchy from root trust to deployment, region, tenant, compartment, and segment/data keys,
+- key lifecycle states for creation, activation, rotation, expiration, compromise, quarantine, and destruction,
+- encryption domains for tenant, region, classification, compartment, world, WAL, segment, projection, backup, export capsule, AI artifact, WASM/plugin secret, and audit log,
 - per-compartment key epochs,
 - per-segment encryption epochs,
+- query-result classification rules,
+- encrypted index and projection boundaries,
+- memory secrecy rules for key material and secret buffers,
 - threshold approval records,
 - signed manifests,
+- encrypted and signed audit logs,
+- recovery and compromise playbooks,
 - offline verification.
 
 Post-quantum readiness is a metadata and migration requirement from day one.
+
+See [Encryption Architecture](encryption-architecture.md).
 
 ## Phase 6: Projection Compiler
 

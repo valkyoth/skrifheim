@@ -13,6 +13,7 @@ Status: baseline control map
 | Canonical truth | Facts are versioned and evidence-bound | Scaffolded | `skrifheim-fact` |
 | Classification | Labels and clearance checks | Scaffolded | `skrifheim-policy` |
 | Crypto agility | Algorithm and signature envelopes | Scaffolded | `skrifheim-crypto` |
+| Encryption control plane | Key hierarchy, lifecycle, domains, memory secrecy, encrypted projections, and compromise handling | Planned | `docs/encryption-architecture.md` |
 | Tamper evidence | Segment metadata and validation | Scaffolded | `skrifheim-storage` |
 | AI authority | AI artifacts are derived, not truth | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | CMS isolation | Public/private world split | Planned | `docs/cms-1-0-target.md` |
