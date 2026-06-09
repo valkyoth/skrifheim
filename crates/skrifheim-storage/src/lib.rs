@@ -7,6 +7,7 @@ use alloc::string::String;
 use skrifheim_core::{PolicyId, Result, SkrifheimError, TenantId, TxId};
 
 pub const SEGMENT_MAGIC: [u8; 8] = *b"SKRIFSEG";
+pub const SEGMENT_VERSION_MAX: u16 = 1;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SegmentKind {
@@ -43,7 +44,12 @@ impl SegmentHeader {
                 "segment version must be non-zero",
             )));
         }
-        if self.min_tx.0 > self.max_tx.0 {
+        if self.version > SEGMENT_VERSION_MAX {
+            return Err(SkrifheimError::InvalidStorageHeader(String::from(
+                "segment version is newer than this parser",
+            )));
+        }
+        if self.min_tx.get() > self.max_tx.get() {
             return Err(SkrifheimError::InvalidStorageHeader(String::from(
                 "min transaction is greater than max transaction",
             )));
@@ -51,6 +57,21 @@ impl SegmentHeader {
         if self.body_len == 0 {
             return Err(SkrifheimError::InvalidStorageHeader(String::from(
                 "segment body must not be empty",
+            )));
+        }
+        if self.body_crc64 == 0 {
+            return Err(SkrifheimError::InvalidStorageHeader(String::from(
+                "body CRC must be non-zero",
+            )));
+        }
+        if self.content_hash == [0; 32] {
+            return Err(SkrifheimError::InvalidStorageHeader(String::from(
+                "content hash must be non-zero",
+            )));
+        }
+        if self.encryption_key_id == 0 {
+            return Err(SkrifheimError::InvalidStorageHeader(String::from(
+                "encryption key ID must be non-zero",
             )));
         }
         Ok(())
@@ -61,34 +82,76 @@ impl SegmentHeader {
 mod tests {
     use super::*;
 
-    fn header() -> SegmentHeader {
-        SegmentHeader {
+    fn id<T>(id: Option<T>) -> Result<T> {
+        id.ok_or(SkrifheimError::InvalidIdentifier)
+    }
+
+    fn header() -> Result<SegmentHeader> {
+        Ok(SegmentHeader {
             magic: SEGMENT_MAGIC,
             version: 1,
             segment_kind: SegmentKind::Fact,
-            tenant_id: TenantId(1),
-            min_tx: TxId(1),
-            max_tx: TxId(2),
-            policy_id: PolicyId(3),
+            tenant_id: id(TenantId::from_u128(1))?,
+            min_tx: id(TxId::from_u128(1))?,
+            max_tx: id(TxId::from_u128(2))?,
+            policy_id: id(PolicyId::from_u128(3))?,
             encryption_key_id: 4,
             body_len: 5,
             body_crc64: 6,
             content_hash: [7; 32],
-        }
+        })
     }
 
     #[test]
-    fn valid_header_passes() {
-        assert_eq!(header().validate(), Ok(()));
+    fn valid_header_passes() -> Result<()> {
+        assert_eq!(header()?.validate(), Ok(()));
+        Ok(())
     }
 
     #[test]
-    fn header_rejects_bad_magic() {
-        let mut header = header();
+    fn header_rejects_bad_magic() -> Result<()> {
+        let mut header = header()?;
         header.magic = *b"WRONGSEG";
         assert!(matches!(
             header.validate(),
             Err(SkrifheimError::InvalidStorageHeader(_))
         ));
+        Ok(())
+    }
+
+    #[test]
+    fn header_rejects_unknown_version() -> Result<()> {
+        let mut header = header()?;
+        header.version = SEGMENT_VERSION_MAX + 1;
+        assert!(matches!(
+            header.validate(),
+            Err(SkrifheimError::InvalidStorageHeader(_))
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn header_rejects_missing_integrity_fields() -> Result<()> {
+        let mut missing_crc = header()?;
+        missing_crc.body_crc64 = 0;
+        assert!(matches!(
+            missing_crc.validate(),
+            Err(SkrifheimError::InvalidStorageHeader(_))
+        ));
+
+        let mut missing_hash = header()?;
+        missing_hash.content_hash = [0; 32];
+        assert!(matches!(
+            missing_hash.validate(),
+            Err(SkrifheimError::InvalidStorageHeader(_))
+        ));
+
+        let mut missing_key = header()?;
+        missing_key.encryption_key_id = 0;
+        assert!(matches!(
+            missing_key.validate(),
+            Err(SkrifheimError::InvalidStorageHeader(_))
+        ));
+        Ok(())
     }
 }

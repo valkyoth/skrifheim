@@ -6,6 +6,19 @@ Status: implementation stop, pending pentest.
 
 `0.1.0` establishes the repository, workspace layout, security policy, release discipline, and initial placeholder models for the causal world-state database.
 
+## Pentest Remediation
+
+- Redaction decisions now block query plan executability until a redaction path exists.
+- Signature envelopes reject empty signatures and known fixed-size algorithms with malformed signature lengths.
+- Policy denial reasons no longer disclose compartment or releasability names.
+- Confidence uses a deterministic fixed-point representation with private invariants.
+- Segment header validation rejects unknown versions and missing integrity/encryption metadata.
+- Facts reject self-referential causal links.
+- Core IDs are non-zero and no longer expose public tuple fields.
+- World diffs require a direct parent/child relationship and return deltas.
+- `xtask` resolves scripts from the workspace root and maps non-zero child exits to failure without truncation.
+- CLI startup output no longer discloses the Rust toolchain baseline.
+
 ## Verification
 
 - `scripts/checks.sh`

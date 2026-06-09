@@ -13,7 +13,6 @@ pub use skrifheim_world as world;
 pub struct BuildInfo {
     pub database_name: &'static str,
     pub version: &'static str,
-    pub rust_baseline: &'static str,
 }
 
 #[must_use]
@@ -21,7 +20,6 @@ pub const fn build_info() -> BuildInfo {
     BuildInfo {
         database_name: "skrifheim",
         version: env!("CARGO_PKG_VERSION"),
-        rust_baseline: "1.96.0",
     }
 }
 

@@ -120,7 +120,7 @@ cargo run -p skrifheim
 Expected output:
 
 ```text
-skrifheim 0.1.0 (Rust baseline 1.96.0)
+skrifheim 0.1.0
 ```
 
 Run the normal local checks:

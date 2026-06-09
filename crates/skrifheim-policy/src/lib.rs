@@ -3,14 +3,29 @@
 
 extern crate alloc;
 
-use alloc::{format, string::String, vec::Vec};
+use alloc::{collections::BTreeSet, string::String, vec::Vec};
 use skrifheim_core::{Classification, Result, SecurityLabel, SkrifheimError};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SubjectContext {
-    pub clearance: Classification,
-    pub compartments: Vec<String>,
-    pub releasable_to: Vec<String>,
+    clearance: Classification,
+    compartments: BTreeSet<String>,
+    releasable_to: BTreeSet<String>,
+}
+
+impl SubjectContext {
+    #[must_use]
+    pub fn new(
+        clearance: Classification,
+        compartments: Vec<String>,
+        releasable_to: Vec<String>,
+    ) -> Self {
+        Self {
+            clearance,
+            compartments: canonical_set(compartments),
+            releasable_to: canonical_set(releasable_to),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -22,24 +37,24 @@ pub enum PlannerDecision {
 
 #[must_use]
 pub fn evaluate_read(subject: &SubjectContext, label: &SecurityLabel) -> PlannerDecision {
-    if !subject.clearance.dominates(label.classification) {
+    if !subject.clearance.dominates(label.classification()) {
         return PlannerDecision::Reject {
-            reason: String::from("subject clearance is below fact classification"),
+            reason: access_denied(),
         };
     }
 
-    for compartment in &label.compartments {
+    for compartment in label.compartments() {
         if !subject.compartments.contains(compartment) {
             return PlannerDecision::Reject {
-                reason: format!("subject lacks compartment {compartment}"),
+                reason: access_denied(),
             };
         }
     }
 
-    for releasability in &label.releasable_to {
+    for releasability in label.releasable_to() {
         if !subject.releasable_to.contains(releasability) {
             return PlannerDecision::Redact {
-                reason: format!("subject lacks releasability {releasability}"),
+                reason: access_denied(),
             };
         }
     }
@@ -56,6 +71,19 @@ pub fn require_allowed(decision: PlannerDecision) -> Result<()> {
     }
 }
 
+fn canonical_set(values: Vec<String>) -> BTreeSet<String> {
+    values.into_iter().map(canonical_token).collect()
+}
+
+fn canonical_token(mut value: String) -> String {
+    value.make_ascii_uppercase();
+    value
+}
+
+fn access_denied() -> String {
+    String::from("access denied")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -63,16 +91,16 @@ mod tests {
 
     #[test]
     fn read_requires_clearance() {
-        let subject = SubjectContext {
-            clearance: Classification::Restricted,
-            compartments: vec![String::from("A")],
-            releasable_to: vec![String::from("EU")],
-        };
-        let label = SecurityLabel {
-            classification: Classification::Secret,
-            compartments: vec![String::from("A")],
-            releasable_to: vec![String::from("EU")],
-        };
+        let subject = SubjectContext::new(
+            Classification::Restricted,
+            vec![String::from("A")],
+            vec![String::from("EU")],
+        );
+        let label = SecurityLabel::new(
+            Classification::Secret,
+            vec![String::from("A")],
+            vec![String::from("EU")],
+        );
         assert!(matches!(
             evaluate_read(&subject, &label),
             PlannerDecision::Reject { .. }
@@ -81,19 +109,32 @@ mod tests {
 
     #[test]
     fn missing_releasability_redacts_instead_of_allows() {
-        let subject = SubjectContext {
-            clearance: Classification::Secret,
-            compartments: vec![String::from("A")],
-            releasable_to: Vec::new(),
-        };
-        let label = SecurityLabel {
-            classification: Classification::Secret,
-            compartments: vec![String::from("A")],
-            releasable_to: vec![String::from("EU")],
-        };
+        let subject =
+            SubjectContext::new(Classification::Secret, vec![String::from("A")], Vec::new());
+        let label = SecurityLabel::new(
+            Classification::Secret,
+            vec![String::from("A")],
+            vec![String::from("EU")],
+        );
         assert!(matches!(
             evaluate_read(&subject, &label),
             PlannerDecision::Redact { .. }
         ));
+    }
+
+    #[test]
+    fn denial_reasons_do_not_disclose_compartment_names() {
+        let subject = SubjectContext::new(Classification::Secret, Vec::new(), Vec::new());
+        let label = SecurityLabel::new(
+            Classification::Secret,
+            vec![String::from("SECRET-COMPARTMENT")],
+            Vec::new(),
+        );
+        assert_eq!(
+            evaluate_read(&subject, &label),
+            PlannerDecision::Reject {
+                reason: String::from("access denied")
+            }
+        );
     }
 }

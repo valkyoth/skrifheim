@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
 use std::env;
+use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 
 fn main() -> ExitCode {
@@ -19,15 +20,26 @@ fn main() -> ExitCode {
 }
 
 fn run_script(path: &str) -> ExitCode {
-    match Command::new(path).status() {
+    let script = workspace_root().join(path);
+    match Command::new(&script).status() {
         Ok(status) if status.success() => ExitCode::SUCCESS,
         Ok(status) => match status.code() {
-            Some(code) => ExitCode::from(code as u8),
+            Some(0) => ExitCode::SUCCESS,
+            Some(_) => ExitCode::from(1),
             None => ExitCode::from(1),
         },
         Err(error) => {
-            eprintln!("failed to run {path}: {error}");
+            eprintln!("failed to run {}: {error}", script.display());
             ExitCode::from(1)
         }
     }
+}
+
+fn workspace_root() -> PathBuf {
+    let manifest_dir = env!("CARGO_MANIFEST_DIR");
+    Path::new(manifest_dir)
+        .parent()
+        .and_then(Path::parent)
+        .map(Path::to_path_buf)
+        .unwrap_or_else(|| PathBuf::from("."))
 }
