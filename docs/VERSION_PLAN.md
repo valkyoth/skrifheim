@@ -675,7 +675,7 @@ Deliverables:
 
 ## v0.51.0 - Production Hardening Candidate
 
-Goal: make the single-node engine ready for release-candidate review.
+Goal: make the single-node engine ready for compliance-foundation review.
 
 Deliverables:
 
@@ -685,7 +685,57 @@ Deliverables:
 - security control evidence update,
 - known-limits review.
 
-## v0.52.0 - 1.0 Release Candidate
+## v0.52.0 - Legal And Compliance Passport Foundations
+
+Goal: make future law-aware clustering possible without moving data yet.
+
+Deliverables:
+
+- node passport model,
+- data passport model,
+- operation passport model,
+- jurisdiction and legal-basis identifiers,
+- data-category and processing-mode identifiers,
+- tests that unlabeled non-public data cannot be planned for movement.
+
+## v0.53.0 - Law Pack Metadata And Admission
+
+Goal: define how signed legal and compliance policy packs enter the system.
+
+Deliverables:
+
+- law-pack metadata model,
+- issuer and authority references,
+- validity window and version rules,
+- review and approval status model,
+- compliance test-case metadata,
+- rollback-prevention and stale-pack rejection tests.
+
+## v0.54.0 - Legal Transfer Decision Engine Skeleton
+
+Goal: require legal decisions before replication, export, backup, AI processing, indexing, or failover plans.
+
+Deliverables:
+
+- legal transfer request type,
+- allow, constrained-allow, approval-required, and deny decision types,
+- legal-basis proof skeleton,
+- safe alternative suggestions such as redacted, aggregate, hash-witness, remote-query, and compute-to-data,
+- deterministic denial-shape tests.
+
+## v0.55.0 - Sovereign Placement Intent Compiler
+
+Goal: compile declared placement intent into lawful single-node and future-cluster planning metadata.
+
+Deliverables:
+
+- placement intent model for worlds, projections, indexes, backups, AI workers, and public releases,
+- jurisdiction and compliance constraints in placement metadata,
+- derived-data passport inheritance rules,
+- stale-placement marker when policy, law-pack, key, or data-passport epochs change,
+- tests for denied cross-boundary placement.
+
+## v0.56.0 - 1.0 Release Candidate
 
 Goal: freeze the 1.0 feature set and run final release evidence.
 
@@ -709,6 +759,10 @@ Deliverables:
 - key hierarchy and lifecycle,
 - encrypted WAL, segments, indexes, projections, backups, exports, and audit logs,
 - query-result classification,
+- legal/compliance passport foundations,
+- law-pack metadata admission,
+- legal transfer decision skeleton,
+- sovereign placement intent compiler,
 - compromise and recovery playbooks,
 - schema catalog and versioned contracts,
 - retention, tombstone, and compaction policy,
@@ -730,6 +784,106 @@ Non-goals for 1.0:
 
 - replacing every SQL database,
 - distributed consensus as default,
+- full multi-cell Hyve clustering,
+- automatic cross-region tunnel management,
+- automatic legal/compliance failover,
 - unsandboxed plugins,
 - AI as authoritative truth,
 - exotic hardware requirement.
+
+## Post-1.0 Cluster Roadmap
+
+The full Hyve cluster fabric starts after the first production single-node
+database unless explicitly re-scoped. Each item still needs its own clean stop,
+pentest handoff, and release notes.
+
+### v1.1.0 - Local Cell Cluster Runtime
+
+Goal: run a local sovereign cell with multiple nodes.
+
+Deliverables:
+
+- node registry,
+- local shard/range assignment,
+- local consensus skeleton,
+- local failover preflight,
+- cell health model,
+- tests for one-node loss inside a cell.
+
+### v1.2.0 - Hyve Control Plane
+
+Goal: make topology and placement intent first-class database state.
+
+Deliverables:
+
+- control-plane metadata store,
+- world and projection registry,
+- placement planner,
+- health monitor,
+- lease manager,
+- policy, key, and law-pack epoch tracking,
+- tests for control-plane proposals that cannot bypass local vetoes.
+
+### v1.3.0 - Policy-Scoped Tunnel Fabric
+
+Goal: open encrypted database tunnels with identity and legal scope.
+
+Deliverables:
+
+- node identity handshake,
+- signed peer maps,
+- tunnel policy model,
+- operation and data-passport binding on streams,
+- replication and health streams,
+- tests that denied labels cannot cross an otherwise healthy tunnel.
+
+### v1.4.0 - Geo Replication And Witness Roles
+
+Goal: replicate safely across cells where policy permits it.
+
+Deliverables:
+
+- commit-log shipping,
+- snapshot shipping,
+- Merkle repair,
+- hot and async secondary modes,
+- hash-only witness/notary role,
+- tests for stale, divergent, and witness-only replicas.
+
+### v1.5.0 - Compliance-Aware Failover
+
+Goal: fail over per world, data class, and legal basis.
+
+Deliverables:
+
+- failover eligibility planner,
+- promote, read-only, sealed, and deny outcomes,
+- authority-approval hooks,
+- split-brain prevention,
+- tests for public data failover and sensitive data failover denial.
+
+### v1.6.0 - Cluster Compliance Autopilot
+
+Goal: reconcile actual placement, tunnels, replicas, keys, and law packs against lawful desired state.
+
+Deliverables:
+
+- drift detector,
+- lawful remediation proposals,
+- tunnel freeze and replica seal actions,
+- key-rotation proposal hooks,
+- compliance incident record,
+- tests for law-pack, node-passport, and certification drift.
+
+### v1.7.0 - Multi-Region CMS Operation
+
+Goal: serve CMS-style public reads locally while keeping private data and publishing controls lawful.
+
+Deliverables:
+
+- public projection replication,
+- private draft home-region placement,
+- regional authentication compartment planning,
+- two-region publish approval workflow,
+- public release pointer promotion,
+- tests for country-loss survival where policy permits it.

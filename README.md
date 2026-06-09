@@ -10,6 +10,8 @@
   ·
   <a href="docs/security-controls.md">Security Controls</a>
   ·
+  <a href="docs/hyve-cluster-and-compliance-roadmap.md">Hyve Cluster Roadmap</a>
+  ·
   <a href="SECURITY.md">Security</a>
 </div>
 
@@ -85,7 +87,10 @@ release candidate, not a usable database engine.
 | CMS release primitives | Planned | `v0.39.0` through `v0.40.0`. |
 | AI artifact provenance | Planned | `v0.41.0`. |
 | Local-first worlds and mission capsules | Planned | `v0.42.0` through `v0.43.0`. |
-| Fuzz/property baseline, operations, and hardening | Planned | `v0.44.0` through `v0.52.0`. |
+| Fuzz/property baseline, operations, and hardening | Planned | `v0.44.0` through `v0.51.0`. |
+| Legal/compliance passports and placement foundations | Planned | `v0.52.0` through `v0.55.0`. |
+| Production release candidate | Planned | `v0.56.0`. |
+| Hyve multi-cell cluster fabric | Planned | `v1.1.0` and later. |
 
 ## Why skrifheim
 
@@ -96,6 +101,9 @@ release candidate, not a usable database engine.
 - **Security-aware planning**: classification, compartments, releasability,
   redaction, and rejection are database planning concerns, not application-side
   decoration.
+- **Compliance-aware direction**: future node, data, and operation passports
+  let placement, replication, indexing, backup, AI processing, and failover
+  respect signed law and compliance packs.
 - **Tamper-evident direction**: WAL, immutable segments, manifests, signatures,
   and audit proofs are planned as the storage foundation.
 - **AI is not truth**: AI output is planned as derived artifact state with
@@ -177,6 +185,7 @@ database operation begins in later storage and runtime milestones.
 - no `std` in core library crates,
 - no AI output as authoritative truth,
 - no release tag without a clean stop and pentest resolution,
+- no legal/compliance movement without signed policy inputs and audit proof,
 - no root `PENTEST.md` committed.
 
 See [Engineering Policy](docs/engineering-policy.md), [Unsafe Policy](docs/unsafe-policy.md),
@@ -197,6 +206,7 @@ Tags are created only when explicitly requested.
 - [Version Plan](docs/VERSION_PLAN.md)
 - [Engineering Policy](docs/engineering-policy.md)
 - [Encryption Architecture](docs/encryption-architecture.md)
+- [Hyve Cluster And Compliance Roadmap](docs/hyve-cluster-and-compliance-roadmap.md)
 - [Security Controls](docs/security-controls.md)
 - [Threat Model](docs/threat-model.md)
 - [CMS 1.0 Target](docs/cms-1-0-target.md)

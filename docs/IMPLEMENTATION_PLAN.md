@@ -33,6 +33,8 @@ The canonical layer must be boring, durable, testable, and auditable. The futuri
 - `skrifheim-crypto`: crypto-agile envelopes, epochs, algorithm identifiers, future threshold signatures.
 - `skrifheim-storage`: WAL, immutable segment metadata, Merkle manifests, content-addressed blobs.
 - `skrifheim-query`: query intent, policy-aware planning, context-pack planning.
+- `skrifheim-compliance`: future legal/compliance passports, law-pack metadata, and legal transfer decisions.
+- `skrifheim-cluster`: future cell, control-plane, tunnel, placement, and failover planning primitives.
 - `skrifheim`: CLI/server orchestration.
 - `xtask`: repeatable local automation.
 
@@ -122,7 +124,27 @@ Post-quantum readiness is a metadata and migration requirement from day one.
 
 See [Encryption Architecture](encryption-architecture.md).
 
-## Phase 6: Projection Compiler
+## Phase 6: Compliance, Legal, And Sovereign Placement
+
+Build the policy foundations that let a future cluster understand legal and
+compliance constraints before moving data.
+
+Required models:
+
+- node passports for jurisdiction, operator, approvals, crypto profile, and law-pack versions,
+- data passports for origin, classification, data category, purpose, retention, export, AI, search, vector, backup, and transfer policy,
+- operation passports for replication, query, backup, restore, indexing, embedding, export, failover, and tunnel creation,
+- signed law and compliance pack metadata with review status, test cases, validity windows, and rollback rules,
+- legal transfer decisions that can allow, constrain, require approval, or deny,
+- legal-basis proof skeletons for planner output,
+- local compliance-law veto model.
+
+The database must not invent law. It consumes signed, reviewed, versioned packs
+and turns them into deterministic planning inputs.
+
+See [Hyve Cluster And Compliance Roadmap](hyve-cluster-and-compliance-roadmap.md).
+
+## Phase 7: Projection Compiler
 
 Canonical facts drive projections:
 
@@ -136,7 +158,7 @@ Canonical facts drive projections:
 
 Every projection records its source fact range, consistency level, policy boundary, and rebuild command.
 
-## Phase 7: Query Language And Context Packs
+## Phase 8: Query Language And Context Packs
 
 The native query model is world-aware and causal:
 
@@ -155,7 +177,7 @@ return context_pack {
 
 The result must include provenance, source facts, graph paths, redactions, stale artifact markers, and policy proof.
 
-## Phase 8: Local-First And CMS Support
+## Phase 9: Local-First And CMS Support
 
 Support offline and collaborative worlds:
 
@@ -168,7 +190,7 @@ Support offline and collaborative worlds:
 
 CMS publishing uses world promotion, not mutable published flags.
 
-## Phase 9: Rootless Podman And Production Runtime
+## Phase 10: Rootless Podman And Production Runtime
 
 `skrifheim` must run:
 
@@ -176,6 +198,25 @@ CMS publishing uses world promotion, not mutable published flags.
 - inside rootless Podman,
 - with portable file I/O on all supported OS families,
 - with Linux io_uring/direct-I/O only as an optional fast path.
+
+## Phase 11: Hyve Cluster Fabric
+
+Build cluster features only after the single-node database and legal planning
+foundations are strong enough to test in isolation.
+
+Planned components:
+
+- sovereign cells with local consensus and local failover,
+- Hyve control plane for topology, placement, health, policy epochs, key epochs, and law-pack epochs,
+- automatic encrypted tunnels with workload identity and policy-scoped streams,
+- signed peer maps and node passports,
+- placement planner for worlds, projections, indexes, backups, AI workers, and public releases,
+- legal transfer handshake before replication, query, indexing, backup, export, AI processing, or failover,
+- compliance-aware failover that can promote, seal, restrict, or deny per world and data class,
+- witness/notary roles for hash-only proof replication,
+- compliance autopilot that detects drift and proposes lawful remediation.
+
+The control plane may propose movement. Local compliance-law kernels can veto it.
 
 ## Test Strategy
 

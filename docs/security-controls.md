@@ -14,6 +14,9 @@ Status: baseline control map
 | Classification | Labels and clearance checks | Scaffolded | `skrifheim-policy` |
 | Crypto agility | Algorithm and signature envelopes | Scaffolded | `skrifheim-crypto` |
 | Encryption control plane | Key hierarchy, lifecycle, domains, memory secrecy, encrypted projections, and compromise handling | Planned | `docs/encryption-architecture.md` |
+| Legal/compliance planning | Node, data, and operation passports with signed law-pack metadata and legal transfer decisions | Planned | `docs/hyve-cluster-and-compliance-roadmap.md` |
+| Sovereign placement | Placement and failover decisions constrained by jurisdiction, compliance, data category, and legal basis | Planned | `docs/hyve-cluster-and-compliance-roadmap.md` |
+| Cluster control plane | Future Hyve cells, control plane, policy-scoped tunnels, witness nodes, and compliance autopilot | Planned | `docs/hyve-cluster-and-compliance-roadmap.md` |
 | Tamper evidence | Segment metadata and validation | Scaffolded | `skrifheim-storage` |
 | AI authority | AI artifacts are derived, not truth | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | CMS isolation | Public/private world split | Planned | `docs/cms-1-0-target.md` |
