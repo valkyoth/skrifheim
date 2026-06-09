@@ -131,7 +131,7 @@ mod tests {
                 Classification::Restricted,
                 vec![String::from("EU-COMMAND")],
                 vec![String::from("EU")],
-            ),
+            )?,
             signatures: signature_set()?,
         })
     }

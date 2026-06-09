@@ -7,6 +7,8 @@ use alloc::{collections::BTreeSet, string::String, vec::Vec};
 use core::fmt;
 use core::num::NonZeroU128;
 
+pub const POLICY_TOKEN_MAX_BYTES: usize = 128;
+
 macro_rules! nonzero_id {
     ($name:ident) => {
         #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -114,17 +116,16 @@ impl SecurityLabel {
         }
     }
 
-    #[must_use]
     pub fn new(
         classification: Classification,
         compartments: Vec<String>,
         releasable_to: Vec<String>,
-    ) -> Self {
-        Self {
+    ) -> Result<Self> {
+        Ok(Self {
             classification,
-            compartments: canonical_set(compartments),
-            releasable_to: canonical_set(releasable_to),
-        }
+            compartments: canonical_policy_set(compartments)?,
+            releasable_to: canonical_policy_set(releasable_to)?,
+        })
     }
 
     #[must_use]
@@ -161,6 +162,7 @@ pub enum SkrifheimError {
     EmptySignatureSet,
     InvalidSignatureEnvelope(&'static str),
     InvalidSignatureLength,
+    InvalidSecurityToken,
     SelfReferentialFact,
     PolicyDenied(String),
     InvalidStorageHeader(String),
@@ -179,6 +181,7 @@ impl fmt::Display for SkrifheimError {
                 write!(f, "invalid signature envelope: {reason}")
             }
             Self::InvalidSignatureLength => write!(f, "invalid signature length"),
+            Self::InvalidSecurityToken => write!(f, "invalid security token"),
             Self::SelfReferentialFact => write!(f, "fact cannot refer to itself causally"),
             Self::PolicyDenied(reason) => write!(f, "policy denied operation: {reason}"),
             Self::InvalidStorageHeader(reason) => write!(f, "invalid storage header: {reason}"),
@@ -189,13 +192,61 @@ impl fmt::Display for SkrifheimError {
 
 pub type Result<T> = core::result::Result<T, SkrifheimError>;
 
-fn canonical_set(values: Vec<String>) -> BTreeSet<String> {
-    values.into_iter().map(canonical_token).collect()
+pub fn canonical_policy_set(values: Vec<String>) -> Result<BTreeSet<String>> {
+    values.into_iter().map(canonical_policy_token).collect()
 }
 
-fn canonical_token(mut value: String) -> String {
+pub fn canonical_policy_token(mut value: String) -> Result<String> {
+    if !is_valid_policy_token(&value) {
+        return Err(SkrifheimError::InvalidSecurityToken);
+    }
     value.make_ascii_uppercase();
-    value
+    Ok(value)
+}
+
+#[must_use]
+pub fn contains_policy_token_ct(tokens: &BTreeSet<String>, needle: &str) -> bool {
+    let needle = match canonical_policy_token(String::from(needle)) {
+        Ok(needle) => needle,
+        Err(_) => return false,
+    };
+    let mut found = 0_u8;
+    for token in tokens {
+        found |= policy_token_eq_ct(token, &needle);
+    }
+    found == 1
+}
+
+fn is_valid_policy_token(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= POLICY_TOKEN_MAX_BYTES
+        && value.bytes().all(|byte| {
+            byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.' | b':' | b'@')
+        })
+}
+
+fn policy_token_eq_ct(left: &str, right: &str) -> u8 {
+    let left = left.as_bytes();
+    let right = right.as_bytes();
+    let mut diff = left.len() ^ right.len();
+    let mut index = 0;
+    while index < POLICY_TOKEN_MAX_BYTES {
+        let left_byte = byte_at(left, index);
+        let right_byte = byte_at(right, index);
+        diff |= usize::from(left_byte ^ right_byte);
+        index += 1;
+    }
+    usize_is_zero(diff)
+}
+
+fn byte_at(bytes: &[u8], index: usize) -> u8 {
+    if index < bytes.len() { bytes[index] } else { 0 }
+}
+
+fn usize_is_zero(value: usize) -> u8 {
+    let folded = value | value.wrapping_neg();
+    let top_bit = folded >> (usize::BITS - 1);
+    (top_bit ^ 1) as u8
 }
 
 #[cfg(test)]
@@ -229,14 +280,42 @@ mod tests {
     }
 
     #[test]
-    fn security_label_canonicalizes_sets() {
+    fn security_label_canonicalizes_sets() -> Result<()> {
         let label = SecurityLabel::new(
             Classification::Secret,
             vec![String::from("eu-command"), String::from("EU-COMMAND")],
             vec![String::from("eu")],
-        );
+        )?;
         assert_eq!(label.compartments().len(), 1);
         assert!(label.compartments().contains("EU-COMMAND"));
         assert!(label.releasable_to().contains("EU"));
+        Ok(())
+    }
+
+    #[test]
+    fn security_label_rejects_unicode_homograph_tokens() {
+        assert_eq!(
+            SecurityLabel::new(
+                Classification::Secret,
+                vec![String::from("ЕU-COMMAND")],
+                Vec::new(),
+            ),
+            Err(SkrifheimError::InvalidSecurityToken)
+        );
+    }
+
+    #[test]
+    fn constant_time_policy_token_lookup_is_case_insensitive() -> Result<()> {
+        let label = SecurityLabel::new(
+            Classification::Secret,
+            vec![String::from("eu-command")],
+            Vec::new(),
+        )?;
+        assert!(contains_policy_token_ct(label.compartments(), "EU-COMMAND"));
+        assert!(!contains_policy_token_ct(
+            label.compartments(),
+            "EU-COMMAND-X"
+        ));
+        Ok(())
     }
 }

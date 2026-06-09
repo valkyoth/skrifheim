@@ -4,7 +4,10 @@
 extern crate alloc;
 
 use alloc::{collections::BTreeSet, string::String, vec::Vec};
-use skrifheim_core::{Classification, Result, SecurityLabel, SkrifheimError};
+use skrifheim_core::{
+    Classification, Result, SecurityLabel, SkrifheimError, canonical_policy_set,
+    contains_policy_token_ct,
+};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SubjectContext {
@@ -14,17 +17,16 @@ pub struct SubjectContext {
 }
 
 impl SubjectContext {
-    #[must_use]
     pub fn new(
         clearance: Classification,
         compartments: Vec<String>,
         releasable_to: Vec<String>,
-    ) -> Self {
-        Self {
+    ) -> Result<Self> {
+        Ok(Self {
             clearance,
-            compartments: canonical_set(compartments),
-            releasable_to: canonical_set(releasable_to),
-        }
+            compartments: canonical_policy_set(compartments)?,
+            releasable_to: canonical_policy_set(releasable_to)?,
+        })
     }
 }
 
@@ -44,7 +46,7 @@ pub fn evaluate_read(subject: &SubjectContext, label: &SecurityLabel) -> Planner
     }
 
     for compartment in label.compartments() {
-        if !subject.compartments.contains(compartment) {
+        if !contains_policy_token_ct(&subject.compartments, compartment) {
             return PlannerDecision::Reject {
                 reason: access_denied(),
             };
@@ -52,7 +54,7 @@ pub fn evaluate_read(subject: &SubjectContext, label: &SecurityLabel) -> Planner
     }
 
     for releasability in label.releasable_to() {
-        if !subject.releasable_to.contains(releasability) {
+        if !contains_policy_token_ct(&subject.releasable_to, releasability) {
             return PlannerDecision::Redact {
                 reason: access_denied(),
             };
@@ -71,15 +73,6 @@ pub fn require_allowed(decision: PlannerDecision) -> Result<()> {
     }
 }
 
-fn canonical_set(values: Vec<String>) -> BTreeSet<String> {
-    values.into_iter().map(canonical_token).collect()
-}
-
-fn canonical_token(mut value: String) -> String {
-    value.make_ascii_uppercase();
-    value
-}
-
 fn access_denied() -> String {
     String::from("access denied")
 }
@@ -90,51 +83,66 @@ mod tests {
     use alloc::{string::String, vec};
 
     #[test]
-    fn read_requires_clearance() {
+    fn read_requires_clearance() -> Result<()> {
         let subject = SubjectContext::new(
             Classification::Restricted,
             vec![String::from("A")],
             vec![String::from("EU")],
-        );
+        )?;
         let label = SecurityLabel::new(
             Classification::Secret,
             vec![String::from("A")],
             vec![String::from("EU")],
-        );
+        )?;
         assert!(matches!(
             evaluate_read(&subject, &label),
             PlannerDecision::Reject { .. }
         ));
+        Ok(())
     }
 
     #[test]
-    fn missing_releasability_redacts_instead_of_allows() {
+    fn missing_releasability_redacts_instead_of_allows() -> Result<()> {
         let subject =
-            SubjectContext::new(Classification::Secret, vec![String::from("A")], Vec::new());
+            SubjectContext::new(Classification::Secret, vec![String::from("A")], Vec::new())?;
         let label = SecurityLabel::new(
             Classification::Secret,
             vec![String::from("A")],
             vec![String::from("EU")],
-        );
+        )?;
         assert!(matches!(
             evaluate_read(&subject, &label),
             PlannerDecision::Redact { .. }
         ));
+        Ok(())
     }
 
     #[test]
-    fn denial_reasons_do_not_disclose_compartment_names() {
-        let subject = SubjectContext::new(Classification::Secret, Vec::new(), Vec::new());
+    fn denial_reasons_do_not_disclose_compartment_names() -> Result<()> {
+        let subject = SubjectContext::new(Classification::Secret, Vec::new(), Vec::new())?;
         let label = SecurityLabel::new(
             Classification::Secret,
             vec![String::from("SECRET-COMPARTMENT")],
             Vec::new(),
-        );
+        )?;
         assert_eq!(
             evaluate_read(&subject, &label),
             PlannerDecision::Reject {
                 reason: String::from("access denied")
             }
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn subject_context_rejects_unicode_homograph_tokens() {
+        assert_eq!(
+            SubjectContext::new(
+                Classification::Secret,
+                vec![String::from("ЕU-COMMAND")],
+                Vec::new(),
+            ),
+            Err(SkrifheimError::InvalidSecurityToken)
         );
     }
 }

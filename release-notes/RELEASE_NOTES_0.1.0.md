@@ -18,6 +18,10 @@ Status: implementation stop, pending pentest.
 - World diffs require a direct parent/child relationship and return deltas.
 - `xtask` resolves scripts from the workspace root and maps non-zero child exits to failure without truncation.
 - CLI startup output no longer discloses the Rust toolchain baseline.
+- Policy tokens are restricted to a bounded ASCII character set before canonicalization.
+- Policy read checks no longer use `BTreeSet::contains()` for compartment or releasability membership in the hot path.
+- Unicode homograph compartment and releasability tokens are rejected at label/context construction.
+- Signature envelopes reject hash-only algorithms such as Blake3 in signing contexts.
 
 ## Verification
 

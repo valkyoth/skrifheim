@@ -23,6 +23,20 @@ pub enum AlgorithmId {
     Named(String),
 }
 
+impl AlgorithmId {
+    #[must_use]
+    pub const fn is_signing_algorithm(&self) -> bool {
+        matches!(
+            self,
+            Self::Ed25519
+                | Self::MlDsa65
+                | Self::SlhDsaSha2S128s
+                | Self::HybridClassicalPq { .. }
+                | Self::Named(_)
+        )
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct CryptoEpoch(pub u64);
 
@@ -100,6 +114,11 @@ impl SignatureSet {
 }
 
 fn validate_signature_length(algorithm: &AlgorithmId, actual: usize) -> Result<()> {
+    if !algorithm.is_signing_algorithm() {
+        return Err(SkrifheimError::InvalidSignatureEnvelope(
+            "algorithm is not valid for signatures",
+        ));
+    }
     if actual == 0 {
         return Err(SkrifheimError::EmptySignatureSet);
     }
@@ -107,7 +126,8 @@ fn validate_signature_length(algorithm: &AlgorithmId, actual: usize) -> Result<(
         AlgorithmId::Ed25519 => Some(ED25519_SIG_BYTES),
         AlgorithmId::MlDsa65 => Some(ML_DSA_65_SIG_BYTES),
         AlgorithmId::SlhDsaSha2S128s => Some(SLH_DSA_SHA2_S128S_SIG_BYTES),
-        AlgorithmId::Blake3 | AlgorithmId::HybridClassicalPq { .. } | AlgorithmId::Named(_) => None,
+        AlgorithmId::HybridClassicalPq { .. } | AlgorithmId::Named(_) => None,
+        AlgorithmId::Blake3 => unreachable!("Blake3 is rejected before length checks"),
     };
     if let Some(expected) = expected
         && expected != actual
@@ -154,6 +174,16 @@ mod tests {
         );
         assert!(
             SignatureEnvelope::new(AlgorithmId::Ed25519, CryptoEpoch(1), "k", vec![1; 64]).is_ok()
+        );
+    }
+
+    #[test]
+    fn blake3_is_rejected_in_signature_contexts() {
+        assert_eq!(
+            SignatureEnvelope::new(AlgorithmId::Blake3, CryptoEpoch(1), "k", vec![1; 32]),
+            Err(SkrifheimError::InvalidSignatureEnvelope(
+                "algorithm is not valid for signatures"
+            ))
         );
     }
 }

@@ -84,9 +84,9 @@ mod tests {
                 Classification::TopSecret,
                 Vec::new(),
                 Vec::new(),
-            )],
+            )?],
         };
-        let subject = SubjectContext::new(Classification::Secret, Vec::new(), Vec::new());
+        let subject = SubjectContext::new(Classification::Secret, Vec::new(), Vec::new())?;
         assert!(request.plan(&subject).has_rejection());
         Ok(())
     }
@@ -100,9 +100,9 @@ mod tests {
                 Classification::Secret,
                 Vec::new(),
                 vec![String::from("EU")],
-            )],
+            )?],
         };
-        let subject = SubjectContext::new(Classification::Secret, Vec::new(), Vec::new());
+        let subject = SubjectContext::new(Classification::Secret, Vec::new(), Vec::new())?;
         let plan = request.plan(&subject);
         assert!(plan.has_redaction());
         assert!(!plan.is_executable());
