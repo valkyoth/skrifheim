@@ -76,6 +76,26 @@ Current external dependency exceptions:
 - Do not use `zeroize`; use `sanitization` only if memory cleanup is needed and after dependency admission. This is preferred because it is our own crate.
 - Do not use the `base64` crate. If base64 is unavoidable, use `base64-ng` only after dependency admission. This is preferred because it is our own crate.
 
+## Constant-Time Primitive Rule
+
+Source-level branchless code is not enough evidence for production
+constant-time behavior. Rust does not provide a language-level guarantee that
+ordinary codegen preserves constant-time properties.
+
+The current scaffold may use local, reviewed, no-dependency helpers for
+bounded token comparison. Before any production claim for timing-sensitive
+policy, key, signature, authentication, or secret comparison paths, `skrifheim`
+must either:
+
+- admit a reviewed constant-time primitive crate such as `subtle` or an
+  equivalent under the external dependency admission process, or
+- provide equivalent compiler-barrier and codegen evidence in a reviewed local
+  implementation.
+
+No constant-time helper graduates from scaffold to production without tests,
+documentation, dependency or local-implementation review, and release-gate
+evidence.
+
 ## Unsafe Boundary Rule
 
 Unsafe Rust is not allowed in core crates.

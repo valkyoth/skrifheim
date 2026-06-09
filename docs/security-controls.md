@@ -12,6 +12,7 @@ Status: baseline control map
 | Modularity | Focused crates and file-size gate | Active | `docs/modularity-policy.md` |
 | Canonical truth | Facts are versioned and evidence-bound | Scaffolded | `skrifheim-fact` |
 | Classification | Labels and clearance checks | Scaffolded | `skrifheim-policy` |
+| Timing side channels | Bounded local policy-token comparison exists; production constant-time primitives require dependency or local evidence review | Planned | `docs/engineering-policy.md` |
 | Crypto agility | Algorithm and signature envelopes | Scaffolded | `skrifheim-crypto` |
 | Encryption control plane | Key hierarchy, lifecycle, domains, memory secrecy, encrypted projections, and compromise handling | Planned | `docs/encryption-architecture.md` |
 | Legal/compliance planning | Instance/node, data, and operation passports with signed law-pack metadata and legal operation/transfer decisions | Planned | `docs/hyve-cluster-and-compliance-roadmap.md` |

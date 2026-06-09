@@ -37,6 +37,14 @@ Status: implementation stop, pending pentest.
 
 This release is not a usable database engine. It does not provide durable storage, networking, replication, cryptographic verification, or production query execution.
 
+## Residual Risk And Future Work
+
+- The policy-token comparison helper is branchless at source level, but Rust
+  does not guarantee constant-time code generation. A production release must
+  admit reviewed constant-time primitives, such as `subtle` or an equivalent,
+  through the dependency admission process or provide equivalent reviewed local
+  codegen evidence.
+
 ## Pentest Status
 
 Pentest is required before tagging. Root `PENTEST.md` is the temporary findings handoff file and must be removed after findings are resolved.
