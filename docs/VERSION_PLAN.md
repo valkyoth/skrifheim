@@ -65,6 +65,7 @@ Deliverables:
 Verification:
 
 - `scripts/checks.sh`
+- `scripts/release_0_1_gate.sh`
 - `cargo test --workspace`
 
 ## v0.2.0 - Fact Model And Policy Labels
