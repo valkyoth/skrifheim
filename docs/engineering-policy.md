@@ -1,0 +1,93 @@
+# skrifheim Engineering Policy
+
+Status: hard rule
+
+`skrifheim` is a military-security-oriented database project. Convenience is not enough reason to add `std`, unsafe code, or third-party dependencies to the trusted core.
+
+## Hard Rules
+
+Crates under `crates/` are core database crates. Their library targets must:
+
+- use `#![no_std]`,
+- use `#![forbid(unsafe_code)]`,
+- avoid `std` imports entirely,
+- prefer `alloc` only where owned dynamic data is necessary,
+- prefer `skrifheim`-owned primitives for security-critical behavior,
+- avoid external dependencies unless the reason is documented before use.
+
+Host-only code may use `std`:
+
+- `crates/skrifheim/src/main.rs`,
+- `tools/xtask`,
+- shell scripts,
+- future fuzz, release, and test-only tools.
+
+Host-only code still follows the dependency review rule.
+
+## Build Our Own By Default
+
+`skrifheim` should own its security-critical primitives:
+
+- fact identity and validation,
+- world DAG and merge semantics,
+- classification and compartment checks,
+- policy planner decisions,
+- storage frame formats,
+- WAL and recovery state machine,
+- query language parser and planner,
+- manifest and audit-proof formats,
+- crypto-agile envelope metadata,
+- CMS release/dependency primitives.
+
+External crates can be safer for some standards or host-only tooling, but they must not quietly import a different authority model, runtime model, parser behavior, allocator assumption, or unsafe trusted boundary.
+
+## External Dependency Admission
+
+Before adding any external crate:
+
+1. Discuss why local implementation is not the better option.
+2. Check the latest crate version.
+3. Review license compatibility with EUPL-1.2.
+4. Review maintenance, unsafe usage, transitive dependencies, and advisories.
+5. Add focused tests for the behavior we rely on.
+6. Record the exception here before merging.
+
+Exception format:
+
+```text
+Crate:
+Used by:
+Scope:
+Reason:
+Why not local:
+Unsafe review:
+Transitive dependency review:
+License:
+Review deadline:
+Removal condition:
+```
+
+Current external dependency exceptions:
+
+- None.
+
+## Specific Crate Rules
+
+- Do not use `zeroize`; use `sanitization` only if memory cleanup is needed and after dependency admission. This is preferred because it is our own crate.
+- Do not use the `base64` crate. If base64 is unavoidable, use `base64-ng` only after dependency admission. This is preferred because it is our own crate.
+
+## Unsafe Boundary Rule
+
+Unsafe Rust is not allowed in core crates.
+
+If a future feature truly cannot be implemented without unsafe code, the unsafe must first be admitted in [Unsafe Policy](unsafe-policy.md), then isolated in a dedicated boundary crate with a name that makes the risk obvious. The safe `skrifheim` core should consume only a narrow reviewed wrapper. The default project posture remains no unsafe.
+
+## Validator
+
+`scripts/validate-engineering-policy.sh` enforces the current baseline:
+
+- every library under `crates/` has `#![no_std]`,
+- every library under `crates/` has `#![forbid(unsafe_code)]`,
+- core crates do not import `std`,
+- `zeroize` is rejected,
+- the `base64` crate is rejected.

@@ -1,0 +1,9 @@
+/target/
+/.cargo-deny-advisory-dbs/
+/sbom.spdx.json
+/PENTEST.md
+*.tmp
+*.bak
+*.swp
+.DS_Store
+Thumbs.db

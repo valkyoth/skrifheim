@@ -1,0 +1,4 @@
+FROM docker.io/library/rust:1.96-alpine
+WORKDIR /workspace
+COPY . .
+RUN cargo test --workspace

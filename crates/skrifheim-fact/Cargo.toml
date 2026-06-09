@@ -1,0 +1,15 @@
+[package]
+name = "skrifheim-fact"
+description = "Causal fact model for skrifheim."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+skrifheim-core = { version = "0.1.0", path = "../skrifheim-core" }
+skrifheim-crypto = { version = "0.1.0", path = "../skrifheim-crypto" }
+
+[lints]
+workspace = true

@@ -1,0 +1,31 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/skrifheim",
+    "crates/skrifheim-core",
+    "crates/skrifheim-fact",
+    "crates/skrifheim-world",
+    "crates/skrifheim-policy",
+    "crates/skrifheim-crypto",
+    "crates/skrifheim-storage",
+    "crates/skrifheim-query",
+    "tools/xtask",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "EUPL-1.2"
+repository = "https://github.com/valkyoth/skrifheim"
+rust-version = "1.96"
+
+[workspace.lints.rust]
+unsafe_op_in_unsafe_fn = "forbid"
+unused_must_use = "deny"
+
+[workspace.lints.clippy]
+panic = "deny"
+unwrap_used = "deny"
+expect_used = "deny"
+todo = "deny"
+dbg_macro = "deny"

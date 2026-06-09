@@ -1,0 +1,42 @@
+name: Rust CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  checks:
+    name: Format, lint, test, and policy checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Rust toolchain
+        run: rustup show
+
+      - name: Run local checks
+        run: scripts/checks.sh
+
+      - name: Install security tools
+        run: |
+          cargo install --locked cargo-deny
+          cargo install --locked cargo-audit
+
+      - name: Check dependency policy
+        run: cargo deny check
+
+      - name: Check RustSec advisories
+        run: cargo audit
