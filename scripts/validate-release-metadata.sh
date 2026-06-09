@@ -16,6 +16,7 @@ docs/VERSION_PLAN.md
 docs/security-controls.md
 docs/threat-model.md
 release-notes/RELEASE_NOTES_0.1.0.md
+release-notes/RELEASE_NOTES_0.2.0.md
 "
 
 for path in $required; do

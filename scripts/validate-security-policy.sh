@@ -2,7 +2,7 @@
 set -eu
 
 if grep -R -E "unsafe[[:space:]]*(\\{|fn|trait|impl|extern)" crates tools --include '*.rs' >/dev/null; then
-    echo "unsafe code is not allowed in the v0.1.0 scaffold" >&2
+    echo "unsafe code is not allowed in skrifheim core crates" >&2
     exit 1
 fi
 
