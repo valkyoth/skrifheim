@@ -4,19 +4,30 @@ Status: planned architecture
 
 Database name: `skrifheim`
 
-This document records the cluster and compliance direction for `skrifheim`.
-The core idea is that topology, jurisdiction, compliance posture, and legal
-movement rules become database planning inputs, not external deployment notes.
+This document records the standalone compliance and future cluster direction
+for `skrifheim`. The core idea is that jurisdiction, compliance posture, legal
+processing rules, topology, and movement rules become database planning inputs,
+not external deployment notes.
 
 ## Design Position
 
-The cluster model is a set of sovereign cells coordinated by a control plane.
-The control plane can propose placement, tunnels, failover, and repair, but it
-does not sit on the hot data path for every user write.
+Compliance-aware planning is a core database capability. It must work in a
+single standalone `skrifheim` instance before any multi-node cluster exists.
 
-The legal and compliance model is stricter: a node may not move, replicate,
-index, summarize, back up, fail over, or export data until the operation passes
-the relevant local and destination policy checks.
+The standalone model decides whether local reads, writes, CMS document access,
+exports, backups, search indexes, vector embeddings, AI summaries, admin
+queries, and public projections are lawful for the actor, purpose, data class,
+request context, and configured policy packs.
+
+The cluster model extends the same planner to a set of sovereign cells
+coordinated by a control plane. The control plane can propose placement,
+tunnels, failover, and repair, but it does not sit on the hot data path for
+every user write.
+
+The legal and compliance model is stricter than normal access control: an
+operation may not read, reveal, derive, move, replicate, index, summarize,
+back up, fail over, or export protected data until the operation passes the
+relevant local policy checks. In a cluster, destination checks are added.
 
 Important boundaries:
 
@@ -24,7 +35,36 @@ Important boundaries:
 - the database does not invent legal interpretation,
 - AI may help draft explanations but must not become legal authority,
 - every legal interpretation change is versioned, signed, reviewed, and tested,
-- a local compliance kernel can veto a control-plane placement decision.
+- a local compliance kernel can veto a local query, export, AI/index operation,
+  backup operation, or control-plane placement decision.
+
+## Standalone Compliance Is Core
+
+A standalone database in Sweden, Norway, Germany, France, or any other
+jurisdiction must carry the same compliance-aware planning model as a future
+cluster node.
+
+Examples:
+
+- a CMS public gateway asks for a private draft as public content: deny,
+- a request context is outside the approved region for an EEA-only tenant
+  policy: deny, redact, or require stronger proof according to the policy pack,
+- an AI worker asks to summarize personal data without an allowed purpose:
+  deny,
+- a search projection tries to index data above its legal or classification
+  domain: deny,
+- an admin export asks for personal data without the required legal basis:
+  deny or require approval,
+- a backup target is outside the allowed region or contract scope: deny.
+
+Network origin, IP country, device posture, actor identity, tenant policy,
+purpose, lawful basis, consent state, retention state, and data category are
+policy signals. They are not individually sufficient as legal truth, but the
+planner must be able to combine them into a deterministic decision.
+
+The safe default is that unlabeled non-public data cannot be read outside its
+declared local purpose, cannot be exported, cannot be indexed, cannot be
+processed by AI, and cannot be backed up to a new boundary.
 
 ## Sovereign Cells
 
@@ -77,13 +117,14 @@ The control plane must not override a local compliance-law veto.
 
 ## Compliance-Law Kernel
 
-Every node that participates in non-public data movement eventually needs a
-local compliance-law kernel.
+Every standalone instance and every future cluster node that participates in
+non-public access or movement needs a local compliance-law kernel.
 
 Responsibilities:
 
 - resolve jurisdiction and applicable policy packs,
-- evaluate node passports, data passports, and operation passports,
+- evaluate local instance/node passports, data passports, operation passports,
+  actor context, request context, and workload context,
 - enforce classification and data-category rules,
 - evaluate legal basis, purpose limitation, retention, and export rules,
 - detect legal or policy conflicts,
@@ -91,10 +132,11 @@ Responsibilities:
 - explain decisions without leaking protected facts,
 - log immutable audit events for every security-relevant decision.
 
-If the local compliance-law kernel is unavailable, the node may continue
+If the local compliance-law kernel is unavailable, the instance may continue
 serving already-approved local reads according to its last safe state, but it
-must not accept new cross-border movement, new sensitive replication, or new
-legal interpretation changes.
+must not accept new sensitive reads, exports, AI/search/index operations,
+backups, cross-boundary movement, sensitive replication, or legal
+interpretation changes.
 
 ## Passports
 
@@ -184,20 +226,24 @@ Each pack must include:
 Packs are not accepted only because they parse. Admission requires review,
 tests, rollback handling, and signed approval by the correct authority.
 
-## Legal Transfer Handshake
+## Legal Operation And Transfer Handshake
 
-Before data crosses a node, cell, region, jurisdiction, tunnel, projection,
-AI worker, backup target, or failover boundary, `skrifheim` must evaluate a
-legal transfer handshake.
+Before protected data is read, written, derived, indexed, summarized, exported,
+backed up, or moved across a node, cell, region, jurisdiction, tunnel,
+projection, AI worker, backup target, or failover boundary, `skrifheim` must
+evaluate a legal operation handshake. Cross-boundary movement adds the transfer
+handshake checks.
 
 The handshake checks:
 
-- source node passport,
-- destination node passport,
+- local instance or source node passport,
+- destination node passport when data crosses a boundary,
 - data passport,
 - operation passport,
+- actor and workload context,
+- request context such as source network region and device posture when known,
 - source law and policy packs,
-- destination law and policy packs,
+- destination law and policy packs when data crosses a boundary,
 - tenant and organization policy,
 - crypto profile,
 - key epoch,
@@ -236,6 +282,8 @@ The planning stack eventually becomes:
 The legal planner answers:
 
 - can this operation legally exist,
+- can this actor access this document for this purpose,
+- can this request context receive this result,
 - can this data leave this node,
 - can derived data leave this node,
 - can this index be built in that jurisdiction,
@@ -245,7 +293,7 @@ The legal planner answers:
 - can this query result be shown to this actor,
 - what classification and legal basis does the output inherit.
 
-Only after legal approval can performance planning run.
+Only after legal approval can security, query, and performance planning run.
 
 ## Compliance-Aware Tunnels
 
@@ -325,9 +373,9 @@ explicit release-gated policies and audit proofs.
 
 ## Versioning Intent
 
-The 1.0 release must include the foundations that make legal and compliance
-awareness possible: passports, law-pack metadata, legal planner skeletons,
-placement intent, and legal-basis proofs.
+The 1.0 release must include standalone legal and compliance foundations:
+passports, law-pack metadata, legal planner skeletons, local operation
+decisions, placement intent, and legal-basis proofs.
 
 Full multi-cell clustering, automatic tunnel management, multi-region failover,
 and compliance autopilot are post-1.0 roadmap items unless their prerequisites

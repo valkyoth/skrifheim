@@ -126,8 +126,10 @@ See [Encryption Architecture](encryption-architecture.md).
 
 ## Phase 6: Compliance, Legal, And Sovereign Placement
 
-Build the policy foundations that let a future cluster understand legal and
-compliance constraints before moving data.
+Build the policy foundations that let a standalone database understand legal
+and compliance constraints before reading, writing, exporting, backing up,
+indexing, or deriving data. A future cluster extends the same model before
+moving data between nodes or jurisdictions.
 
 Required models:
 
@@ -135,7 +137,7 @@ Required models:
 - data passports for origin, classification, data category, purpose, retention, export, AI, search, vector, backup, and transfer policy,
 - operation passports for replication, query, backup, restore, indexing, embedding, export, failover, and tunnel creation,
 - signed law and compliance pack metadata with review status, test cases, validity windows, and rollback rules,
-- legal transfer decisions that can allow, constrain, require approval, or deny,
+- legal operation and transfer decisions that can allow, constrain, require approval, or deny,
 - legal-basis proof skeletons for planner output,
 - local compliance-law veto model.
 
@@ -211,7 +213,7 @@ Planned components:
 - automatic encrypted tunnels with workload identity and policy-scoped streams,
 - signed peer maps and node passports,
 - placement planner for worlds, projections, indexes, backups, AI workers, and public releases,
-- legal transfer handshake before replication, query, indexing, backup, export, AI processing, or failover,
+- legal operation and transfer handshake before replication, query, indexing, backup, export, AI processing, or failover,
 - compliance-aware failover that can promote, seal, restrict, or deny per world and data class,
 - witness/notary roles for hash-only proof replication,
 - compliance autopilot that detects drift and proposes lawful remediation.

@@ -687,7 +687,7 @@ Deliverables:
 
 ## v0.52.0 - Legal And Compliance Passport Foundations
 
-Goal: make future law-aware clustering possible without moving data yet.
+Goal: make standalone legal/compliance planning possible before clustering.
 
 Deliverables:
 
@@ -696,7 +696,8 @@ Deliverables:
 - operation passport model,
 - jurisdiction and legal-basis identifiers,
 - data-category and processing-mode identifiers,
-- tests that unlabeled non-public data cannot be planned for movement.
+- request-context markers such as actor, workload, source region, and device posture,
+- tests that unlabeled non-public data cannot be read, exported, indexed, processed by AI, backed up, or planned for movement.
 
 ## v0.53.0 - Law Pack Metadata And Admission
 
@@ -711,17 +712,19 @@ Deliverables:
 - compliance test-case metadata,
 - rollback-prevention and stale-pack rejection tests.
 
-## v0.54.0 - Legal Transfer Decision Engine Skeleton
+## v0.54.0 - Legal Operation Decision Engine Skeleton
 
-Goal: require legal decisions before replication, export, backup, AI processing, indexing, or failover plans.
+Goal: require legal decisions before local access, replication, export, backup, AI processing, indexing, or failover plans.
 
 Deliverables:
 
-- legal transfer request type,
+- legal operation request type,
+- legal transfer request extension for future cluster boundaries,
 - allow, constrained-allow, approval-required, and deny decision types,
 - legal-basis proof skeleton,
 - safe alternative suggestions such as redacted, aggregate, hash-witness, remote-query, and compute-to-data,
-- deterministic denial-shape tests.
+- deterministic denial-shape tests,
+- tests for denied CMS reads from disallowed request contexts.
 
 ## v0.55.0 - Sovereign Placement Intent Compiler
 
@@ -761,7 +764,7 @@ Deliverables:
 - query-result classification,
 - legal/compliance passport foundations,
 - law-pack metadata admission,
-- legal transfer decision skeleton,
+- legal operation and transfer decision skeleton,
 - sovereign placement intent compiler,
 - compromise and recovery playbooks,
 - schema catalog and versioned contracts,
