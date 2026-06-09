@@ -19,25 +19,69 @@ pub enum WorldKind {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct World {
-    pub id: WorldId,
-    pub name: String,
-    pub kind: WorldKind,
-    pub parent: Option<WorldId>,
-    pub added_facts: Vec<FactId>,
-    pub hidden_facts: Vec<FactId>,
+    id: WorldId,
+    name: String,
+    kind: WorldKind,
+    parent: Option<WorldId>,
+    added_facts: Vec<FactId>,
+    hidden_facts: Vec<FactId>,
 }
 
 impl World {
     #[must_use]
-    pub fn fork(&self, id: WorldId, name: impl Into<String>, kind: WorldKind) -> Self {
+    pub fn root(id: WorldId, name: impl Into<String>, kind: WorldKind) -> Self {
         Self {
+            id,
+            name: name.into(),
+            kind,
+            parent: None,
+            added_facts: Vec::new(),
+            hidden_facts: Vec::new(),
+        }
+    }
+
+    pub fn fork(&self, id: WorldId, name: impl Into<String>, kind: WorldKind) -> Result<Self> {
+        if id == self.id {
+            return Err(SkrifheimError::InvalidWorldDiff);
+        }
+        Ok(Self {
             id,
             name: name.into(),
             kind,
             parent: Some(self.id),
             added_facts: Vec::new(),
             hidden_facts: Vec::new(),
-        }
+        })
+    }
+
+    #[must_use]
+    pub const fn id(&self) -> WorldId {
+        self.id
+    }
+
+    #[must_use]
+    pub fn name(&self) -> &str {
+        &self.name
+    }
+
+    #[must_use]
+    pub const fn kind(&self) -> &WorldKind {
+        &self.kind
+    }
+
+    #[must_use]
+    pub const fn parent(&self) -> Option<WorldId> {
+        self.parent
+    }
+
+    #[must_use]
+    pub fn added_facts(&self) -> &[FactId] {
+        &self.added_facts
+    }
+
+    #[must_use]
+    pub fn hidden_facts(&self) -> &[FactId] {
+        &self.hidden_facts
     }
 
     pub fn add_fact(&mut self, fact_id: FactId) {
@@ -96,53 +140,42 @@ mod tests {
 
     #[test]
     fn fork_keeps_parent_identity() -> Result<()> {
-        let production = World {
-            id: id(WorldId::from_u128(1))?,
-            name: String::from("production"),
-            kind: WorldKind::Production,
-            parent: None,
-            added_facts: Vec::new(),
-            hidden_facts: Vec::new(),
-        };
-        let draft = production.fork(id(WorldId::from_u128(2))?, "draft", WorldKind::Simulation);
-        assert_eq!(draft.parent, Some(id(WorldId::from_u128(1))?));
+        let production = World::root(
+            id(WorldId::from_u128(1))?,
+            "production",
+            WorldKind::Production,
+        );
+        let draft = production.fork(id(WorldId::from_u128(2))?, "draft", WorldKind::Simulation)?;
+        assert_eq!(draft.parent(), Some(id(WorldId::from_u128(1))?));
         Ok(())
     }
 
     #[test]
     fn duplicate_fact_adds_are_idempotent() -> Result<()> {
-        let mut world = World {
-            id: id(WorldId::from_u128(1))?,
-            name: String::from("production"),
-            kind: WorldKind::Production,
-            parent: None,
-            added_facts: Vec::new(),
-            hidden_facts: Vec::new(),
-        };
+        let mut world = World::root(
+            id(WorldId::from_u128(1))?,
+            "production",
+            WorldKind::Production,
+        );
         world.add_fact(id(FactId::from_u128(7))?);
         world.add_fact(id(FactId::from_u128(7))?);
-        assert_eq!(world.added_facts, vec![id(FactId::from_u128(7))?]);
+        assert_eq!(world.added_facts(), &[id(FactId::from_u128(7))?]);
         Ok(())
     }
 
     #[test]
     fn diff_requires_direct_child_relationship() -> Result<()> {
-        let production = World {
-            id: id(WorldId::from_u128(1))?,
-            name: String::from("production"),
-            kind: WorldKind::Production,
-            parent: None,
-            added_facts: vec![id(FactId::from_u128(7))?],
-            hidden_facts: Vec::new(),
-        };
-        let unrelated = World {
-            id: id(WorldId::from_u128(2))?,
-            name: String::from("unrelated"),
-            kind: WorldKind::Simulation,
-            parent: None,
-            added_facts: Vec::new(),
-            hidden_facts: Vec::new(),
-        };
+        let mut production = World::root(
+            id(WorldId::from_u128(1))?,
+            "production",
+            WorldKind::Production,
+        );
+        production.add_fact(id(FactId::from_u128(7))?);
+        let unrelated = World::root(
+            id(WorldId::from_u128(2))?,
+            "unrelated",
+            WorldKind::Simulation,
+        );
         assert_eq!(
             WorldDiff::between(&production, &unrelated),
             Err(SkrifheimError::InvalidWorldDiff)
@@ -152,20 +185,32 @@ mod tests {
 
     #[test]
     fn diff_returns_delta_against_parent() -> Result<()> {
-        let mut production = World {
-            id: id(WorldId::from_u128(1))?,
-            name: String::from("production"),
-            kind: WorldKind::Production,
-            parent: None,
-            added_facts: Vec::new(),
-            hidden_facts: Vec::new(),
-        };
+        let mut production = World::root(
+            id(WorldId::from_u128(1))?,
+            "production",
+            WorldKind::Production,
+        );
         production.add_fact(id(FactId::from_u128(7))?);
-        let mut child = production.fork(id(WorldId::from_u128(2))?, "child", WorldKind::Simulation);
+        let mut child =
+            production.fork(id(WorldId::from_u128(2))?, "child", WorldKind::Simulation)?;
         child.add_fact(id(FactId::from_u128(7))?);
         child.add_fact(id(FactId::from_u128(8))?);
         let diff = WorldDiff::between(&production, &child)?;
         assert_eq!(diff.added, vec![id(FactId::from_u128(8))?]);
+        Ok(())
+    }
+
+    #[test]
+    fn fork_rejects_self_parent() -> Result<()> {
+        let production = World::root(
+            id(WorldId::from_u128(1))?,
+            "production",
+            WorldKind::Production,
+        );
+        assert_eq!(
+            production.fork(id(WorldId::from_u128(1))?, "bad", WorldKind::Simulation),
+            Err(SkrifheimError::InvalidWorldDiff)
+        );
         Ok(())
     }
 }

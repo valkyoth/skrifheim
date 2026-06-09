@@ -157,6 +157,22 @@ pub enum Value {
     Ref(EntityId),
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct AccessDeniedReason(());
+
+impl AccessDeniedReason {
+    #[must_use]
+    pub const fn new() -> Self {
+        Self(())
+    }
+}
+
+impl Default for AccessDeniedReason {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum SkrifheimError {
     InvalidTimeRange,
@@ -165,11 +181,13 @@ pub enum SkrifheimError {
     EmptyEvidence,
     EmptySignatureSet,
     MissingFactField(&'static str),
+    DuplicateEvidence,
+    DuplicateFactLink,
     InvalidSignatureEnvelope(&'static str),
     InvalidSignatureLength,
     InvalidSecurityToken,
     SelfReferentialFact,
-    PolicyDenied(String),
+    PolicyDenied(AccessDeniedReason),
     InvalidStorageHeader(String),
     InvalidWorldDiff,
 }
@@ -183,13 +201,15 @@ impl fmt::Display for SkrifheimError {
             Self::EmptyEvidence => write!(f, "fact must carry at least one evidence source"),
             Self::EmptySignatureSet => write!(f, "commit or fact must carry signatures"),
             Self::MissingFactField(field) => write!(f, "fact builder is missing field: {field}"),
+            Self::DuplicateEvidence => write!(f, "fact evidence must not contain duplicates"),
+            Self::DuplicateFactLink => write!(f, "fact links must not contain duplicates"),
             Self::InvalidSignatureEnvelope(reason) => {
                 write!(f, "invalid signature envelope: {reason}")
             }
             Self::InvalidSignatureLength => write!(f, "invalid signature length"),
             Self::InvalidSecurityToken => write!(f, "invalid security token"),
             Self::SelfReferentialFact => write!(f, "fact cannot refer to itself causally"),
-            Self::PolicyDenied(reason) => write!(f, "policy denied operation: {reason}"),
+            Self::PolicyDenied(_) => write!(f, "policy denied operation: access denied"),
             Self::InvalidStorageHeader(reason) => write!(f, "invalid storage header: {reason}"),
             Self::InvalidWorldDiff => write!(f, "target world is not a child of source world"),
         }

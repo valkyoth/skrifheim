@@ -24,9 +24,9 @@ pub struct QueryRequest {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct QueryPlan {
-    pub world: WorldId,
-    pub intent: QueryIntent,
-    pub decisions: Vec<PlannerDecision>,
+    world: WorldId,
+    intent: QueryIntent,
+    decisions: Vec<PlannerDecision>,
 }
 
 impl QueryRequest {
@@ -45,6 +45,21 @@ impl QueryRequest {
 }
 
 impl QueryPlan {
+    #[must_use]
+    pub const fn world(&self) -> WorldId {
+        self.world
+    }
+
+    #[must_use]
+    pub const fn intent(&self) -> &QueryIntent {
+        &self.intent
+    }
+
+    #[must_use]
+    pub fn decisions(&self) -> &[PlannerDecision] {
+        &self.decisions
+    }
+
     #[must_use]
     pub fn has_rejection(&self) -> bool {
         self.decisions
@@ -87,7 +102,11 @@ mod tests {
             )?],
         };
         let subject = SubjectContext::new(Classification::Secret, Vec::new(), Vec::new())?;
-        assert!(request.plan(&subject).has_rejection());
+        let plan = request.plan(&subject);
+        assert_eq!(plan.world(), id(WorldId::from_u128(1))?);
+        assert_eq!(plan.intent(), &QueryIntent::BuildContextPack);
+        assert_eq!(plan.decisions().len(), 1);
+        assert!(plan.has_rejection());
         Ok(())
     }
 

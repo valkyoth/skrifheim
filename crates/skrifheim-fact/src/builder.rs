@@ -100,13 +100,13 @@ impl FactBuilder {
 
     #[must_use]
     pub fn add_evidence(mut self, source: SourceId) -> Self {
-        self.evidence.push(source);
+        push_unique(&mut self.evidence, source);
         self
     }
 
     #[must_use]
     pub fn evidence(mut self, evidence: Vec<SourceId>) -> Self {
-        self.evidence = evidence;
+        self.evidence = dedup(evidence);
         self
     }
 
@@ -124,25 +124,25 @@ impl FactBuilder {
 
     #[must_use]
     pub fn add_caused_by(mut self, fact_id: FactId) -> Self {
-        self.caused_by.push(fact_id);
+        push_unique(&mut self.caused_by, fact_id);
         self
     }
 
     #[must_use]
     pub fn caused_by(mut self, caused_by: Vec<FactId>) -> Self {
-        self.caused_by = caused_by;
+        self.caused_by = dedup(caused_by);
         self
     }
 
     #[must_use]
     pub fn supersedes(mut self, supersedes: Vec<FactId>) -> Self {
-        self.supersedes = supersedes;
+        self.supersedes = dedup(supersedes);
         self
     }
 
     #[must_use]
     pub fn invalidates(mut self, invalidates: Vec<FactId>) -> Self {
-        self.invalidates = invalidates;
+        self.invalidates = dedup(invalidates);
         self
     }
 
@@ -196,4 +196,18 @@ impl Default for FactBuilder {
 
 fn missing_field(field: &'static str) -> SkrifheimError {
     SkrifheimError::MissingFactField(field)
+}
+
+fn dedup<T: Copy + Eq>(values: Vec<T>) -> Vec<T> {
+    let mut deduped = Vec::new();
+    for value in values {
+        push_unique(&mut deduped, value);
+    }
+    deduped
+}
+
+fn push_unique<T: Copy + Eq>(values: &mut Vec<T>, value: T) {
+    if !values.contains(&value) {
+        values.push(value);
+    }
 }

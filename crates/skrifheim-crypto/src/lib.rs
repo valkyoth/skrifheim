@@ -35,6 +35,23 @@ impl AlgorithmId {
                 | Self::Named(_)
         )
     }
+
+    pub fn validate_signature_context(&self) -> Result<()> {
+        match self {
+            Self::Blake3 => Err(SkrifheimError::InvalidSignatureEnvelope(
+                "algorithm is not valid for signatures",
+            )),
+            Self::HybridClassicalPq {
+                classical,
+                post_quantum,
+            } => {
+                validate_algorithm_name(classical)?;
+                validate_algorithm_name(post_quantum)
+            }
+            Self::Named(name) => validate_algorithm_name(name),
+            Self::Ed25519 | Self::MlDsa65 | Self::SlhDsaSha2S128s => Ok(()),
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -61,7 +78,7 @@ impl SignatureEnvelope {
                 "key id must not be empty",
             ));
         }
-        validate_signature_length(&algorithm, signature.len())?;
+        validate_signature_envelope_parts(&algorithm, &signature)?;
         Ok(Self {
             algorithm,
             epoch,
@@ -93,16 +110,27 @@ impl SignatureEnvelope {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SignatureSet {
-    pub signatures: Vec<SignatureEnvelope>,
+    signatures: Vec<SignatureEnvelope>,
 }
 
 impl SignatureSet {
+    pub fn new(signatures: Vec<SignatureEnvelope>) -> Result<Self> {
+        let set = Self { signatures };
+        set.require_non_empty()?;
+        Ok(set)
+    }
+
+    #[must_use]
+    pub fn envelopes(&self) -> &[SignatureEnvelope] {
+        &self.signatures
+    }
+
     pub fn require_non_empty(&self) -> Result<()> {
         if self.signatures.is_empty() {
             return Err(SkrifheimError::EmptySignatureSet);
         }
         for signature in &self.signatures {
-            validate_signature_length(&signature.algorithm, signature.signature.len())?;
+            validate_signature_envelope_parts(&signature.algorithm, &signature.signature)?;
             if signature.key_id.is_empty() {
                 return Err(SkrifheimError::InvalidSignatureEnvelope(
                     "key id must not be empty",
@@ -113,13 +141,9 @@ impl SignatureSet {
     }
 }
 
-fn validate_signature_length(algorithm: &AlgorithmId, actual: usize) -> Result<()> {
-    if !algorithm.is_signing_algorithm() {
-        return Err(SkrifheimError::InvalidSignatureEnvelope(
-            "algorithm is not valid for signatures",
-        ));
-    }
-    if actual == 0 {
+fn validate_signature_envelope_parts(algorithm: &AlgorithmId, signature: &[u8]) -> Result<()> {
+    algorithm.validate_signature_context()?;
+    if signature.is_empty() {
         return Err(SkrifheimError::EmptySignatureSet);
     }
     let expected = match algorithm {
@@ -130,9 +154,26 @@ fn validate_signature_length(algorithm: &AlgorithmId, actual: usize) -> Result<(
         AlgorithmId::Blake3 => unreachable!("Blake3 is rejected before length checks"),
     };
     if let Some(expected) = expected
-        && expected != actual
+        && expected != signature.len()
     {
         return Err(SkrifheimError::InvalidSignatureLength);
+    }
+    Ok(())
+}
+
+fn validate_algorithm_name(name: &str) -> Result<()> {
+    if name.is_empty() || name.len() > 64 {
+        return Err(SkrifheimError::InvalidSignatureEnvelope(
+            "algorithm name is empty or too long",
+        ));
+    }
+    if !name
+        .bytes()
+        .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_'))
+    {
+        return Err(SkrifheimError::InvalidSignatureEnvelope(
+            "algorithm name contains invalid characters",
+        ));
     }
     Ok(())
 }
@@ -144,11 +185,8 @@ mod tests {
 
     #[test]
     fn empty_signature_set_is_rejected() {
-        let signatures = SignatureSet {
-            signatures: Vec::new(),
-        };
         assert_eq!(
-            signatures.require_non_empty(),
+            SignatureSet::new(Vec::new()),
             Err(SkrifheimError::EmptySignatureSet)
         );
     }
@@ -183,6 +221,39 @@ mod tests {
             SignatureEnvelope::new(AlgorithmId::Blake3, CryptoEpoch(1), "k", vec![1; 32]),
             Err(SkrifheimError::InvalidSignatureEnvelope(
                 "algorithm is not valid for signatures"
+            ))
+        );
+    }
+
+    #[test]
+    fn empty_named_algorithm_is_rejected_in_signature_contexts() {
+        assert_eq!(
+            SignatureEnvelope::new(
+                AlgorithmId::Named(String::new()),
+                CryptoEpoch(1),
+                "k",
+                vec![1]
+            ),
+            Err(SkrifheimError::InvalidSignatureEnvelope(
+                "algorithm name is empty or too long"
+            ))
+        );
+    }
+
+    #[test]
+    fn hybrid_algorithm_names_are_validated() {
+        assert_eq!(
+            SignatureEnvelope::new(
+                AlgorithmId::HybridClassicalPq {
+                    classical: String::from(""),
+                    post_quantum: String::from("ML-DSA-65"),
+                },
+                CryptoEpoch(1),
+                "k",
+                vec![1]
+            ),
+            Err(SkrifheimError::InvalidSignatureEnvelope(
+                "algorithm name is empty or too long"
             ))
         );
     }

@@ -5,8 +5,8 @@ extern crate alloc;
 
 use alloc::{collections::BTreeSet, string::String, vec::Vec};
 use skrifheim_core::{
-    Classification, Result, SecurityLabel, SkrifheimError, canonical_policy_set,
-    contains_policy_token_ct,
+    AccessDeniedReason, Classification, Result, SecurityLabel, SkrifheimError,
+    canonical_policy_set, contains_policy_token_ct,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -45,20 +45,27 @@ pub fn evaluate_read(subject: &SubjectContext, label: &SecurityLabel) -> Planner
         };
     }
 
+    let mut compartment_allowed = 1_u8;
     for compartment in label.compartments() {
-        if !contains_policy_token_ct(&subject.compartments, compartment) {
-            return PlannerDecision::Reject {
-                reason: access_denied(),
-            };
-        }
+        compartment_allowed &= contains_policy_token_ct(&subject.compartments, compartment) as u8;
     }
 
+    let mut releasability_allowed = 1_u8;
     for releasability in label.releasable_to() {
-        if !contains_policy_token_ct(&subject.releasable_to, releasability) {
-            return PlannerDecision::Redact {
-                reason: access_denied(),
-            };
-        }
+        releasability_allowed &=
+            contains_policy_token_ct(&subject.releasable_to, releasability) as u8;
+    }
+
+    if compartment_allowed == 0 {
+        return PlannerDecision::Reject {
+            reason: access_denied(),
+        };
+    }
+
+    if releasability_allowed == 0 {
+        return PlannerDecision::Redact {
+            reason: access_denied(),
+        };
     }
 
     PlannerDecision::Allow
@@ -68,7 +75,8 @@ pub fn require_allowed(decision: PlannerDecision) -> Result<()> {
     match decision {
         PlannerDecision::Allow => Ok(()),
         PlannerDecision::Redact { reason } | PlannerDecision::Reject { reason } => {
-            Err(SkrifheimError::PolicyDenied(reason))
+            let _ = reason;
+            Err(SkrifheimError::PolicyDenied(AccessDeniedReason::new()))
         }
     }
 }

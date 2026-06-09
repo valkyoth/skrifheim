@@ -11,6 +11,8 @@ use skrifheim_core::{
 use skrifheim_crypto::SignatureSet;
 
 mod builder;
+#[cfg(test)]
+mod tests;
 
 pub use builder::FactBuilder;
 
@@ -48,22 +50,22 @@ impl Confidence {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Fact {
-    pub id: FactId,
-    pub world_id: WorldId,
-    pub subject: EntityId,
-    pub predicate: PredicateId,
-    pub object: Value,
-    pub valid_time: TimeRange,
-    pub committed_at: TxId,
-    pub asserted_by: ActorId,
-    pub evidence: Vec<SourceId>,
-    pub confidence: Confidence,
-    pub caused_by: Vec<FactId>,
-    pub supersedes: Vec<FactId>,
-    pub invalidates: Vec<FactId>,
-    pub policy_id: PolicyId,
-    pub label: SecurityLabel,
-    pub signatures: SignatureSet,
+    id: FactId,
+    world_id: WorldId,
+    subject: EntityId,
+    predicate: PredicateId,
+    object: Value,
+    valid_time: TimeRange,
+    committed_at: TxId,
+    asserted_by: ActorId,
+    evidence: Vec<SourceId>,
+    confidence: Confidence,
+    caused_by: Vec<FactId>,
+    supersedes: Vec<FactId>,
+    invalidates: Vec<FactId>,
+    policy_id: PolicyId,
+    label: SecurityLabel,
+    signatures: SignatureSet,
 }
 
 impl Fact {
@@ -81,6 +83,15 @@ impl Fact {
         if self.evidence.is_empty() {
             return Err(SkrifheimError::EmptyEvidence);
         }
+        if has_duplicates(&self.evidence) {
+            return Err(SkrifheimError::DuplicateEvidence);
+        }
+        if has_duplicates(&self.caused_by)
+            || has_duplicates(&self.supersedes)
+            || has_duplicates(&self.invalidates)
+        {
+            return Err(SkrifheimError::DuplicateFactLink);
+        }
         if self.caused_by.contains(&self.id)
             || self.supersedes.contains(&self.id)
             || self.invalidates.contains(&self.id)
@@ -96,135 +107,99 @@ impl Fact {
             || self.supersedes.contains(&source)
             || self.invalidates.contains(&source)
     }
+
+    #[must_use]
+    pub const fn id(&self) -> FactId {
+        self.id
+    }
+
+    #[must_use]
+    pub const fn world_id(&self) -> WorldId {
+        self.world_id
+    }
+
+    #[must_use]
+    pub const fn subject(&self) -> EntityId {
+        self.subject
+    }
+
+    #[must_use]
+    pub const fn predicate(&self) -> PredicateId {
+        self.predicate
+    }
+
+    #[must_use]
+    pub const fn object(&self) -> &Value {
+        &self.object
+    }
+
+    #[must_use]
+    pub const fn valid_time(&self) -> TimeRange {
+        self.valid_time
+    }
+
+    #[must_use]
+    pub const fn committed_at(&self) -> TxId {
+        self.committed_at
+    }
+
+    #[must_use]
+    pub const fn asserted_by(&self) -> ActorId {
+        self.asserted_by
+    }
+
+    #[must_use]
+    pub fn evidence(&self) -> &[SourceId] {
+        &self.evidence
+    }
+
+    #[must_use]
+    pub const fn confidence(&self) -> Confidence {
+        self.confidence
+    }
+
+    #[must_use]
+    pub fn caused_by(&self) -> &[FactId] {
+        &self.caused_by
+    }
+
+    #[must_use]
+    pub fn supersedes(&self) -> &[FactId] {
+        &self.supersedes
+    }
+
+    #[must_use]
+    pub fn invalidates(&self) -> &[FactId] {
+        &self.invalidates
+    }
+
+    #[must_use]
+    pub const fn policy_id(&self) -> PolicyId {
+        self.policy_id
+    }
+
+    #[must_use]
+    pub const fn label(&self) -> &SecurityLabel {
+        &self.label
+    }
+
+    #[must_use]
+    pub const fn signatures(&self) -> &SignatureSet {
+        &self.signatures
+    }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use alloc::{string::String, vec};
-    use skrifheim_core::{Classification, Timestamp};
-    use skrifheim_crypto::{AlgorithmId, CryptoEpoch, SignatureEnvelope};
-
-    fn id<T>(id: Option<T>) -> Result<T> {
-        id.ok_or(SkrifheimError::InvalidIdentifier)
+fn has_duplicates<T: Eq>(values: &[T]) -> bool {
+    let mut index = 0;
+    while index < values.len() {
+        let mut other = index + 1;
+        while other < values.len() {
+            if values[index] == values[other] {
+                return true;
+            }
+            other += 1;
+        }
+        index += 1;
     }
-
-    fn signature_set() -> Result<SignatureSet> {
-        Ok(SignatureSet {
-            signatures: vec![SignatureEnvelope::new(
-                AlgorithmId::Ed25519,
-                CryptoEpoch(1),
-                "test-key",
-                vec![1; 64],
-            )?],
-        })
-    }
-
-    fn fact() -> Result<Fact> {
-        base_builder()?.build()
-    }
-
-    fn base_builder() -> Result<FactBuilder> {
-        Ok(Fact::builder()
-            .id(id(FactId::from_u128(1))?)
-            .world_id(id(WorldId::from_u128(2))?)
-            .subject(id(EntityId::from_u128(3))?)
-            .predicate(id(PredicateId::from_u128(4))?)
-            .object(Value::Boolean(true))
-            .valid_time(TimeRange::new(Timestamp(5), None))
-            .committed_at(id(TxId::from_u128(6))?)
-            .asserted_by(id(ActorId::from_u128(7))?)
-            .add_evidence(id(SourceId::from_u128(8))?)
-            .confidence_clamped(2000)
-            .add_caused_by(id(FactId::from_u128(9))?)
-            .policy_id(id(PolicyId::from_u128(10))?)
-            .label(SecurityLabel::new(
-                Classification::Restricted,
-                vec![String::from("EU-COMMAND")],
-                vec![String::from("EU")],
-            )?)
-            .signatures(signature_set()?))
-    }
-
-    #[test]
-    fn valid_fact_passes_validation() -> Result<()> {
-        assert_eq!(fact()?.validate(), Ok(()));
-        Ok(())
-    }
-
-    #[test]
-    fn builder_constructs_valid_fact() -> Result<()> {
-        let fact = fact()?;
-        assert_eq!(fact.confidence, Confidence::max());
-        assert_eq!(fact.evidence.len(), 1);
-        assert!(fact.is_derived_from(id(FactId::from_u128(9))?));
-        Ok(())
-    }
-
-    #[test]
-    fn builder_requires_all_required_fields() {
-        assert_eq!(
-            Fact::builder().build(),
-            Err(SkrifheimError::MissingFactField("id"))
-        );
-    }
-
-    #[test]
-    fn builder_requires_evidence() -> Result<()> {
-        let result = base_builder()?.evidence(Vec::new()).build();
-        assert_eq!(result, Err(SkrifheimError::EmptyEvidence));
-        Ok(())
-    }
-
-    #[test]
-    fn fact_validation_requires_evidence() -> Result<()> {
-        let fact = Fact {
-            evidence: Vec::new(),
-            ..fact()?
-        };
-        assert_eq!(fact.validate(), Err(SkrifheimError::EmptyEvidence));
-        Ok(())
-    }
-
-    #[test]
-    fn confidence_is_clamped() {
-        assert_eq!(Confidence::clamped(2000), Confidence::max());
-        assert_eq!(Confidence::clamped(7).get(), 7);
-    }
-
-    #[test]
-    fn confidence_rejects_out_of_range_values() {
-        assert_eq!(
-            Confidence::new(1001),
-            Err(SkrifheimError::InvalidConfidence)
-        );
-    }
-
-    #[test]
-    fn fact_rejects_self_referential_causality() -> Result<()> {
-        let fact = fact()?;
-        let result = base_builder()?.add_caused_by(fact.id).build();
-        assert_eq!(result, Err(SkrifheimError::SelfReferentialFact));
-        Ok(())
-    }
-
-    #[test]
-    fn builder_rejects_invalid_valid_time() -> Result<()> {
-        let result = base_builder()?
-            .valid_time(TimeRange::new(Timestamp(20), Some(Timestamp(10))))
-            .build();
-        assert_eq!(result, Err(SkrifheimError::InvalidTimeRange));
-        Ok(())
-    }
-
-    #[test]
-    fn builder_rejects_empty_signature_set() -> Result<()> {
-        let result = base_builder()?
-            .signatures(SignatureSet {
-                signatures: Vec::new(),
-            })
-            .build();
-        assert_eq!(result, Err(SkrifheimError::EmptySignatureSet));
-        Ok(())
-    }
+    false
 }
