@@ -6,6 +6,8 @@ extern crate alloc;
 use alloc::{string::String, vec::Vec};
 use skrifheim_core::{FactId, Result, SkrifheimError, WorldId};
 
+pub const WORLD_NAME_MAX_BYTES: usize = 256;
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum WorldKind {
     Production,
@@ -28,16 +30,15 @@ pub struct World {
 }
 
 impl World {
-    #[must_use]
-    pub fn root(id: WorldId, name: impl Into<String>, kind: WorldKind) -> Self {
-        Self {
+    pub fn root(id: WorldId, name: impl Into<String>, kind: WorldKind) -> Result<Self> {
+        Ok(Self {
             id,
-            name: name.into(),
+            name: validate_world_name(name.into())?,
             kind,
             parent: None,
             added_facts: Vec::new(),
             hidden_facts: Vec::new(),
-        }
+        })
     }
 
     pub fn fork(&self, id: WorldId, name: impl Into<String>, kind: WorldKind) -> Result<Self> {
@@ -46,7 +47,7 @@ impl World {
         }
         Ok(Self {
             id,
-            name: name.into(),
+            name: validate_world_name(name.into())?,
             kind,
             parent: Some(self.id),
             added_facts: Vec::new(),
@@ -97,6 +98,20 @@ impl World {
     }
 }
 
+fn validate_world_name(name: String) -> Result<String> {
+    if name.is_empty() || name.len() > WORLD_NAME_MAX_BYTES {
+        return Err(SkrifheimError::InvalidWorldName);
+    }
+    if !name.bytes().all(|byte| {
+        byte.is_ascii_alphanumeric()
+            || byte == b' '
+            || matches!(byte, b'-' | b'_' | b'.' | b':' | b'/')
+    }) {
+        return Err(SkrifheimError::InvalidWorldName);
+    }
+    Ok(name)
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct WorldDiff {
     pub from: WorldId,
@@ -144,7 +159,7 @@ mod tests {
             id(WorldId::from_u128(1))?,
             "production",
             WorldKind::Production,
-        );
+        )?;
         let draft = production.fork(id(WorldId::from_u128(2))?, "draft", WorldKind::Simulation)?;
         assert_eq!(draft.parent(), Some(id(WorldId::from_u128(1))?));
         Ok(())
@@ -156,7 +171,7 @@ mod tests {
             id(WorldId::from_u128(1))?,
             "production",
             WorldKind::Production,
-        );
+        )?;
         world.add_fact(id(FactId::from_u128(7))?);
         world.add_fact(id(FactId::from_u128(7))?);
         assert_eq!(world.added_facts(), &[id(FactId::from_u128(7))?]);
@@ -169,13 +184,13 @@ mod tests {
             id(WorldId::from_u128(1))?,
             "production",
             WorldKind::Production,
-        );
+        )?;
         production.add_fact(id(FactId::from_u128(7))?);
         let unrelated = World::root(
             id(WorldId::from_u128(2))?,
             "unrelated",
             WorldKind::Simulation,
-        );
+        )?;
         assert_eq!(
             WorldDiff::between(&production, &unrelated),
             Err(SkrifheimError::InvalidWorldDiff)
@@ -189,7 +204,7 @@ mod tests {
             id(WorldId::from_u128(1))?,
             "production",
             WorldKind::Production,
-        );
+        )?;
         production.add_fact(id(FactId::from_u128(7))?);
         let mut child =
             production.fork(id(WorldId::from_u128(2))?, "child", WorldKind::Simulation)?;
@@ -206,10 +221,38 @@ mod tests {
             id(WorldId::from_u128(1))?,
             "production",
             WorldKind::Production,
-        );
+        )?;
         assert_eq!(
             production.fork(id(WorldId::from_u128(1))?, "bad", WorldKind::Simulation),
             Err(SkrifheimError::InvalidWorldDiff)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn root_rejects_invalid_world_names() -> Result<()> {
+        assert_eq!(
+            World::root(id(WorldId::from_u128(1))?, "", WorldKind::Production),
+            Err(SkrifheimError::InvalidWorldName)
+        );
+        assert_eq!(
+            World::root(
+                id(WorldId::from_u128(1))?,
+                "production\nbad",
+                WorldKind::Production
+            ),
+            Err(SkrifheimError::InvalidWorldName)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn root_rejects_overlong_world_names() -> Result<()> {
+        let name = String::from_utf8(vec![b'a'; WORLD_NAME_MAX_BYTES + 1])
+            .map_err(|_| SkrifheimError::InvalidWorldName)?;
+        assert_eq!(
+            World::root(id(WorldId::from_u128(1))?, name, WorldKind::Production),
+            Err(SkrifheimError::InvalidWorldName)
         );
         Ok(())
     }

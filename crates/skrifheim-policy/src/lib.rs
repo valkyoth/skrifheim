@@ -33,15 +33,15 @@ impl SubjectContext {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum PlannerDecision {
     Allow,
-    Redact { reason: String },
-    Reject { reason: String },
+    Redact { reason: AccessDeniedReason },
+    Reject { reason: AccessDeniedReason },
 }
 
 #[must_use]
 pub fn evaluate_read(subject: &SubjectContext, label: &SecurityLabel) -> PlannerDecision {
     if !subject.clearance.dominates(label.classification()) {
         return PlannerDecision::Reject {
-            reason: access_denied(),
+            reason: AccessDeniedReason::new(),
         };
     }
 
@@ -58,13 +58,13 @@ pub fn evaluate_read(subject: &SubjectContext, label: &SecurityLabel) -> Planner
 
     if compartment_allowed == 0 {
         return PlannerDecision::Reject {
-            reason: access_denied(),
+            reason: AccessDeniedReason::new(),
         };
     }
 
     if releasability_allowed == 0 {
         return PlannerDecision::Redact {
-            reason: access_denied(),
+            reason: AccessDeniedReason::new(),
         };
     }
 
@@ -75,14 +75,9 @@ pub fn require_allowed(decision: PlannerDecision) -> Result<()> {
     match decision {
         PlannerDecision::Allow => Ok(()),
         PlannerDecision::Redact { reason } | PlannerDecision::Reject { reason } => {
-            let _ = reason;
-            Err(SkrifheimError::PolicyDenied(AccessDeniedReason::new()))
+            Err(SkrifheimError::PolicyDenied(reason))
         }
     }
-}
-
-fn access_denied() -> String {
-    String::from("access denied")
 }
 
 #[cfg(test)]
@@ -136,7 +131,7 @@ mod tests {
         assert_eq!(
             evaluate_read(&subject, &label),
             PlannerDecision::Reject {
-                reason: String::from("access denied")
+                reason: AccessDeniedReason::new()
             }
         );
         Ok(())

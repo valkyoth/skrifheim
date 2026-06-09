@@ -183,9 +183,11 @@ pub enum SkrifheimError {
     MissingFactField(&'static str),
     DuplicateEvidence,
     DuplicateFactLink,
+    TooManyFactLinks,
     InvalidSignatureEnvelope(&'static str),
     InvalidSignatureLength,
     InvalidSecurityToken,
+    InvalidWorldName,
     SelfReferentialFact,
     PolicyDenied(AccessDeniedReason),
     InvalidStorageHeader(String),
@@ -203,11 +205,13 @@ impl fmt::Display for SkrifheimError {
             Self::MissingFactField(field) => write!(f, "fact builder is missing field: {field}"),
             Self::DuplicateEvidence => write!(f, "fact evidence must not contain duplicates"),
             Self::DuplicateFactLink => write!(f, "fact links must not contain duplicates"),
+            Self::TooManyFactLinks => write!(f, "fact link list is too large"),
             Self::InvalidSignatureEnvelope(reason) => {
                 write!(f, "invalid signature envelope: {reason}")
             }
             Self::InvalidSignatureLength => write!(f, "invalid signature length"),
             Self::InvalidSecurityToken => write!(f, "invalid security token"),
+            Self::InvalidWorldName => write!(f, "invalid world name"),
             Self::SelfReferentialFact => write!(f, "fact cannot refer to itself causally"),
             Self::PolicyDenied(_) => write!(f, "policy denied operation: access denied"),
             Self::InvalidStorageHeader(reason) => write!(f, "invalid storage header: {reason}"),

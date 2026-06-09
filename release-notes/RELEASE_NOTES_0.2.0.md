@@ -38,6 +38,10 @@ fact invariants before returning a `Fact`.
 - Fact evidence and causal-link inputs are deduplicated.
 - `World` structural fields are private; root/fork construction and fact
   mutation go through invariant-preserving methods.
+- Fact causal-link lists are capped and duplicate validation avoids quadratic
+  pairwise scans.
+- Planner decision reasons use `AccessDeniedReason` instead of strings.
+- World names are length-bounded and restricted to a safe ASCII character set.
 
 ## Verification
 

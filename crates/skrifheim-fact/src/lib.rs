@@ -3,12 +3,14 @@
 
 extern crate alloc;
 
-use alloc::vec::Vec;
+use alloc::{collections::BTreeSet, vec::Vec};
 use skrifheim_core::{
     ActorId, EntityId, FactId, PolicyId, PredicateId, Result, SecurityLabel, SkrifheimError,
     SourceId, TimeRange, TxId, Value, WorldId,
 };
 use skrifheim_crypto::SignatureSet;
+
+pub const FACT_LINK_LIST_MAX_ITEMS: usize = 1024;
 
 mod builder;
 #[cfg(test)]
@@ -82,6 +84,12 @@ impl Fact {
         }
         if self.evidence.is_empty() {
             return Err(SkrifheimError::EmptyEvidence);
+        }
+        if self.caused_by.len() > FACT_LINK_LIST_MAX_ITEMS
+            || self.supersedes.len() > FACT_LINK_LIST_MAX_ITEMS
+            || self.invalidates.len() > FACT_LINK_LIST_MAX_ITEMS
+        {
+            return Err(SkrifheimError::TooManyFactLinks);
         }
         if has_duplicates(&self.evidence) {
             return Err(SkrifheimError::DuplicateEvidence);
@@ -189,17 +197,12 @@ impl Fact {
     }
 }
 
-fn has_duplicates<T: Eq>(values: &[T]) -> bool {
-    let mut index = 0;
-    while index < values.len() {
-        let mut other = index + 1;
-        while other < values.len() {
-            if values[index] == values[other] {
-                return true;
-            }
-            other += 1;
+fn has_duplicates<T: Copy + Ord>(values: &[T]) -> bool {
+    let mut seen = BTreeSet::new();
+    for value in values {
+        if !seen.insert(*value) {
+            return true;
         }
-        index += 1;
     }
     false
 }

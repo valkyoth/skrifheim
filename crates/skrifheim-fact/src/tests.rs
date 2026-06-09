@@ -5,7 +5,7 @@ use skrifheim_core::{
 };
 use skrifheim_crypto::{AlgorithmId, CryptoEpoch, SignatureEnvelope, SignatureSet};
 
-use super::{Confidence, Fact, FactBuilder};
+use super::{Confidence, FACT_LINK_LIST_MAX_ITEMS, Fact, FactBuilder};
 
 fn id<T>(id: Option<T>) -> Result<T> {
     id.ok_or(SkrifheimError::InvalidIdentifier)
@@ -157,5 +157,16 @@ fn builder_deduplicates_bulk_fact_links() -> Result<()> {
     let cause = id(FactId::from_u128(9))?;
     let fact = base_builder()?.caused_by(vec![cause, cause]).build()?;
     assert_eq!(fact.caused_by(), &[cause]);
+    Ok(())
+}
+
+#[test]
+fn validation_rejects_oversized_fact_link_lists() -> Result<()> {
+    let mut links = Vec::new();
+    for index in 0..=FACT_LINK_LIST_MAX_ITEMS {
+        links.push(id(FactId::from_u128((index + 20) as u128))?);
+    }
+    let result = base_builder()?.caused_by(links).build();
+    assert_eq!(result, Err(SkrifheimError::TooManyFactLinks));
     Ok(())
 }
