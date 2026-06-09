@@ -1,5 +1,5 @@
 <p align="center">
-  <b>Rust no_std-first world database for signed facts, branchable worlds, and security-aware planning.</b><br>
+  <b>Skrifheim is a Rust world database for signed, versioned, policy-bound facts, branchable worlds, causal provenance, tamper-evident storage, and security-aware query planning.</b><br>
   Built for causal provenance, tamper-evident history, strict release gates, and rootless containers.
 </p>
 
