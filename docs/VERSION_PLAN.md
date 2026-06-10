@@ -83,7 +83,7 @@ Deliverables:
 
 ## v0.3.0 - Security Labels And Authority Context
 
-Goal: make classification, compartments, releasability, and subject context explicit.
+Goal: make classification, compartments, releasability, and authority context explicit.
 
 Deliverables:
 

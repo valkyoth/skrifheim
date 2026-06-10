@@ -48,6 +48,8 @@ nonzero_id!(PredicateId);
 nonzero_id!(PolicyId);
 nonzero_id!(TxId);
 nonzero_id!(ActorId);
+nonzero_id!(DeviceId);
+nonzero_id!(WorkloadId);
 nonzero_id!(SourceId);
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]

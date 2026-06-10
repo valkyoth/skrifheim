@@ -5,7 +5,7 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 use skrifheim_core::{SecurityLabel, WorldId};
-use skrifheim_policy::{PlannerDecision, SubjectContext, evaluate_read};
+use skrifheim_policy::{AuthorityContext, PlannerDecision, evaluate_read};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum QueryIntent {
@@ -31,14 +31,14 @@ pub struct QueryPlan {
 
 impl QueryRequest {
     #[must_use]
-    pub fn plan(&self, subject: &SubjectContext) -> QueryPlan {
+    pub fn plan(&self, authority: &AuthorityContext) -> QueryPlan {
         QueryPlan {
             world: self.world,
             intent: self.intent.clone(),
             decisions: self
                 .requested_labels
                 .iter()
-                .map(|label| evaluate_read(subject, label))
+                .map(|label| evaluate_read(authority, label))
                 .collect(),
         }
     }
@@ -84,10 +84,29 @@ impl QueryPlan {
 mod tests {
     use super::*;
     use alloc::{string::String, vec};
-    use skrifheim_core::{Classification, SkrifheimError};
+    use skrifheim_core::{Classification, DeviceId, SkrifheimError, WorkloadId};
+    use skrifheim_policy::{DeviceContext, SubjectContext, WorkloadContext};
 
     fn id<T>(id: Option<T>) -> skrifheim_core::Result<T> {
         id.ok_or(SkrifheimError::InvalidIdentifier)
+    }
+
+    fn authority(clearance: Classification) -> skrifheim_core::Result<AuthorityContext> {
+        Ok(AuthorityContext::new(
+            SubjectContext::new(clearance, Vec::new(), Vec::new())?,
+            DeviceContext::new(
+                id(DeviceId::from_u128(2))?,
+                clearance,
+                Vec::new(),
+                Vec::new(),
+            )?,
+            WorkloadContext::new(
+                id(WorkloadId::from_u128(3))?,
+                clearance,
+                Vec::new(),
+                Vec::new(),
+            )?,
+        ))
     }
 
     #[test]
@@ -101,8 +120,8 @@ mod tests {
                 Vec::new(),
             )?],
         };
-        let subject = SubjectContext::new(Classification::Secret, Vec::new(), Vec::new())?;
-        let plan = request.plan(&subject);
+        let authority = authority(Classification::Secret)?;
+        let plan = request.plan(&authority);
         assert_eq!(plan.world(), id(WorldId::from_u128(1))?);
         assert_eq!(plan.intent(), &QueryIntent::BuildContextPack);
         assert_eq!(plan.decisions().len(), 1);
@@ -121,8 +140,8 @@ mod tests {
                 vec![String::from("EU")],
             )?],
         };
-        let subject = SubjectContext::new(Classification::Secret, Vec::new(), Vec::new())?;
-        let plan = request.plan(&subject);
+        let authority = authority(Classification::Secret)?;
+        let plan = request.plan(&authority);
         assert!(plan.has_redaction());
         assert!(!plan.is_executable());
         Ok(())

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.3.0
+
+- Added subject/device/workload authority context for policy checks.
+- Added `0.3.0` release metadata and gate script.
+
+## 0.2.0
+
 - Added validated fact construction through `FactBuilder`.
 - Added `0.2.0` release metadata and gate script.
 
