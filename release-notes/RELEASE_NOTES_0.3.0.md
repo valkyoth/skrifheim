@@ -37,6 +37,10 @@ This release is not a usable database engine. It does not provide durable
 storage, networking, replication, cryptographic verification, or production
 query execution.
 
+`0.3.0` models subject, device, and workload authority inputs, but it does not
+attest that those inputs correspond to the physical requester. That binding
+belongs to the future authenticated API, transport, and attestation layers.
+
 ## Pentest Status
 
 Pentest is required before tagging. Root `PENTEST.md` is the temporary findings

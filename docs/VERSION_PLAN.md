@@ -209,7 +209,9 @@ Goal: make security-relevant actions attributable.
 
 Deliverables:
 
-- identity types for users, services, nodes, replicas, plugins, AI workers, backup agents, and admin tools,
+- identity types for users, devices, workloads, services, nodes, replicas,
+  plugins, AI workers, backup agents, and admin tools,
+- attestation-evidence references for device and workload posture,
 - audit event model,
 - encrypted/signed audit-log metadata,
 - break-glass audit event skeleton,
@@ -632,7 +634,8 @@ Goal: define the first server API boundary without exposing unauthenticated data
 Deliverables:
 
 - local server API skeleton,
-- authenticated subject extraction,
+- authenticated authority-context extraction for subject, device, and workload,
+- mTLS or equivalent identity binding hook for device and workload context,
 - service/node identity hook,
 - constant-shape API errors,
 - tests for unauthenticated and unauthorized requests.

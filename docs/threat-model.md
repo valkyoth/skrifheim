@@ -20,6 +20,7 @@ Status: baseline
 ## Initial Threats
 
 - unauthorized reads across clearance boundaries,
+- forged device or workload context supplied to policy evaluation,
 - write-down from high classification to lower outputs,
 - query inference through aggregation or repeated small queries,
 - projection mixing incompatible compartments,
@@ -34,6 +35,8 @@ Status: baseline
 
 - classify facts, projections, blobs, query results, and AI artifacts,
 - reject unsafe query plans before execution,
+- bind subject, device, and workload context at the authenticated API boundary
+  before policy evaluation,
 - keep projections rebuildable,
 - sign commits and manifests,
 - scope keys by compartment and epoch,
