@@ -182,16 +182,13 @@ pub enum PlannerDecision {
 
 #[must_use]
 pub fn evaluate_read(authority: &AuthorityContext, label: &SecurityLabel) -> PlannerDecision {
-    if !authority
-        .subject
-        .clearance
-        .dominates(label.classification())
-        || !authority.device.clearance.dominates(label.classification())
-        || !authority
-            .workload
-            .clearance
-            .dominates(label.classification())
-    {
+    let label_classification = label.classification();
+    let mut clearance_allowed = 1_u8;
+    clearance_allowed &= authority.subject.clearance.dominates(label_classification) as u8;
+    clearance_allowed &= authority.device.clearance.dominates(label_classification) as u8;
+    clearance_allowed &= authority.workload.clearance.dominates(label_classification) as u8;
+
+    if clearance_allowed == 0 {
         return PlannerDecision::Reject {
             reason: AccessDeniedReason::new(),
         };
