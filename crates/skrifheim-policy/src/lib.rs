@@ -11,6 +11,5 @@ mod tests;
 
 pub use context::{AuthorityContext, DeviceContext, SubjectContext, WorkloadContext};
 pub use decision::{
-    DecisionKind, PlannerDecision, PolicyProof, calculate_output_classification, evaluate_read,
-    evaluate_read_set, require_allowed,
+    DecisionKind, PlannerDecision, PolicyProof, evaluate_read, evaluate_read_set, require_allowed,
 };

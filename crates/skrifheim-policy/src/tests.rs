@@ -1,4 +1,5 @@
 use super::*;
+use crate::decision::calculate_output_classification;
 use alloc::{string::String, vec, vec::Vec};
 use skrifheim_core::{
     AccessDeniedReason, Classification, DeviceId, Result, SecurityLabel, SkrifheimError, WorkloadId,

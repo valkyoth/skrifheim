@@ -134,7 +134,7 @@ pub fn evaluate_read_set(
 }
 
 #[must_use]
-pub fn calculate_output_classification(labels: &[SecurityLabel]) -> Classification {
+pub(crate) fn calculate_output_classification(labels: &[SecurityLabel]) -> Classification {
     let mut output_classification = Classification::Public;
     for label in labels {
         if label.classification() > output_classification {
