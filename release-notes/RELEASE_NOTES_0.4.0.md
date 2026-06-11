@@ -1,6 +1,6 @@
 # skrifheim 0.4.0 Release Notes
 
-Status: implementation stop, pending pentest.
+Status: implementation stop, pentest complete.
 
 ## Scope
 
@@ -40,5 +40,5 @@ execution, or formal policy proofs.
 
 ## Pentest Status
 
-Pentest is required before tagging. Root `PENTEST.md` is the temporary findings
-handoff file and must be removed after findings are resolved.
+Pentest completed for the `0.4.0` implementation stop. Root `PENTEST.md` is the
+temporary findings handoff file and must be removed after findings are resolved.
