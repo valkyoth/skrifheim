@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.4.0
+
+- Added aggregate policy proof skeletons and output classification calculation.
+- Added `0.4.0` release metadata and gate script.
+
 ## 0.3.0
 
 - Added subject/device/workload authority context for policy checks.

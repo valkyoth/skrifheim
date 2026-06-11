@@ -5,7 +5,9 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 use skrifheim_core::{SecurityLabel, WorldId};
-use skrifheim_policy::{AuthorityContext, PlannerDecision, evaluate_read};
+use skrifheim_policy::{
+    AuthorityContext, PlannerDecision, PolicyProof, evaluate_read, evaluate_read_set,
+};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum QueryIntent {
@@ -26,15 +28,18 @@ pub struct QueryRequest {
 pub struct QueryPlan {
     world: WorldId,
     intent: QueryIntent,
+    proof: PolicyProof,
     decisions: Vec<PlannerDecision>,
 }
 
 impl QueryRequest {
     #[must_use]
     pub fn plan(&self, authority: &AuthorityContext) -> QueryPlan {
+        let aggregate_decision = evaluate_read_set(authority, &self.requested_labels);
         QueryPlan {
             world: self.world,
             intent: self.intent.clone(),
+            proof: aggregate_decision.proof().clone(),
             decisions: self
                 .requested_labels
                 .iter()
@@ -53,6 +58,16 @@ impl QueryPlan {
     #[must_use]
     pub const fn intent(&self) -> &QueryIntent {
         &self.intent
+    }
+
+    #[must_use]
+    pub const fn proof(&self) -> &PolicyProof {
+        &self.proof
+    }
+
+    #[must_use]
+    pub const fn output_classification(&self) -> skrifheim_core::Classification {
+        self.proof.output_classification()
     }
 
     #[must_use]
@@ -126,6 +141,10 @@ mod tests {
         assert_eq!(plan.intent(), &QueryIntent::BuildContextPack);
         assert_eq!(plan.decisions().len(), 1);
         assert!(plan.has_rejection());
+        assert_eq!(
+            plan.output_classification(),
+            skrifheim_core::Classification::TopSecret
+        );
         Ok(())
     }
 
@@ -144,6 +163,24 @@ mod tests {
         let plan = request.plan(&authority);
         assert!(plan.has_redaction());
         assert!(!plan.is_executable());
+        assert_eq!(plan.proof().input_label_count(), 1);
+        Ok(())
+    }
+
+    #[test]
+    fn plan_escalates_output_classification_for_joins() -> skrifheim_core::Result<()> {
+        let request = QueryRequest {
+            world: id(WorldId::from_u128(1))?,
+            intent: QueryIntent::ReadFacts,
+            requested_labels: vec![
+                SecurityLabel::new(Classification::Public, Vec::new(), Vec::new())?,
+                SecurityLabel::new(Classification::Secret, Vec::new(), Vec::new())?,
+            ],
+        };
+        let authority = authority(Classification::TopSecret)?;
+        let plan = request.plan(&authority);
+        assert_eq!(plan.output_classification(), Classification::Secret);
+        assert!(plan.is_executable());
         Ok(())
     }
 }

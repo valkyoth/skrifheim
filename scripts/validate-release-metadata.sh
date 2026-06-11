@@ -18,6 +18,7 @@ docs/threat-model.md
 release-notes/RELEASE_NOTES_0.1.0.md
 release-notes/RELEASE_NOTES_0.2.0.md
 release-notes/RELEASE_NOTES_0.3.0.md
+release-notes/RELEASE_NOTES_0.4.0.md
 "
 
 for path in $required; do
