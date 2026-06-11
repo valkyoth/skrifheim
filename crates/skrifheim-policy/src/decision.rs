@@ -102,7 +102,6 @@ pub fn evaluate_read_set(
     authority: &AuthorityContext,
     labels: &[SecurityLabel],
 ) -> PlannerDecision {
-    let output_classification = calculate_output_classification(labels);
     let mut rejected = 0_u8;
     let mut redacted = 0_u8;
 
@@ -117,17 +116,18 @@ pub fn evaluate_read_set(
     if rejected == 1 {
         return PlannerDecision::Reject {
             reason: AccessDeniedReason::new(),
-            proof: PolicyProof::new(DecisionKind::Reject, labels.len(), output_classification),
+            proof: PolicyProof::new(DecisionKind::Reject, labels.len(), Classification::Public),
         };
     }
 
     if redacted == 1 {
         return PlannerDecision::Redact {
             reason: AccessDeniedReason::new(),
-            proof: PolicyProof::new(DecisionKind::Redact, labels.len(), output_classification),
+            proof: PolicyProof::new(DecisionKind::Redact, labels.len(), Classification::Public),
         };
     }
 
+    let output_classification = calculate_output_classification(labels);
     PlannerDecision::Allow {
         proof: PolicyProof::new(DecisionKind::Allow, labels.len(), output_classification),
     }
@@ -144,6 +144,9 @@ pub fn calculate_output_classification(labels: &[SecurityLabel]) -> Classificati
     output_classification
 }
 
+/// All authority components must independently authorize clearance,
+/// compartments, and releasability. This is intentional defense in depth:
+/// subject, device, and workload are all weakest-link controls.
 fn evaluate_label(authority: &AuthorityContext, label: &SecurityLabel) -> DecisionKind {
     let label_classification = label.classification();
     let mut clearance_allowed = 1_u8;

@@ -143,7 +143,7 @@ mod tests {
         assert!(plan.has_rejection());
         assert_eq!(
             plan.output_classification(),
-            skrifheim_core::Classification::TopSecret
+            skrifheim_core::Classification::Public
         );
         Ok(())
     }
@@ -164,6 +164,7 @@ mod tests {
         assert!(plan.has_redaction());
         assert!(!plan.is_executable());
         assert_eq!(plan.proof().input_label_count(), 1);
+        assert_eq!(plan.output_classification(), Classification::Public);
         Ok(())
     }
 

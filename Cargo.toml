@@ -25,6 +25,7 @@ unused_must_use = "deny"
 
 [workspace.lints.clippy]
 panic = "deny"
+unreachable = "deny"
 unwrap_used = "deny"
 expect_used = "deny"
 todo = "deny"

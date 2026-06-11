@@ -151,7 +151,11 @@ fn validate_signature_envelope_parts(algorithm: &AlgorithmId, signature: &[u8]) 
         AlgorithmId::MlDsa65 => Some(ML_DSA_65_SIG_BYTES),
         AlgorithmId::SlhDsaSha2S128s => Some(SLH_DSA_SHA2_S128S_SIG_BYTES),
         AlgorithmId::HybridClassicalPq { .. } | AlgorithmId::Named(_) => None,
-        AlgorithmId::Blake3 => unreachable!("Blake3 is rejected before length checks"),
+        AlgorithmId::Blake3 => {
+            return Err(SkrifheimError::InvalidSignatureEnvelope(
+                "algorithm is not valid for signatures",
+            ));
+        }
     };
     if let Some(expected) = expected
         && expected != signature.len()

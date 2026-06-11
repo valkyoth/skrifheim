@@ -55,7 +55,7 @@ fn read_requires_clearance() -> Result<()> {
     assert_eq!(decision.proof().decision(), DecisionKind::Reject);
     assert_eq!(
         decision.proof().output_classification(),
-        Classification::Secret
+        Classification::Public
     );
     Ok(())
 }
@@ -77,6 +77,10 @@ fn missing_releasability_redacts_instead_of_allows() -> Result<()> {
     let decision = evaluate_read(&authority, &label);
     assert_eq!(decision.kind(), DecisionKind::Redact);
     assert_eq!(decision.proof().decision(), DecisionKind::Redact);
+    assert_eq!(
+        decision.proof().output_classification(),
+        Classification::Public
+    );
     Ok(())
 }
 
@@ -246,7 +250,7 @@ fn dangerous_join_rejects_when_output_exceeds_authority() -> Result<()> {
     assert_eq!(decision.kind(), DecisionKind::Reject);
     assert_eq!(
         decision.proof().output_classification(),
-        Classification::Secret
+        Classification::Public
     );
     Ok(())
 }
@@ -270,5 +274,35 @@ fn aggregate_redaction_uses_constant_shape_denial() -> Result<()> {
     let reason = AccessDeniedReason::new();
     assert_eq!(decision.denial_reason(), Some(&reason));
     assert_eq!(decision.proof().decision(), DecisionKind::Redact);
+    assert_eq!(
+        decision.proof().output_classification(),
+        Classification::Public
+    );
+    Ok(())
+}
+
+#[test]
+fn releasability_requires_all_three_contexts_independently() -> Result<()> {
+    // Subject, device, and workload releasability are all weakest-link controls.
+    let authority = AuthorityContext::new(
+        SubjectContext::new(Classification::Secret, Vec::new(), vec![String::from("EU")])?,
+        DeviceContext::new(
+            id(DeviceId::from_u128(1))?,
+            Classification::Secret,
+            Vec::new(),
+            Vec::new(),
+        )?,
+        WorkloadContext::new(
+            id(WorkloadId::from_u128(2))?,
+            Classification::Secret,
+            Vec::new(),
+            vec![String::from("EU")],
+        )?,
+    );
+    let label = SecurityLabel::new(Classification::Secret, Vec::new(), vec![String::from("EU")])?;
+    assert_eq!(
+        evaluate_read(&authority, &label).kind(),
+        DecisionKind::Redact
+    );
     Ok(())
 }

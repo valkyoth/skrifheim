@@ -17,6 +17,8 @@ for requested labels.
 - Added aggregate `evaluate_read_set` policy evaluation.
 - Query plans now expose aggregate proof and output classification.
 - Kept denial reasons constant-shape through `AccessDeniedReason`.
+- Non-allow proofs use a non-disclosing output classification sentinel.
+- Removed panic-based unreachable signature validation paths.
 - Added tests for dangerous joins, redaction, rejection, and proof metadata.
 - Bumped workspace and internal crate dependency versions to `0.4.0`.
 

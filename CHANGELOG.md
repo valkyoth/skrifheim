@@ -5,6 +5,7 @@
 ## 0.4.0
 
 - Added aggregate policy proof skeletons and output classification calculation.
+- Resolved 0.4.0 pentest findings for non-allow proof disclosure and panic-free crypto validation.
 - Added `0.4.0` release metadata and gate script.
 
 ## 0.3.0
