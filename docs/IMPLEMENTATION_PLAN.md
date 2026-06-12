@@ -10,7 +10,11 @@ Database name: `skrifheim`
 
 `skrifheim` stores signed, versioned, policy-bound facts about worlds. It is not a SQL compatibility project and not a generic multi-model database. Relational, document, graph, vector, search, CMS render graphs, AI context packs, and analytics are projections over canonical facts.
 
-The canonical layer must be boring, durable, testable, and auditable. The futuristic behavior comes from world overlays, causal invalidation, policy-aware planning, and derived projections that can be rebuilt from truth.
+The canonical layer must be boring, durable, testable, and auditable. The
+futuristic behavior comes from world overlays, causal invalidation,
+policy-aware planning, cryptographic declassification, capability-scoped AI
+derivation, confidence propagation, and derived projections that can be rebuilt
+from truth.
 
 ## Non-Negotiable Engineering Rules
 
@@ -52,6 +56,11 @@ Build append-only facts with:
 - signatures and content identity.
 
 The first correctness question is: can `skrifheim` prove what was true, who asserted it, which policy governed it, and which evidence supported it?
+
+Causal links are not passive metadata. They must become a live dependency graph
+that can answer blast-radius questions such as: which facts, decisions,
+projections, releases, and AI artifacts become tainted when a source, model,
+worker, key, or upstream fact is revoked or marked compromised?
 
 ## Phase 2: World Branches
 
@@ -96,6 +105,7 @@ The planner must answer:
 - can an AI worker process it,
 - can a projection mix these labels,
 - can an export lower classification,
+- can confidence and provenance support this classification decision,
 - what classification does the output carry.
 
 Rejected plans must be deterministic and constant-shape where practical.
@@ -118,6 +128,10 @@ Build crypto-agile metadata before hard-coding any final algorithm:
 - signed manifests,
 - encrypted and signed audit logs,
 - recovery and compromise playbooks,
+- signed declassification proofs for every write-down across a classification
+  or release boundary,
+- capability-scoped AI write credentials with classification ceilings and
+  derivation-cone identifiers,
 - offline verification.
 
 Post-quantum readiness is a metadata and migration requirement from day one.
@@ -160,6 +174,12 @@ Canonical facts drive projections:
 
 Every projection records its source fact range, consistency level, policy boundary, and rebuild command.
 
+Projection metadata must also support taint propagation. If a source fact,
+worker, model, or key is compromised, `skrifheim` must be able to find the
+downstream projection and artifact cone and mark it stale, quarantine it into a
+separate world, or make it eligible for crypto-erasure where the key hierarchy
+allows that response.
+
 ## Phase 8: Query Language And Context Packs
 
 The native query model is world-aware and causal:
@@ -178,6 +198,36 @@ return context_pack {
 ```
 
 The result must include provenance, source facts, graph paths, redactions, stale artifact markers, and policy proof.
+
+Confidence is not just a stored scalar in the target model. Derived facts and
+query results should carry computed confidence from their evidence and
+caused-by chains, weighted by source reliability and fused with mandatory
+access control so policy can express rules such as redacting high-classification
+facts below an accepted confidence threshold.
+
+## Distinctive Security And Truth Capabilities
+
+These capabilities are expected to make `skrifheim` stand out once the durable
+engine, policy planner, and key hierarchy are in place:
+
+- Blast-radius invalidation: use the causal DAG to walk forward from poisoned,
+  revoked, invalidated, or compromised inputs and identify every downstream
+  fact, decision, projection, release, and AI artifact that is epistemically
+  tainted.
+- Provenance-bearing declassification: write-downs across classification or
+  release boundaries require signed declassification proofs with actor,
+  authority, legal/policy basis, reason, source facts, target label, and policy
+  epoch. The proof becomes part of the resulting fact or export signature chain.
+- Capability-scoped AI derivation cones: AI workers receive bounded write
+  capabilities, including classification ceilings, policy epochs, allowed
+  worlds, and derivation-cone IDs. A poisoned model or worker must be traceable
+  to its output cone, and that cone must support quarantine or crypto-erasure
+  through key destruction where the data model permits it.
+- Propagated confidence with mandatory access control: confidence for derived
+  state is computed from evidence, source reliability, and causal dependencies,
+  then evaluated together with mandatory access control. Low-confidence
+  sensitive results can be redacted or rejected even when the requester has
+  clearance.
 
 ## Phase 9: Local-First And CMS Support
 

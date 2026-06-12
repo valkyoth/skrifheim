@@ -78,7 +78,7 @@ Deliverables:
 - required evidence checks,
 - valid-time checks,
 - signature-set checks,
-- confidence clamping,
+- confidence validation,
 - negative tests for invalid facts.
 
 ## v0.3.0 - Security Labels And Authority Context
@@ -179,6 +179,7 @@ Deliverables:
 - sovereignty propagation rules,
 - PII-derived output marker,
 - AI-processing eligibility marker,
+- confidence-threshold policy hooks for future propagated confidence,
 - tests for classification escalation.
 
 ## v0.11.0 - Index And Projection Encryption Policy
@@ -357,6 +358,7 @@ Deliverables:
 - in-memory fact index,
 - snapshot timestamp visibility,
 - supersession and invalidation lookup,
+- forward causal-edge lookup for future blast-radius traversal,
 - fact history tests,
 - unauthorized stale-read tests.
 
@@ -395,6 +397,7 @@ Deliverables:
 - rejection and redaction reports,
 - policy proof skeleton,
 - query-result classification,
+- confidence-aware allow/redact/reject policy hooks,
 - tests for denied plans.
 
 ## v0.28.0 - Query Execution Prototype
@@ -406,6 +409,8 @@ Deliverables:
 - fact scan execution,
 - point lookup execution,
 - causality edge traversal over fact links,
+- bounded forward traversal for taint and blast-radius queries,
+- first propagated-confidence calculation over evidence and caused-by chains,
 - bounded result sets,
 - tests for authorized and denied reads.
 
@@ -432,6 +437,7 @@ Deliverables:
 - source range tracking,
 - rebuild from canonical facts,
 - stale projection detection,
+- tainted projection detection from causal blast-radius traversal,
 - encrypted projection metadata,
 - graph traversal tests.
 
@@ -455,6 +461,8 @@ Deliverables:
 
 - vector projection encryption domain,
 - AI artifact encryption domain,
+- AI write capability ceiling metadata,
+- derivation-cone key-domain metadata,
 - source-fact visibility rules,
 - no lower-domain embedding of higher-domain facts,
 - tests for denied vector/AI projection writes.
@@ -479,6 +487,7 @@ Deliverables:
 
 - fact existence proof skeleton,
 - policy epoch proof skeleton,
+- confidence derivation proof skeleton,
 - manifest root reference,
 - audit query output type,
 - tests for missing proof material.
@@ -505,6 +514,7 @@ Deliverables:
 - lost-key playbook,
 - compromised-key playbook,
 - captured-node playbook,
+- poisoned source, model, or AI-worker blast-radius quarantine plan,
 - stale-replica quarantine plan,
 - leaked-backup response plan,
 - tests for compromised-key rejection paths.
@@ -554,6 +564,7 @@ Deliverables:
 - route render graph model,
 - content dependency edges,
 - invalidation calculation,
+- blast-radius invalidation for rendered output,
 - public projection boundary,
 - tests for precise invalidation.
 
@@ -565,6 +576,8 @@ Deliverables:
 
 - source fact lineage,
 - model and prompt hash metadata,
+- capability-scoped AI write metadata,
+- derivation-cone identity and invalidation,
 - artifact invalidation,
 - human promotion workflow,
 - tests that AI artifacts are not authoritative facts.
@@ -590,6 +603,8 @@ Deliverables:
 - mission capsule metadata,
 - expiration and device-binding fields,
 - export policy proof skeleton,
+- signed declassification proof skeleton for every write-down/export to a
+  lower classification or release boundary,
 - import verification preflight,
 - rejected downgrade tests.
 
@@ -764,7 +779,11 @@ Deliverables:
 - durable single-node fact/world engine,
 - strict transaction semantics,
 - policy-aware query planning,
+- causal blast-radius invalidation and quarantine support,
 - key hierarchy and lifecycle,
+- signed declassification proof model,
+- capability-scoped AI derivation cones,
+- propagated confidence fused with mandatory access control,
 - encrypted WAL, segments, indexes, projections, backups, exports, and audit logs,
 - query-result classification,
 - legal/compliance passport foundations,

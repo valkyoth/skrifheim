@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added roadmap commitments for causal blast-radius invalidation, signed declassification proofs, capability-scoped AI derivation cones, and propagated confidence fused with mandatory access control.
+
 ## 0.5.0
 
 - Added deterministic world metadata identities and branch-depth tracking.
