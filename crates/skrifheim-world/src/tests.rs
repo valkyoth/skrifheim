@@ -5,10 +5,15 @@ fn id<T>(id: Option<T>) -> Result<T> {
     id.ok_or(SkrifheimError::InvalidIdentifier)
 }
 
+fn tenant(value: u128) -> Result<TenantId> {
+    id(TenantId::from_u128(value))
+}
+
 #[test]
 fn fork_keeps_parent_identity() -> Result<()> {
-    let production = World::root("production", WorldKind::Production)?;
+    let production = World::root(tenant(1)?, "production", WorldKind::Production)?;
     let draft = production.fork("draft", WorldKind::Simulation)?;
+    assert_eq!(draft.tenant_id(), production.tenant_id());
     assert_eq!(draft.parent(), Some(production.id()));
     assert_eq!(draft.depth(), production.depth() + 1);
     Ok(())
@@ -16,36 +21,47 @@ fn fork_keeps_parent_identity() -> Result<()> {
 
 #[test]
 fn deterministic_root_identity_repeats_for_same_metadata() -> Result<()> {
-    let first = World::root("production", WorldKind::Production)?;
-    let second = World::root("production", WorldKind::Production)?;
+    let first = World::root(tenant(1)?, "production", WorldKind::Production)?;
+    let second = World::root(tenant(1)?, "production", WorldKind::Production)?;
     assert_eq!(first.id(), second.id());
     assert_eq!(first.metadata(), second.metadata());
     Ok(())
 }
 
 #[test]
-fn deterministic_child_identity_depends_on_parent() -> Result<()> {
-    let production = World::root("production", WorldKind::Production)?;
-    let staging = World::root("staging", WorldKind::Staging)?;
+fn deterministic_root_identity_is_tenant_scoped() -> Result<()> {
+    let tenant_one = World::root(tenant(1)?, "production", WorldKind::Production)?;
+    let tenant_two = World::root(tenant(2)?, "production", WorldKind::Production)?;
+    assert_ne!(tenant_one.id(), tenant_two.id());
+    Ok(())
+}
+
+#[test]
+fn deterministic_child_identity_depends_on_parent_and_tenant() -> Result<()> {
+    let production = World::root(tenant(1)?, "production", WorldKind::Production)?;
+    let staging = World::root(tenant(1)?, "staging", WorldKind::Staging)?;
+    let other_tenant = World::root(tenant(2)?, "production", WorldKind::Production)?;
     let production_child = production.fork("draft", WorldKind::Simulation)?;
     let repeated_child = production.fork("draft", WorldKind::Simulation)?;
     let staging_child = staging.fork("draft", WorldKind::Simulation)?;
+    let other_tenant_child = other_tenant.fork("draft", WorldKind::Simulation)?;
     assert_eq!(production_child.id(), repeated_child.id());
     assert_ne!(production_child.id(), staging_child.id());
+    assert_ne!(production_child.id(), other_tenant_child.id());
     Ok(())
 }
 
 #[test]
 fn deterministic_identity_changes_with_kind() -> Result<()> {
-    let simulation = World::root("draft", WorldKind::Simulation)?;
-    let audit = World::root("draft", WorldKind::LegalAudit)?;
+    let simulation = World::root(tenant(1)?, "draft", WorldKind::Simulation)?;
+    let audit = World::root(tenant(1)?, "draft", WorldKind::LegalAudit)?;
     assert_ne!(simulation.id(), audit.id());
     Ok(())
 }
 
 #[test]
 fn duplicate_fact_adds_are_idempotent() -> Result<()> {
-    let mut world = World::root("production", WorldKind::Production)?;
+    let mut world = World::root(tenant(1)?, "production", WorldKind::Production)?;
     world.add_fact(id(FactId::from_u128(7))?);
     world.add_fact(id(FactId::from_u128(7))?);
     assert_eq!(world.added_facts(), &[id(FactId::from_u128(7))?]);
@@ -54,7 +70,7 @@ fn duplicate_fact_adds_are_idempotent() -> Result<()> {
 
 #[test]
 fn branch_fact_sets_are_isolated_from_parent() -> Result<()> {
-    let mut production = World::root("production", WorldKind::Production)?;
+    let mut production = World::root(tenant(1)?, "production", WorldKind::Production)?;
     production.add_fact(id(FactId::from_u128(7))?);
     let mut draft = production.fork("draft", WorldKind::Simulation)?;
     draft.add_fact(id(FactId::from_u128(8))?);
@@ -68,9 +84,9 @@ fn branch_fact_sets_are_isolated_from_parent() -> Result<()> {
 
 #[test]
 fn diff_requires_direct_child_relationship() -> Result<()> {
-    let mut production = World::root("production", WorldKind::Production)?;
+    let mut production = World::root(tenant(1)?, "production", WorldKind::Production)?;
     production.add_fact(id(FactId::from_u128(7))?);
-    let unrelated = World::root("unrelated", WorldKind::Simulation)?;
+    let unrelated = World::root(tenant(1)?, "unrelated", WorldKind::Simulation)?;
     assert_eq!(
         WorldDiff::between(&production, &unrelated),
         Err(SkrifheimError::InvalidWorldDiff)
@@ -80,7 +96,7 @@ fn diff_requires_direct_child_relationship() -> Result<()> {
 
 #[test]
 fn diff_returns_delta_against_parent() -> Result<()> {
-    let mut production = World::root("production", WorldKind::Production)?;
+    let mut production = World::root(tenant(1)?, "production", WorldKind::Production)?;
     production.add_fact(id(FactId::from_u128(7))?);
     let mut child = production.fork("child", WorldKind::Simulation)?;
     child.add_fact(id(FactId::from_u128(7))?);
@@ -93,15 +109,16 @@ fn diff_returns_delta_against_parent() -> Result<()> {
 }
 
 #[test]
-fn root_rejects_invalid_world_names() {
+fn root_rejects_invalid_world_names() -> Result<()> {
     assert_eq!(
-        World::root("", WorldKind::Production),
+        World::root(tenant(1)?, "", WorldKind::Production),
         Err(SkrifheimError::InvalidWorldName)
     );
     assert_eq!(
-        World::root("production\nbad", WorldKind::Production),
+        World::root(tenant(1)?, "production\nbad", WorldKind::Production),
         Err(SkrifheimError::InvalidWorldName)
     );
+    Ok(())
 }
 
 #[test]
@@ -109,7 +126,7 @@ fn root_rejects_overlong_world_names() -> Result<()> {
     let name = String::from_utf8(vec![b'a'; WORLD_NAME_MAX_BYTES + 1])
         .map_err(|_| SkrifheimError::InvalidWorldName)?;
     assert_eq!(
-        World::root(name, WorldKind::Production),
+        World::root(tenant(1)?, name, WorldKind::Production),
         Err(SkrifheimError::InvalidWorldName)
     );
     Ok(())

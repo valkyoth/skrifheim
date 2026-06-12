@@ -5,19 +5,25 @@ Status: implementation stop, pending pentest.
 ## Scope
 
 `0.5.0` makes world identity part of validated metadata. Worlds are now
-deterministic branch overlays: root and child IDs derive from validated world
-metadata instead of caller-provided identifiers.
+deterministic, tenant-scoped branch overlays: root and child IDs derive from
+validated world metadata instead of caller-provided identifiers.
 
 ## Changes
 
-- Added `WorldMetadata` with ID, name, kind, parent pointer, and branch depth.
-- Root worlds now derive deterministic IDs from validated root metadata.
-- Forked worlds now derive deterministic IDs from parent ID, depth, name, and
-  kind.
+- Added `WorldMetadata` with ID, tenant ID, name, kind, parent pointer, and
+  branch depth.
+- Root worlds now derive deterministic IDs from tenant ID and validated root
+  metadata.
+- Forked worlds now inherit the parent tenant ID and derive deterministic IDs
+  from tenant ID, parent ID, depth, name, and kind.
+- Documented the world identity contract: root and fork creation are idempotent
+  for the `(tenant_id, kind, depth, parent, name)` tuple. The future storage
+  registry must enforce that tuple as the uniqueness key.
 - Added `InvalidWorldIdentity` for invalid deterministic identity states.
 - Kept added and hidden fact sets isolated per branch overlay.
-- Added tests for repeated root identity, parent-sensitive child identity, kind
-  separation, branch isolation, and direct-child diff validation.
+- Added tests for repeated root identity, tenant separation, parent-sensitive
+  child identity, kind separation, branch isolation, and direct-child diff
+  validation.
 - Bounded policy token sets and requested query-label lists to reduce
   algorithmic-complexity DoS risk.
 - Made time ranges fail on inverted bounds at construction.
@@ -41,8 +47,8 @@ metadata instead of caller-provided identifiers.
 This release is not a usable database engine. It does not provide durable
 storage, networking, replication, cryptographic verification, production query
 execution, merge/promotion preflight, or collision-resistant world identity.
-The deterministic world ID derivation is a stable scaffold, not a cryptographic
-content-addressing scheme.
+The deterministic world ID derivation is tenant-scoped and stable, but remains
+a scaffold, not a cryptographic content-addressing scheme.
 
 ## Pentest Status
 

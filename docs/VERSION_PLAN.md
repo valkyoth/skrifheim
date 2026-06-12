@@ -112,9 +112,11 @@ Goal: model worlds as branchable overlays, not copied databases.
 Deliverables:
 
 - world metadata,
+- tenant-scoped identity derivation,
 - parent pointers,
 - added and hidden fact sets,
-- deterministic world identity rules,
+- deterministic world identity rules where `(tenant_id, kind, depth, parent,
+  name)` is the idempotent uniqueness key,
 - tests for branch isolation.
 
 ## v0.6.0 - World Diff And Promotion Preflight

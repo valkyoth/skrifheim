@@ -4,7 +4,7 @@
 extern crate alloc;
 
 use alloc::{string::String, vec::Vec};
-use skrifheim_core::{FactId, Result, SkrifheimError, WorldId};
+use skrifheim_core::{FactId, Result, SkrifheimError, TenantId, WorldId};
 
 #[cfg(test)]
 mod tests;
@@ -42,6 +42,7 @@ impl WorldKind {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct WorldMetadata {
     id: WorldId,
+    tenant_id: TenantId,
     name: String,
     kind: WorldKind,
     parent: Option<WorldId>,
@@ -49,11 +50,12 @@ pub struct WorldMetadata {
 }
 
 impl WorldMetadata {
-    pub fn root(name: impl Into<String>, kind: WorldKind) -> Result<Self> {
+    pub fn root(tenant_id: TenantId, name: impl Into<String>, kind: WorldKind) -> Result<Self> {
         let name = validate_world_name(name.into())?;
-        let id = derive_world_id(None, 0, &name, kind)?;
+        let id = derive_world_id(tenant_id, None, 0, &name, kind)?;
         Ok(Self {
             id,
+            tenant_id,
             name,
             kind,
             parent: None,
@@ -67,12 +69,13 @@ impl WorldMetadata {
             .depth
             .checked_add(1)
             .ok_or(SkrifheimError::InvalidWorldIdentity)?;
-        let id = derive_world_id(Some(parent.id), depth, &name, kind)?;
+        let id = derive_world_id(parent.tenant_id, Some(parent.id), depth, &name, kind)?;
         if id == parent.id {
             return Err(SkrifheimError::InvalidWorldIdentity);
         }
         Ok(Self {
             id,
+            tenant_id: parent.tenant_id,
             name,
             kind,
             parent: Some(parent.id),
@@ -83,6 +86,11 @@ impl WorldMetadata {
     #[must_use]
     pub const fn id(&self) -> WorldId {
         self.id
+    }
+
+    #[must_use]
+    pub const fn tenant_id(&self) -> TenantId {
+        self.tenant_id
     }
 
     #[must_use]
@@ -114,14 +122,23 @@ pub struct World {
 }
 
 impl World {
-    pub fn root(name: impl Into<String>, kind: WorldKind) -> Result<Self> {
+    /// Creates a deterministic root world identity for the
+    /// `(tenant_id, kind, depth, parent, name)` tuple.
+    ///
+    /// Repeating this call with the same arguments returns the same `WorldId`
+    /// by design; storage must treat that tuple as the uniqueness key.
+    pub fn root(tenant_id: TenantId, name: impl Into<String>, kind: WorldKind) -> Result<Self> {
         Ok(Self {
-            metadata: WorldMetadata::root(name, kind)?,
+            metadata: WorldMetadata::root(tenant_id, name, kind)?,
             added_facts: Vec::new(),
             hidden_facts: Vec::new(),
         })
     }
 
+    /// Creates a deterministic child world identity under this parent.
+    ///
+    /// Repeating this call with the same parent, name, and kind returns the same
+    /// `WorldId` by design; it does not mint a fresh scratch branch.
     pub fn fork(&self, name: impl Into<String>, kind: WorldKind) -> Result<Self> {
         Ok(Self {
             metadata: WorldMetadata::child(&self.metadata, name, kind)?,
@@ -138,6 +155,11 @@ impl World {
     #[must_use]
     pub const fn id(&self) -> WorldId {
         self.metadata.id()
+    }
+
+    #[must_use]
+    pub const fn tenant_id(&self) -> TenantId {
+        self.metadata.tenant_id()
     }
 
     #[must_use]
@@ -198,6 +220,7 @@ fn validate_world_name(name: String) -> Result<String> {
 }
 
 fn derive_world_id(
+    tenant_id: TenantId,
     parent: Option<WorldId>,
     depth: u32,
     name: &str,
@@ -205,6 +228,7 @@ fn derive_world_id(
 ) -> Result<WorldId> {
     let mut state = WORLD_ID_OFFSET;
     state = hash_bytes(state, b"skrifheim/world/v1");
+    state = hash_bytes(state, &tenant_id.get().to_le_bytes());
     state = hash_bytes(state, &[kind.identity_tag()]);
     state = hash_bytes(state, &depth.to_le_bytes());
     match parent {
