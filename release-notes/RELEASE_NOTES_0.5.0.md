@@ -1,6 +1,6 @@
 # skrifheim 0.5.0 Release Notes
 
-Status: implementation stop, pending pentest.
+Status: implementation stop, pentest complete, pending GitHub verification.
 
 ## Scope
 
@@ -30,6 +30,9 @@ validated world metadata instead of caller-provided identifiers.
 - Removed public confidence clamping so malformed external confidence values
   must fail validation instead of silently becoming maximum confidence.
 - Replaced storage integrity zero sentinels with explicit presence fields.
+- Added roadmap commitments for causal blast-radius invalidation, signed
+  declassification proofs, capability-scoped AI derivation cones, and
+  propagated confidence fused with mandatory access control.
 - Bumped workspace and internal crate dependency versions to `0.5.0`.
 
 ## Verification
@@ -52,5 +55,6 @@ a scaffold, not a cryptographic content-addressing scheme.
 
 ## Pentest Status
 
-Pentest is required before tagging. Root `PENTEST.md` is the temporary findings
-handoff file and must be removed after findings are resolved.
+Pentest findings and retest findings for the `0.5.0` implementation stop have
+been resolved. Root `PENTEST.md` is absent. The permanent release handoff is
+recorded in `security/pentest/v0.5.0.md`.

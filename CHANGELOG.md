@@ -2,14 +2,13 @@
 
 ## Unreleased
 
-- Added roadmap commitments for causal blast-radius invalidation, signed declassification proofs, capability-scoped AI derivation cones, and propagated confidence fused with mandatory access control.
-
 ## 0.5.0
 
 - Added deterministic world metadata identities and branch-depth tracking.
 - Added branch isolation tests for world overlays.
 - Resolved 0.5.0 pentest findings for bounded policy/query inputs and stricter invariants.
 - Resolved 0.5.0 retest findings by making deterministic world identity tenant-scoped and documenting idempotent root/fork semantics.
+- Added roadmap commitments for causal blast-radius invalidation, signed declassification proofs, capability-scoped AI derivation cones, and propagated confidence fused with mandatory access control.
 - Added `0.5.0` release metadata and gate script.
 
 ## 0.4.0

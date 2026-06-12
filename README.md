@@ -31,8 +31,8 @@ provenance; classification-aware planning; tamper-evident storage; and CMS
 integration through typed facts, atomic releases, sanitized projections, and AI
 artifacts with provenance.
 
-The project is currently at the `v0.5.0` implementation stop. It is not a
-usable database engine.
+The project is currently at the `v0.5.0` release-prep stop, pending GitHub
+verification before tag approval. It is not a usable database engine.
 
 `skrifheim` is licensed under the European Union Public Licence 1.2.
 
@@ -86,6 +86,7 @@ usable database engine.
 | Audit proofs and backup/restore | Planned | `v0.34.0` through `v0.36.0`. |
 | CMS release primitives | Planned | `v0.39.0` through `v0.40.0`. |
 | AI artifact provenance | Planned | `v0.41.0`. |
+| Distinctive security and truth features | Planned | Causal blast-radius invalidation, signed declassification proofs, AI derivation cones, and propagated confidence with mandatory access control are now tracked in the implementation and version plans. |
 | Local-first worlds and mission capsules | Planned | `v0.42.0` through `v0.43.0`. |
 | Fuzz/property baseline, operations, and hardening | Planned | `v0.44.0` through `v0.51.0`. |
 | Standalone legal/compliance passports and placement foundations | Planned | `v0.52.0` through `v0.55.0`. |
@@ -109,6 +110,9 @@ usable database engine.
   and audit proofs are planned as the storage foundation.
 - **AI is not truth**: AI output is planned as derived artifact state with
   provenance and review, never silent authoritative mutation.
+- **Truth has blast radius**: causal links, declassification proofs, AI
+  derivation cones, and propagated confidence are planned as first-class
+  security controls.
 - **Strict engineering posture**: core crates are `no_std`, unsafe code is
   forbidden, external crates require admission, and release stops require
   pentest review.
