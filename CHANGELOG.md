@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.5.0
+
+- Added deterministic world metadata identities and branch-depth tracking.
+- Added branch isolation tests for world overlays.
+- Added `0.5.0` release metadata and gate script.
+
 ## 0.4.0
 
 - Added aggregate policy proof skeletons and output classification calculation.

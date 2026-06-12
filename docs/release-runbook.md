@@ -14,7 +14,7 @@ maintainer. Tags are never created or pushed unless explicitly requested.
 3. Run `scripts/checks.sh`.
 4. Run `cargo deny check`.
 5. Run `cargo audit`.
-6. Run the version gate script when one exists, such as `scripts/release_0_4_gate.sh`.
+6. Run the version gate script when one exists, such as `scripts/release_0_5_gate.sh`.
 7. Run rootless Podman smoke if the milestone includes container support and it is not already covered by the version gate.
 8. Stop and call out the pentest handoff for the exact commit.
 

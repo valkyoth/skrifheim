@@ -6,9 +6,15 @@ extern crate alloc;
 use alloc::{string::String, vec::Vec};
 use skrifheim_core::{FactId, Result, SkrifheimError, WorldId};
 
+#[cfg(test)]
+mod tests;
+
 pub const WORLD_NAME_MAX_BYTES: usize = 256;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+const WORLD_ID_OFFSET: u128 = 0x6c62_272e_07bb_0142_62b8_2175_6295_c58d;
+const WORLD_ID_PRIME: u128 = 0x0000_0000_0100_0000_0000_0000_0000_013b;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum WorldKind {
     Production,
     Staging,
@@ -19,39 +25,58 @@ pub enum WorldKind {
     MissionCapsule,
 }
 
+impl WorldKind {
+    const fn identity_tag(self) -> u8 {
+        match self {
+            Self::Production => 1,
+            Self::Staging => 2,
+            Self::UserLocal => 3,
+            Self::AgentScratchpad => 4,
+            Self::Simulation => 5,
+            Self::LegalAudit => 6,
+            Self::MissionCapsule => 7,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct World {
+pub struct WorldMetadata {
     id: WorldId,
     name: String,
     kind: WorldKind,
     parent: Option<WorldId>,
-    added_facts: Vec<FactId>,
-    hidden_facts: Vec<FactId>,
+    depth: u32,
 }
 
-impl World {
-    pub fn root(id: WorldId, name: impl Into<String>, kind: WorldKind) -> Result<Self> {
+impl WorldMetadata {
+    pub fn root(name: impl Into<String>, kind: WorldKind) -> Result<Self> {
+        let name = validate_world_name(name.into())?;
+        let id = derive_world_id(None, 0, &name, kind)?;
         Ok(Self {
             id,
-            name: validate_world_name(name.into())?,
+            name,
             kind,
             parent: None,
-            added_facts: Vec::new(),
-            hidden_facts: Vec::new(),
+            depth: 0,
         })
     }
 
-    pub fn fork(&self, id: WorldId, name: impl Into<String>, kind: WorldKind) -> Result<Self> {
-        if id == self.id {
-            return Err(SkrifheimError::InvalidWorldDiff);
+    pub fn child(parent: &Self, name: impl Into<String>, kind: WorldKind) -> Result<Self> {
+        let name = validate_world_name(name.into())?;
+        let depth = parent
+            .depth
+            .checked_add(1)
+            .ok_or(SkrifheimError::InvalidWorldIdentity)?;
+        let id = derive_world_id(Some(parent.id), depth, &name, kind)?;
+        if id == parent.id {
+            return Err(SkrifheimError::InvalidWorldIdentity);
         }
         Ok(Self {
             id,
-            name: validate_world_name(name.into())?,
+            name,
             kind,
-            parent: Some(self.id),
-            added_facts: Vec::new(),
-            hidden_facts: Vec::new(),
+            parent: Some(parent.id),
+            depth,
         })
     }
 
@@ -66,13 +91,73 @@ impl World {
     }
 
     #[must_use]
-    pub const fn kind(&self) -> &WorldKind {
-        &self.kind
+    pub const fn kind(&self) -> WorldKind {
+        self.kind
     }
 
     #[must_use]
     pub const fn parent(&self) -> Option<WorldId> {
         self.parent
+    }
+
+    #[must_use]
+    pub const fn depth(&self) -> u32 {
+        self.depth
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct World {
+    metadata: WorldMetadata,
+    added_facts: Vec<FactId>,
+    hidden_facts: Vec<FactId>,
+}
+
+impl World {
+    pub fn root(name: impl Into<String>, kind: WorldKind) -> Result<Self> {
+        Ok(Self {
+            metadata: WorldMetadata::root(name, kind)?,
+            added_facts: Vec::new(),
+            hidden_facts: Vec::new(),
+        })
+    }
+
+    pub fn fork(&self, name: impl Into<String>, kind: WorldKind) -> Result<Self> {
+        Ok(Self {
+            metadata: WorldMetadata::child(&self.metadata, name, kind)?,
+            added_facts: Vec::new(),
+            hidden_facts: Vec::new(),
+        })
+    }
+
+    #[must_use]
+    pub const fn metadata(&self) -> &WorldMetadata {
+        &self.metadata
+    }
+
+    #[must_use]
+    pub const fn id(&self) -> WorldId {
+        self.metadata.id()
+    }
+
+    #[must_use]
+    pub fn name(&self) -> &str {
+        self.metadata.name()
+    }
+
+    #[must_use]
+    pub const fn kind(&self) -> WorldKind {
+        self.metadata.kind()
+    }
+
+    #[must_use]
+    pub const fn parent(&self) -> Option<WorldId> {
+        self.metadata.parent()
+    }
+
+    #[must_use]
+    pub const fn depth(&self) -> u32 {
+        self.metadata.depth()
     }
 
     #[must_use]
@@ -112,6 +197,37 @@ fn validate_world_name(name: String) -> Result<String> {
     Ok(name)
 }
 
+fn derive_world_id(
+    parent: Option<WorldId>,
+    depth: u32,
+    name: &str,
+    kind: WorldKind,
+) -> Result<WorldId> {
+    let mut state = WORLD_ID_OFFSET;
+    state = hash_bytes(state, b"skrifheim/world/v1");
+    state = hash_bytes(state, &[kind.identity_tag()]);
+    state = hash_bytes(state, &depth.to_le_bytes());
+    match parent {
+        Some(parent) => {
+            state = hash_bytes(state, b"child");
+            state = hash_bytes(state, &parent.get().to_le_bytes());
+        }
+        None => {
+            state = hash_bytes(state, b"root");
+        }
+    }
+    state = hash_bytes(state, name.as_bytes());
+    WorldId::from_u128(state | 1).ok_or(SkrifheimError::InvalidWorldIdentity)
+}
+
+fn hash_bytes(mut state: u128, bytes: &[u8]) -> u128 {
+    for byte in bytes {
+        state ^= u128::from(*byte);
+        state = state.wrapping_mul(WORLD_ID_PRIME);
+    }
+    state
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct WorldDiff {
     pub from: WorldId,
@@ -122,12 +238,12 @@ pub struct WorldDiff {
 
 impl WorldDiff {
     pub fn between(from: &World, to: &World) -> Result<Self> {
-        if from.id != to.id && to.parent != Some(from.id) {
+        if from.id() != to.id() && to.parent() != Some(from.id()) {
             return Err(SkrifheimError::InvalidWorldDiff);
         }
         Ok(Self {
-            from: from.id,
-            to: to.id,
+            from: from.id(),
+            to: to.id(),
             added: to
                 .added_facts
                 .iter()
@@ -141,119 +257,5 @@ impl WorldDiff {
                 .copied()
                 .collect(),
         })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use alloc::vec;
-
-    fn id<T>(id: Option<T>) -> Result<T> {
-        id.ok_or(SkrifheimError::InvalidIdentifier)
-    }
-
-    #[test]
-    fn fork_keeps_parent_identity() -> Result<()> {
-        let production = World::root(
-            id(WorldId::from_u128(1))?,
-            "production",
-            WorldKind::Production,
-        )?;
-        let draft = production.fork(id(WorldId::from_u128(2))?, "draft", WorldKind::Simulation)?;
-        assert_eq!(draft.parent(), Some(id(WorldId::from_u128(1))?));
-        Ok(())
-    }
-
-    #[test]
-    fn duplicate_fact_adds_are_idempotent() -> Result<()> {
-        let mut world = World::root(
-            id(WorldId::from_u128(1))?,
-            "production",
-            WorldKind::Production,
-        )?;
-        world.add_fact(id(FactId::from_u128(7))?);
-        world.add_fact(id(FactId::from_u128(7))?);
-        assert_eq!(world.added_facts(), &[id(FactId::from_u128(7))?]);
-        Ok(())
-    }
-
-    #[test]
-    fn diff_requires_direct_child_relationship() -> Result<()> {
-        let mut production = World::root(
-            id(WorldId::from_u128(1))?,
-            "production",
-            WorldKind::Production,
-        )?;
-        production.add_fact(id(FactId::from_u128(7))?);
-        let unrelated = World::root(
-            id(WorldId::from_u128(2))?,
-            "unrelated",
-            WorldKind::Simulation,
-        )?;
-        assert_eq!(
-            WorldDiff::between(&production, &unrelated),
-            Err(SkrifheimError::InvalidWorldDiff)
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn diff_returns_delta_against_parent() -> Result<()> {
-        let mut production = World::root(
-            id(WorldId::from_u128(1))?,
-            "production",
-            WorldKind::Production,
-        )?;
-        production.add_fact(id(FactId::from_u128(7))?);
-        let mut child =
-            production.fork(id(WorldId::from_u128(2))?, "child", WorldKind::Simulation)?;
-        child.add_fact(id(FactId::from_u128(7))?);
-        child.add_fact(id(FactId::from_u128(8))?);
-        let diff = WorldDiff::between(&production, &child)?;
-        assert_eq!(diff.added, vec![id(FactId::from_u128(8))?]);
-        Ok(())
-    }
-
-    #[test]
-    fn fork_rejects_self_parent() -> Result<()> {
-        let production = World::root(
-            id(WorldId::from_u128(1))?,
-            "production",
-            WorldKind::Production,
-        )?;
-        assert_eq!(
-            production.fork(id(WorldId::from_u128(1))?, "bad", WorldKind::Simulation),
-            Err(SkrifheimError::InvalidWorldDiff)
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn root_rejects_invalid_world_names() -> Result<()> {
-        assert_eq!(
-            World::root(id(WorldId::from_u128(1))?, "", WorldKind::Production),
-            Err(SkrifheimError::InvalidWorldName)
-        );
-        assert_eq!(
-            World::root(
-                id(WorldId::from_u128(1))?,
-                "production\nbad",
-                WorldKind::Production
-            ),
-            Err(SkrifheimError::InvalidWorldName)
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn root_rejects_overlong_world_names() -> Result<()> {
-        let name = String::from_utf8(vec![b'a'; WORLD_NAME_MAX_BYTES + 1])
-            .map_err(|_| SkrifheimError::InvalidWorldName)?;
-        assert_eq!(
-            World::root(id(WorldId::from_u128(1))?, name, WorldKind::Production),
-            Err(SkrifheimError::InvalidWorldName)
-        );
-        Ok(())
     }
 }
