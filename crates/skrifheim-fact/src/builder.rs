@@ -117,12 +117,6 @@ impl FactBuilder {
     }
 
     #[must_use]
-    pub const fn confidence_clamped(mut self, confidence: u16) -> Self {
-        self.confidence = Confidence::clamped(confidence);
-        self
-    }
-
-    #[must_use]
     pub fn add_caused_by(mut self, fact_id: FactId) -> Self {
         push_unique(&mut self.caused_by, fact_id);
         self

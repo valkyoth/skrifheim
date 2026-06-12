@@ -6,6 +6,7 @@
 
 - Added deterministic world metadata identities and branch-depth tracking.
 - Added branch isolation tests for world overlays.
+- Resolved 0.5.0 pentest findings for bounded policy/query inputs and stricter invariants.
 - Added `0.5.0` release metadata and gate script.
 
 ## 0.4.0

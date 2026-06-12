@@ -4,6 +4,7 @@
 extern crate alloc;
 
 use alloc::string::String;
+use core::num::NonZeroU64;
 use skrifheim_core::{PolicyId, Result, SkrifheimError, TenantId, TxId};
 
 pub const SEGMENT_MAGIC: [u8; 8] = *b"SKRIFSEG";
@@ -28,8 +29,8 @@ pub struct SegmentHeader {
     pub policy_id: PolicyId,
     pub encryption_key_id: u128,
     pub body_len: u64,
-    pub body_crc64: u64,
-    pub content_hash: [u8; 32],
+    pub body_crc64: Option<NonZeroU64>,
+    pub content_hash: Option<[u8; 32]>,
 }
 
 impl SegmentHeader {
@@ -59,14 +60,14 @@ impl SegmentHeader {
                 "segment body must not be empty",
             )));
         }
-        if self.body_crc64 == 0 {
+        if self.body_crc64.is_none() {
             return Err(SkrifheimError::InvalidStorageHeader(String::from(
-                "body CRC must be non-zero",
+                "body CRC missing",
             )));
         }
-        if self.content_hash == [0; 32] {
+        if self.content_hash.is_none() {
             return Err(SkrifheimError::InvalidStorageHeader(String::from(
-                "content hash must be non-zero",
+                "content hash missing",
             )));
         }
         if self.encryption_key_id == 0 {
@@ -97,8 +98,8 @@ mod tests {
             policy_id: id(PolicyId::from_u128(3))?,
             encryption_key_id: 4,
             body_len: 5,
-            body_crc64: 6,
-            content_hash: [7; 32],
+            body_crc64: Some(id(NonZeroU64::new(6))?),
+            content_hash: Some([7; 32]),
         })
     }
 
@@ -133,14 +134,14 @@ mod tests {
     #[test]
     fn header_rejects_missing_integrity_fields() -> Result<()> {
         let mut missing_crc = header()?;
-        missing_crc.body_crc64 = 0;
+        missing_crc.body_crc64 = None;
         assert!(matches!(
             missing_crc.validate(),
             Err(SkrifheimError::InvalidStorageHeader(_))
         ));
 
         let mut missing_hash = header()?;
-        missing_hash.content_hash = [0; 32];
+        missing_hash.content_hash = None;
         assert!(matches!(
             missing_hash.validate(),
             Err(SkrifheimError::InvalidStorageHeader(_))
@@ -152,6 +153,14 @@ mod tests {
             missing_key.validate(),
             Err(SkrifheimError::InvalidStorageHeader(_))
         ));
+        Ok(())
+    }
+
+    #[test]
+    fn header_accepts_explicit_zero_content_hash() -> Result<()> {
+        let mut header = header()?;
+        header.content_hash = Some([0; 32]);
+        assert_eq!(header.validate(), Ok(()));
         Ok(())
     }
 }

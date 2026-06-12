@@ -4,10 +4,12 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
-use skrifheim_core::{SecurityLabel, WorldId};
+use skrifheim_core::{Result, SecurityLabel, SkrifheimError, WorldId};
 use skrifheim_policy::{
     AuthorityContext, PlannerDecision, PolicyProof, evaluate_read, evaluate_read_set,
 };
+
+pub const QUERY_REQUEST_LABEL_MAX_ITEMS: usize = 1024;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum QueryIntent {
@@ -33,10 +35,12 @@ pub struct QueryPlan {
 }
 
 impl QueryRequest {
-    #[must_use]
-    pub fn plan(&self, authority: &AuthorityContext) -> QueryPlan {
+    pub fn plan(&self, authority: &AuthorityContext) -> Result<QueryPlan> {
+        if self.requested_labels.len() > QUERY_REQUEST_LABEL_MAX_ITEMS {
+            return Err(SkrifheimError::InvalidQueryRequest);
+        }
         let aggregate_decision = evaluate_read_set(authority, &self.requested_labels);
-        QueryPlan {
+        Ok(QueryPlan {
             world: self.world,
             intent: self.intent.clone(),
             proof: aggregate_decision.proof().clone(),
@@ -45,7 +49,7 @@ impl QueryRequest {
                 .iter()
                 .map(|label| evaluate_read(authority, label))
                 .collect(),
-        }
+        })
     }
 }
 
@@ -136,7 +140,7 @@ mod tests {
             )?],
         };
         let authority = authority(Classification::Secret)?;
-        let plan = request.plan(&authority);
+        let plan = request.plan(&authority)?;
         assert_eq!(plan.world(), id(WorldId::from_u128(1))?);
         assert_eq!(plan.intent(), &QueryIntent::BuildContextPack);
         assert_eq!(plan.decisions().len(), 1);
@@ -160,7 +164,7 @@ mod tests {
             )?],
         };
         let authority = authority(Classification::Secret)?;
-        let plan = request.plan(&authority);
+        let plan = request.plan(&authority)?;
         assert!(plan.has_redaction());
         assert!(!plan.is_executable());
         assert_eq!(plan.proof().input_label_count(), 1);
@@ -179,9 +183,28 @@ mod tests {
             ],
         };
         let authority = authority(Classification::TopSecret)?;
-        let plan = request.plan(&authority);
+        let plan = request.plan(&authority)?;
         assert_eq!(plan.output_classification(), Classification::Secret);
         assert!(plan.is_executable());
+        Ok(())
+    }
+
+    #[test]
+    fn plan_rejects_too_many_requested_labels() -> skrifheim_core::Result<()> {
+        let mut requested_labels = Vec::new();
+        for _ in 0..=QUERY_REQUEST_LABEL_MAX_ITEMS {
+            requested_labels.push(SecurityLabel::public());
+        }
+        let request = QueryRequest {
+            world: id(WorldId::from_u128(1))?,
+            intent: QueryIntent::ReadFacts,
+            requested_labels,
+        };
+        let authority = authority(Classification::TopSecret)?;
+        assert_eq!(
+            request.plan(&authority),
+            Err(SkrifheimError::InvalidQueryRequest)
+        );
         Ok(())
     }
 }

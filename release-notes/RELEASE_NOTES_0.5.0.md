@@ -18,6 +18,12 @@ metadata instead of caller-provided identifiers.
 - Kept added and hidden fact sets isolated per branch overlay.
 - Added tests for repeated root identity, parent-sensitive child identity, kind
   separation, branch isolation, and direct-child diff validation.
+- Bounded policy token sets and requested query-label lists to reduce
+  algorithmic-complexity DoS risk.
+- Made time ranges fail on inverted bounds at construction.
+- Removed public confidence clamping so malformed external confidence values
+  must fail validation instead of silently becoming maximum confidence.
+- Replaced storage integrity zero sentinels with explicit presence fields.
 - Bumped workspace and internal crate dependency versions to `0.5.0`.
 
 ## Verification

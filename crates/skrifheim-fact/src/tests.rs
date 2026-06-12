@@ -27,7 +27,7 @@ fn invalid_fact_without_evidence() -> Result<Fact> {
         subject: id(EntityId::from_u128(3))?,
         predicate: id(PredicateId::from_u128(4))?,
         object: Value::Boolean(true),
-        valid_time: TimeRange::new(Timestamp(5), None),
+        valid_time: TimeRange::new(Timestamp(5), None)?,
         committed_at: id(TxId::from_u128(6))?,
         asserted_by: id(ActorId::from_u128(7))?,
         evidence: Vec::new(),
@@ -56,11 +56,11 @@ fn base_builder() -> Result<FactBuilder> {
         .subject(id(EntityId::from_u128(3))?)
         .predicate(id(PredicateId::from_u128(4))?)
         .object(Value::Boolean(true))
-        .valid_time(TimeRange::new(Timestamp(5), None))
+        .valid_time(TimeRange::new(Timestamp(5), None)?)
         .committed_at(id(TxId::from_u128(6))?)
         .asserted_by(id(ActorId::from_u128(7))?)
         .add_evidence(id(SourceId::from_u128(8))?)
-        .confidence_clamped(2000)
+        .confidence(Confidence::max())
         .add_caused_by(id(FactId::from_u128(9))?)
         .policy_id(id(PolicyId::from_u128(10))?)
         .label(SecurityLabel::new(
@@ -109,12 +109,6 @@ fn fact_validation_requires_evidence() -> Result<()> {
 }
 
 #[test]
-fn confidence_is_clamped() {
-    assert_eq!(Confidence::clamped(2000), Confidence::max());
-    assert_eq!(Confidence::clamped(7).get(), 7);
-}
-
-#[test]
 fn confidence_rejects_out_of_range_values() {
     assert_eq!(
         Confidence::new(1001),
@@ -132,9 +126,7 @@ fn fact_rejects_self_referential_causality() -> Result<()> {
 
 #[test]
 fn builder_rejects_invalid_valid_time() -> Result<()> {
-    let result = base_builder()?
-        .valid_time(TimeRange::new(Timestamp(20), Some(Timestamp(10))))
-        .build();
+    let result = TimeRange::new(Timestamp(20), Some(Timestamp(10)));
     assert_eq!(result, Err(SkrifheimError::InvalidTimeRange));
     Ok(())
 }

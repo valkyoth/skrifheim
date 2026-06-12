@@ -3,8 +3,12 @@ use alloc::{collections::BTreeSet, string::String, vec::Vec};
 use crate::{Result, SkrifheimError};
 
 pub const POLICY_TOKEN_MAX_BYTES: usize = 128;
+pub const POLICY_TOKEN_SET_MAX_ITEMS: usize = 64;
 
 pub fn canonical_policy_set(values: Vec<String>) -> Result<BTreeSet<String>> {
+    if values.len() > POLICY_TOKEN_SET_MAX_ITEMS {
+        return Err(SkrifheimError::InvalidSecurityToken);
+    }
     values.into_iter().map(canonical_policy_token).collect()
 }
 

@@ -10,7 +10,8 @@ use core::num::NonZeroU128;
 mod policy_token;
 
 pub use policy_token::{
-    POLICY_TOKEN_MAX_BYTES, canonical_policy_set, canonical_policy_token, contains_policy_token_ct,
+    POLICY_TOKEN_MAX_BYTES, POLICY_TOKEN_SET_MAX_ITEMS, canonical_policy_set,
+    canonical_policy_token, contains_policy_token_ct,
 };
 
 macro_rules! nonzero_id {
@@ -57,14 +58,28 @@ pub struct Timestamp(pub u64);
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct TimeRange {
-    pub start: Timestamp,
-    pub end: Option<Timestamp>,
+    start: Timestamp,
+    end: Option<Timestamp>,
 }
 
 impl TimeRange {
+    pub const fn new(start: Timestamp, end: Option<Timestamp>) -> Result<Self> {
+        if let Some(end) = end
+            && end.0 < start.0
+        {
+            return Err(SkrifheimError::InvalidTimeRange);
+        }
+        Ok(Self { start, end })
+    }
+
     #[must_use]
-    pub const fn new(start: Timestamp, end: Option<Timestamp>) -> Self {
-        Self { start, end }
+    pub const fn start(self) -> Timestamp {
+        self.start
+    }
+
+    #[must_use]
+    pub const fn end(self) -> Option<Timestamp> {
+        self.end
     }
 
     #[must_use]
@@ -191,6 +206,7 @@ pub enum SkrifheimError {
     InvalidSecurityToken,
     InvalidWorldName,
     InvalidWorldIdentity,
+    InvalidQueryRequest,
     SelfReferentialFact,
     PolicyDenied(AccessDeniedReason),
     InvalidStorageHeader(String),
@@ -216,6 +232,7 @@ impl fmt::Display for SkrifheimError {
             Self::InvalidSecurityToken => write!(f, "invalid security token"),
             Self::InvalidWorldName => write!(f, "invalid world name"),
             Self::InvalidWorldIdentity => write!(f, "invalid world identity"),
+            Self::InvalidQueryRequest => write!(f, "invalid query request"),
             Self::SelfReferentialFact => write!(f, "fact cannot refer to itself causally"),
             Self::PolicyDenied(_) => write!(f, "policy denied operation: access denied"),
             Self::InvalidStorageHeader(reason) => write!(f, "invalid storage header: {reason}"),
@@ -232,16 +249,26 @@ mod tests {
     use alloc::vec;
 
     #[test]
-    fn open_time_range_contains_later_time() {
-        let range = TimeRange::new(Timestamp(10), None);
+    fn open_time_range_contains_later_time() -> Result<()> {
+        let range = TimeRange::new(Timestamp(10), None)?;
         assert!(range.contains(Timestamp(11)));
+        Ok(())
     }
 
     #[test]
-    fn closed_time_range_excludes_end() {
-        let range = TimeRange::new(Timestamp(10), Some(Timestamp(20)));
+    fn closed_time_range_excludes_end() -> Result<()> {
+        let range = TimeRange::new(Timestamp(10), Some(Timestamp(20)))?;
         assert!(range.contains(Timestamp(19)));
         assert!(!range.contains(Timestamp(20)));
+        Ok(())
+    }
+
+    #[test]
+    fn time_range_rejects_inverted_bounds() {
+        assert_eq!(
+            TimeRange::new(Timestamp(20), Some(Timestamp(10))),
+            Err(SkrifheimError::InvalidTimeRange)
+        );
     }
 
     #[test]
@@ -267,6 +294,18 @@ mod tests {
         assert!(label.compartments().contains("EU-COMMAND"));
         assert!(label.releasable_to().contains("EU"));
         Ok(())
+    }
+
+    #[test]
+    fn security_label_rejects_oversized_policy_token_sets() {
+        let mut compartments = Vec::new();
+        for _ in 0..=POLICY_TOKEN_SET_MAX_ITEMS {
+            compartments.push(String::from("C"));
+        }
+        assert_eq!(
+            SecurityLabel::new(Classification::Secret, compartments, Vec::new()),
+            Err(SkrifheimError::InvalidSecurityToken)
+        );
     }
 
     #[test]

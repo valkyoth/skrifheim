@@ -40,11 +40,6 @@ impl Confidence {
     }
 
     #[must_use]
-    pub const fn clamped(value: u16) -> Self {
-        Self(if value > 1000 { 1000 } else { value })
-    }
-
-    #[must_use]
     pub const fn get(self) -> u16 {
         self.0
     }
@@ -77,11 +72,6 @@ impl Fact {
     }
 
     pub fn validate(&self) -> Result<()> {
-        if let Some(end) = self.valid_time.end
-            && end.0 < self.valid_time.start.0
-        {
-            return Err(SkrifheimError::InvalidTimeRange);
-        }
         if self.evidence.is_empty() {
             return Err(SkrifheimError::EmptyEvidence);
         }
