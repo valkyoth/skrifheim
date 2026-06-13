@@ -1,6 +1,6 @@
 # skrifheim 0.6.0 Release Notes
 
-Status: implementation stop, pending pentest.
+Status: implementation stop, pentest complete, pending GitHub verification.
 
 ## Scope
 
@@ -56,5 +56,6 @@ conflicts before storage-backed world history exists.
 
 ## Pentest Status
 
-Pentest is required before tagging. Root `PENTEST.md` is the temporary findings
-handoff file and must be removed after findings are resolved.
+Pentest findings and retest notes for the `0.6.0` implementation stop have been
+resolved. Root `PENTEST.md` is absent. The permanent release handoff is recorded
+in `security/pentest/v0.6.0.md`.
