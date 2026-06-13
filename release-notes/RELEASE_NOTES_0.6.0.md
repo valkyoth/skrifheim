@@ -20,6 +20,13 @@ and explicit conflict categories for the current world-overlay scaffold.
   `World::rollback_preflight`.
 - Added tests for clean promotion, non-child promotion rejection, conflict
   detection, and rollback inverse-delta reporting.
+- Bounded variable-length `Named` and `HybridClassicalPq` signature payloads to
+  reduce resource-exhaustion risk on untrusted signatures.
+- Bounded fact evidence lists with the same ceiling used for causal fact links.
+- Documented `WorldId` as a deterministic non-secret namespacing key, not an
+  access-control capability.
+- Added `SkrifheimError::public_message()` so external/API boundaries can avoid
+  leaking internal storage-header validation detail.
 - Bumped workspace and internal crate dependency versions to `0.6.0`.
 - Re-checked the stable Rust channel on 2026-06-13. Rust stable remains
   `1.96.0`, dated 2026-05-28 in the official stable manifest.

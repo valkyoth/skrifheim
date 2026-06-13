@@ -15,7 +15,8 @@ pub use policy_token::{
 };
 
 macro_rules! nonzero_id {
-    ($name:ident) => {
+    ($(#[$meta:meta])* $name:ident) => {
+        $(#[$meta])*
         #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
         pub struct $name(NonZeroU128);
 
@@ -42,7 +43,14 @@ macro_rules! nonzero_id {
 }
 
 nonzero_id!(TenantId);
-nonzero_id!(WorldId);
+nonzero_id!(
+    /// Deterministic, non-secret world namespacing key.
+    ///
+    /// `WorldId` MUST NOT be used as a bearer capability or relied on for
+    /// confidentiality. Authorization is always performed through
+    /// `SecurityLabel` and authority context checks in `skrifheim-policy`.
+    WorldId
+);
 nonzero_id!(FactId);
 nonzero_id!(EntityId);
 nonzero_id!(PredicateId);
@@ -241,6 +249,33 @@ impl fmt::Display for SkrifheimError {
     }
 }
 
+impl SkrifheimError {
+    #[must_use]
+    pub const fn public_message(&self) -> &'static str {
+        match self {
+            Self::PolicyDenied(_) => "operation denied",
+            Self::InvalidStorageHeader(_) => "invalid storage data",
+            Self::InvalidSignatureEnvelope(_) => "invalid signature envelope",
+            Self::MissingFactField(_) => "invalid fact",
+            Self::InvalidTimeRange => "invalid time range",
+            Self::InvalidIdentifier => "invalid identifier",
+            Self::InvalidConfidence => "invalid confidence",
+            Self::EmptyEvidence => "invalid fact",
+            Self::EmptySignatureSet => "invalid signature set",
+            Self::DuplicateEvidence => "invalid fact",
+            Self::DuplicateFactLink => "invalid fact",
+            Self::TooManyFactLinks => "invalid fact",
+            Self::InvalidSignatureLength => "invalid signature length",
+            Self::InvalidSecurityToken => "invalid security token",
+            Self::InvalidWorldName => "invalid world name",
+            Self::InvalidWorldIdentity => "invalid world identity",
+            Self::InvalidQueryRequest => "invalid query request",
+            Self::SelfReferentialFact => "invalid fact",
+            Self::InvalidWorldDiff => "invalid world diff",
+        }
+    }
+}
+
 pub type Result<T> = core::result::Result<T, SkrifheimError>;
 
 #[cfg(test)]
@@ -333,5 +368,15 @@ mod tests {
             "EU-COMMAND-X"
         ));
         Ok(())
+    }
+
+    #[test]
+    fn public_message_hides_storage_header_detail() {
+        let error = SkrifheimError::InvalidStorageHeader(String::from("segment magic mismatch"));
+        assert_eq!(
+            alloc::format!("{error}"),
+            "invalid storage header: segment magic mismatch"
+        );
+        assert_eq!(error.public_message(), "invalid storage data");
     }
 }

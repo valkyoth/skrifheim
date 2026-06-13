@@ -9,6 +9,7 @@ use skrifheim_core::{Result, SkrifheimError};
 pub const ED25519_SIG_BYTES: usize = 64;
 pub const ML_DSA_65_SIG_BYTES: usize = 3293;
 pub const SLH_DSA_SHA2_S128S_SIG_BYTES: usize = 7856;
+pub const MAX_VARIABLE_SIGNATURE_BYTES: usize = 16 * 1024;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum AlgorithmId {
@@ -150,7 +151,12 @@ fn validate_signature_envelope_parts(algorithm: &AlgorithmId, signature: &[u8]) 
         AlgorithmId::Ed25519 => Some(ED25519_SIG_BYTES),
         AlgorithmId::MlDsa65 => Some(ML_DSA_65_SIG_BYTES),
         AlgorithmId::SlhDsaSha2S128s => Some(SLH_DSA_SHA2_S128S_SIG_BYTES),
-        AlgorithmId::HybridClassicalPq { .. } | AlgorithmId::Named(_) => None,
+        AlgorithmId::HybridClassicalPq { .. } | AlgorithmId::Named(_) => {
+            if signature.len() > MAX_VARIABLE_SIGNATURE_BYTES {
+                return Err(SkrifheimError::InvalidSignatureLength);
+            }
+            None
+        }
         AlgorithmId::Blake3 => {
             return Err(SkrifheimError::InvalidSignatureEnvelope(
                 "algorithm is not valid for signatures",
@@ -216,6 +222,28 @@ mod tests {
         );
         assert!(
             SignatureEnvelope::new(AlgorithmId::Ed25519, CryptoEpoch(1), "k", vec![1; 64]).is_ok()
+        );
+    }
+
+    #[test]
+    fn variable_signature_length_is_bounded() {
+        assert_eq!(
+            SignatureEnvelope::new(
+                AlgorithmId::Named(String::from("TEST-SIG")),
+                CryptoEpoch(1),
+                "k",
+                vec![1; MAX_VARIABLE_SIGNATURE_BYTES + 1],
+            ),
+            Err(SkrifheimError::InvalidSignatureLength)
+        );
+        assert!(
+            SignatureEnvelope::new(
+                AlgorithmId::Named(String::from("TEST-SIG")),
+                CryptoEpoch(1),
+                "k",
+                vec![1; MAX_VARIABLE_SIGNATURE_BYTES],
+            )
+            .is_ok()
         );
     }
 

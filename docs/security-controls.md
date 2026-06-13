@@ -13,6 +13,7 @@ Status: baseline control map
 | Canonical truth | Facts are versioned and evidence-bound | Scaffolded | `skrifheim-fact` |
 | World promotion safety | Promotion and rollback preflight expose deterministic conflict categories before merge/promotion logic exists | Scaffolded | `skrifheim-world` |
 | Classification | Labels and clearance checks | Scaffolded | `skrifheim-policy` |
+| External error shape | `SkrifheimError::public_message()` provides generic messages for trust-boundary responses | Scaffolded | `skrifheim-core` |
 | Blast-radius invalidation | Forward causal DAG traversal identifies tainted downstream facts, projections, releases, and AI artifacts | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | Declassification | Write-downs require signed provenance-bearing declassification proofs | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | AI derivation cones | AI writes are capability-scoped with classification ceilings and traceable derivation cones | Planned | `docs/IMPLEMENTATION_PLAN.md` |

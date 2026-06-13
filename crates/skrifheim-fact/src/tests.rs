@@ -162,3 +162,14 @@ fn validation_rejects_oversized_fact_link_lists() -> Result<()> {
     assert_eq!(result, Err(SkrifheimError::TooManyFactLinks));
     Ok(())
 }
+
+#[test]
+fn validation_rejects_oversized_evidence_lists() -> Result<()> {
+    let mut evidence = Vec::new();
+    for index in 0..=FACT_LINK_LIST_MAX_ITEMS {
+        evidence.push(id(SourceId::from_u128((index + 20) as u128))?);
+    }
+    let result = base_builder()?.evidence(evidence).build();
+    assert_eq!(result, Err(SkrifheimError::TooManyFactLinks));
+    Ok(())
+}

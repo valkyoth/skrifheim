@@ -75,7 +75,8 @@ impl Fact {
         if self.evidence.is_empty() {
             return Err(SkrifheimError::EmptyEvidence);
         }
-        if self.caused_by.len() > FACT_LINK_LIST_MAX_ITEMS
+        if self.evidence.len() > FACT_LINK_LIST_MAX_ITEMS
+            || self.caused_by.len() > FACT_LINK_LIST_MAX_ITEMS
             || self.supersedes.len() > FACT_LINK_LIST_MAX_ITEMS
             || self.invalidates.len() > FACT_LINK_LIST_MAX_ITEMS
         {
