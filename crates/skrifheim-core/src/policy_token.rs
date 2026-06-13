@@ -5,6 +5,11 @@ use crate::{Result, SkrifheimError};
 
 pub const POLICY_TOKEN_MAX_BYTES: usize = 128;
 pub const POLICY_TOKEN_SET_MAX_ITEMS: usize = 64;
+const INVALID_POLICY_TOKEN_NEEDLE: &str = concat!(
+    "SKRIFHEIM-INVALID-NEEDLE-SKRIFHEIM-INVALID-NEEDLE-",
+    "SKRIFHEIM-INVALID-NEEDLE-SKRIFHEIM-INVALID-NEEDLE-",
+    "SKRIFHEIM-INVALID-NEEDLE"
+);
 
 pub fn canonical_policy_set(values: Vec<String>) -> Result<BTreeSet<String>> {
     if values.len() > POLICY_TOKEN_SET_MAX_ITEMS {
@@ -23,9 +28,12 @@ pub fn canonical_policy_token(mut value: String) -> Result<String> {
 
 #[must_use]
 pub fn contains_policy_token_ct(tokens: &BTreeSet<String>, needle: &str) -> bool {
+    if tokens.len() > POLICY_TOKEN_SET_MAX_ITEMS {
+        return false;
+    }
     let needle = match canonical_policy_token(String::from(needle)) {
         Ok(needle) => needle,
-        Err(_) => return false,
+        Err(_) => String::from(INVALID_POLICY_TOKEN_NEEDLE),
     };
     let mut found = 0_u8;
     let mut tokens = tokens.iter();

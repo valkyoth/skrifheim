@@ -5,10 +5,11 @@
 ## 0.7.0
 
 - Added key hierarchy metadata for root trust, deployment, region, tenant, compartment, segment, and data key scopes.
-- Added parent/child key hierarchy validation and tests for invalid hierarchy edges.
+- Added parent/child key hierarchy validation, including tenant deployment/region binding and data-key edge tests.
 - Hardened policy-token comparison with local compiler barriers and fixed-shape bounded token-set scans.
 - Hardened policy label evaluation to process bounded compartment and releasability slots.
 - Added maximum signature count validation for `SignatureSet`.
+- Changed segment CRC metadata so an explicit CRC64 value of zero is representable.
 - Switched fact-builder evidence and causal-link deduplication to sort/dedup behavior.
 - Added `0.7.0` release metadata and gate script.
 

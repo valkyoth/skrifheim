@@ -117,6 +117,9 @@ Deliverables:
 - added and hidden fact sets,
 - deterministic world identity rules where `(tenant_id, kind, depth, parent,
   name)` is the idempotent uniqueness key,
+- documented requirement to replace scaffold world-id hashing with an admitted
+  collision-resistant derivation before world IDs become authoritative durable
+  storage keys,
 - tests for branch isolation.
 
 ## v0.6.0 - World Diff And Promotion Preflight
@@ -140,7 +143,8 @@ Deliverables:
 
 - root trust, deployment, region, tenant, compartment, and segment/data key IDs,
 - key hierarchy metadata,
-- parent/child key relationship validation,
+- parent/child key relationship validation, including tenant deployment/region
+  binding,
 - no database-wide-key shortcut,
 - constant-time policy-token comparison hardening, either through admitted
   `subtle` or documented local compiler-barrier/codegen evidence,
@@ -148,7 +152,7 @@ Deliverables:
   releasability slots,
 - maximum signature-envelope count per `SignatureSet`,
 - O(n log n) fact-builder deduplication for evidence and causal links,
-- tests for invalid hierarchy edges.
+- tests for invalid hierarchy edges, including segment/data key parent checks.
 
 ## v0.8.0 - Key Lifecycle And Epochs
 
@@ -275,6 +279,8 @@ Deliverables:
 - segment header,
 - footer,
 - content hash field,
+- explicit checksum presence representation where CRC64 value `0` remains a
+  valid present checksum,
 - policy and encryption metadata,
 - key epoch and encryption domain fields,
 - segment validation tests.

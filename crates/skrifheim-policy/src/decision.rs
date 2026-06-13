@@ -199,6 +199,14 @@ fn evaluate_required_tokens(
     device: &BTreeSet<String>,
     workload: &BTreeSet<String>,
 ) -> u8 {
+    if required.len() > POLICY_TOKEN_SET_MAX_ITEMS
+        || subject.len() > POLICY_TOKEN_SET_MAX_ITEMS
+        || device.len() > POLICY_TOKEN_SET_MAX_ITEMS
+        || workload.len() > POLICY_TOKEN_SET_MAX_ITEMS
+    {
+        return 0;
+    }
+
     let mut allowed = 1_u8;
     let mut required = required.iter();
     let mut index = 0;
@@ -225,5 +233,32 @@ pub fn require_allowed(decision: PlannerDecision) -> Result<()> {
         PlannerDecision::Redact { reason, .. } | PlannerDecision::Reject { reason, .. } => {
             Err(SkrifheimError::PolicyDenied(reason))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use alloc::format;
+
+    #[test]
+    fn required_token_evaluation_fails_closed_on_oversized_sets() {
+        let mut required = BTreeSet::new();
+        let mut authority_tokens = BTreeSet::new();
+        for index in 0..=POLICY_TOKEN_SET_MAX_ITEMS {
+            let token = format!("TOKEN-{index}");
+            required.insert(token.clone());
+            authority_tokens.insert(token);
+        }
+
+        assert_eq!(
+            evaluate_required_tokens(
+                &required,
+                &authority_tokens,
+                &authority_tokens,
+                &authority_tokens,
+            ),
+            0
+        );
     }
 }

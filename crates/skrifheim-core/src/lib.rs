@@ -287,7 +287,7 @@ pub type Result<T> = core::result::Result<T, SkrifheimError>;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloc::vec;
+    use alloc::{format, vec};
 
     #[test]
     fn open_time_range_contains_later_time() -> Result<()> {
@@ -374,6 +374,29 @@ mod tests {
             "EU-COMMAND-X"
         ));
         Ok(())
+    }
+
+    #[test]
+    fn constant_time_policy_token_lookup_rejects_malformed_needles() -> Result<()> {
+        let label = SecurityLabel::new(
+            Classification::Secret,
+            vec![String::from("eu-command")],
+            Vec::new(),
+        )?;
+        assert!(!contains_policy_token_ct(
+            label.compartments(),
+            "EU COMMAND"
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn constant_time_policy_token_lookup_fails_closed_on_oversized_sets() {
+        let mut tokens = alloc::collections::BTreeSet::new();
+        for index in 0..=POLICY_TOKEN_SET_MAX_ITEMS {
+            tokens.insert(format!("TOKEN-{index}"));
+        }
+        assert!(!contains_policy_token_ct(&tokens, "TOKEN-1"));
     }
 
     #[test]

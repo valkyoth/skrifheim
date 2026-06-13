@@ -13,13 +13,18 @@ fact-builder deduplication.
 - Added key hierarchy metadata for root trust, deployment, region, tenant,
   compartment, segment, and data key scopes.
 - Added parent/child hierarchy validation with no database-wide-key shortcut.
-- Added invalid hierarchy edge tests.
+- Bound tenant key scope metadata to explicit deployment and region IDs.
+- Added invalid hierarchy edge tests, including data-key parent validation.
 - Bounded signature sets with `MAX_SIGNATURES_PER_SET`.
 - Hardened policy-token equality with local compiler barriers while keeping the
   no-external-dependency posture.
 - Changed policy-token set membership scans to fixed bounded slot counts.
+- Added fail-closed guards for oversized token sets at policy lookup and label
+  evaluation boundaries.
 - Changed policy-label compartment and releasability evaluation to fixed
   bounded slot counts.
+- Changed segment CRC metadata so an explicit CRC64 value of zero is
+  representable separately from a missing CRC.
 - Changed fact-builder evidence and causal-link deduplication to sort/dedup
   behavior.
 - Bumped workspace and internal crate dependency versions to `0.7.0`.
@@ -46,7 +51,12 @@ constant-time evidence. Local compiler barriers reduce scaffold timing risk but
 do not replace a future reviewed constant-time primitive admission or local
 codegen evidence package.
 
+Deterministic world identifiers remain non-secret, non-capability identifiers.
+Replacing the current local deterministic hash with an admitted
+collision-resistant hash remains planned before durable storage uses world
+identity as an authoritative storage key.
+
 ## Pentest Status
 
-Pentest is required before tagging. Root `PENTEST.md` is the temporary findings
-handoff file and must be removed after findings are resolved.
+First pentest pass resolved. Root `PENTEST.md` has been removed after the
+findings were handled.

@@ -48,6 +48,8 @@ pub enum KeyScope {
         region_id: RegionKeyId,
     },
     Tenant {
+        deployment_id: DeploymentKeyId,
+        region_id: RegionKeyId,
         tenant_id: TenantId,
     },
     Compartment {
@@ -141,11 +143,22 @@ fn is_valid_parent(child: KeyScope, parent: KeyScope) -> bool {
                 deployment_id: parent_deployment,
             },
         ) => deployment_id == parent_deployment,
-        (KeyScope::Tenant { .. }, KeyScope::Region { .. }) => true,
+        (
+            KeyScope::Tenant {
+                deployment_id,
+                region_id,
+                ..
+            },
+            KeyScope::Region {
+                deployment_id: parent_deployment,
+                region_id: parent_region,
+            },
+        ) => deployment_id == parent_deployment && region_id == parent_region,
         (
             KeyScope::Compartment { tenant_id, .. },
             KeyScope::Tenant {
                 tenant_id: parent_tenant,
+                ..
             },
         ) => tenant_id == parent_tenant,
         (

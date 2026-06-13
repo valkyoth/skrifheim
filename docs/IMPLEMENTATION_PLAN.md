@@ -79,6 +79,11 @@ Required operations:
 
 World kinds include production, staging, user-local, agent scratchpad, simulation, legal/audit, and mission capsule.
 
+The scaffold deterministic world ID is non-secret and must not become a bearer
+capability or sole authorization input. Before durable storage treats world ID
+as an authoritative key, the derivation must move to an admitted
+collision-resistant hash with documented dependency/security review.
+
 ## Phase 3: Storage Kernel
 
 Implement:
@@ -123,6 +128,7 @@ Build crypto-agile metadata before hard-coding any final algorithm:
 - signature envelopes,
 - bounded signature-set size,
 - key hierarchy from root trust to deployment, region, tenant, compartment, and segment/data keys,
+- tenant key metadata explicitly bound to deployment and region scope,
 - key lifecycle states for creation, activation, rotation, expiration, compromise, quarantine, and destruction,
 - encryption domains for tenant, region, classification, compartment, world, WAL, segment, projection, backup, export capsule, AI artifact, WASM/plugin secret, and audit log,
 - per-compartment key epochs,

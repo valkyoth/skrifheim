@@ -20,14 +20,15 @@ Status: baseline control map
 | Declassification | Write-downs require signed provenance-bearing declassification proofs | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | AI derivation cones | AI writes are capability-scoped with classification ceilings and traceable derivation cones | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | Confidence and mandatory access control | Propagated confidence is evaluated together with mandatory access control | Planned | `docs/IMPLEMENTATION_PLAN.md` |
-| Timing side channels | Policy-token comparison uses local compiler barriers and fixed-shape bounded token-set scans; production constant-time evidence remains required | Scaffolded | `docs/engineering-policy.md` |
+| Timing side channels | Policy-token comparison uses local compiler barriers, fixed-shape bounded token-set scans, and fail-closed oversize guards; production constant-time evidence remains required | Scaffolded | `docs/engineering-policy.md` |
 | Crypto agility | Algorithm and signature envelopes | Scaffolded | `skrifheim-crypto` |
-| Key hierarchy | Root trust, deployment, region, tenant, compartment, segment, and data key parent metadata | Scaffolded | `skrifheim-crypto` |
+| Key hierarchy | Root trust, deployment, region, tenant, compartment, segment, and data key parent metadata with tenant deployment/region binding | Scaffolded | `skrifheim-crypto` |
 | Encryption control plane | Key hierarchy, lifecycle, domains, memory secrecy, encrypted projections, and compromise handling | Planned | `docs/encryption-architecture.md` |
 | Legal/compliance planning | Instance/node, data, and operation passports with signed law-pack metadata and legal operation/transfer decisions | Planned | `docs/hyve-cluster-and-compliance-roadmap.md` |
 | Sovereign placement | Placement and failover decisions constrained by jurisdiction, compliance, data category, and legal basis | Planned | `docs/hyve-cluster-and-compliance-roadmap.md` |
 | Cluster control plane | Future Hyve cells, control plane, policy-scoped tunnels, witness nodes, and compliance autopilot | Planned | `docs/hyve-cluster-and-compliance-roadmap.md` |
-| Tamper evidence | Segment metadata and validation | Scaffolded | `skrifheim-storage` |
+| Tamper evidence | Segment metadata and validation, including explicit checksum presence representation | Scaffolded | `skrifheim-storage` |
+| World identity collision resistance | Deterministic world IDs are non-secret scaffold identifiers; collision-resistant derivation is required before storage-key authority | Planned | `docs/VERSION_PLAN.md` |
 | AI authority | AI artifacts are derived, not truth | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | CMS isolation | Public/private world split | Planned | `docs/cms-1-0-target.md` |
 | Rootless container | Podman smoke path | Scaffolded | `scripts/podman_smoke.sh` |
