@@ -12,6 +12,9 @@
 - Added signature key ID length and character validation.
 - Added fact object payload size validation for text and byte values.
 - Removed per-label query decisions from the public query plan surface.
+- Added constructor-enforced query-label limits and explicit query-label memory budgeting.
+- Added closed allow-list validation for named and hybrid signature algorithms.
+- Enabled release-profile overflow checks.
 - Changed segment CRC metadata so an explicit CRC64 value of zero is representable.
 - Switched fact-builder evidence and causal-link deduplication to sort/dedup behavior with fail-fast link bounds in builder methods.
 - Added `0.7.0` release metadata and gate script.

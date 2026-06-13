@@ -85,7 +85,9 @@ World kinds include production, staging, user-local, agent scratchpad, simulatio
 The scaffold deterministic world ID is non-secret and must not become a bearer
 capability or sole authorization input. Before durable storage treats world ID
 as an authoritative key, the derivation must move to an admitted
-collision-resistant hash with documented dependency/security review.
+collision-resistant hash with documented dependency/security review. Storage
+must also reject creation when a `WorldId` already exists for a different
+`(tenant_id, kind, depth, parent, name)` tuple.
 
 ## Phase 3: Storage Kernel
 
@@ -155,7 +157,8 @@ Post-quantum readiness is a metadata and migration requirement from day one.
 Fact and signature validation must stay bounded before durable ingest exists:
 fact-builder deduplication should use O(n log n) behavior, and signature sets
 must cap the number of envelopes, signature key identifiers, and individual
-signature payload sizes.
+signature payload sizes. Named or hybrid algorithm identifiers must be checked
+against a closed approved list before any verifier dispatch is allowed.
 
 See [Encryption Architecture](encryption-architecture.md).
 

@@ -5,6 +5,7 @@ Status: baseline control map
 | Area | Control | Current Status | Evidence |
 | --- | --- | --- | --- |
 | Toolchain | Rust stable `1.96.0` pinned | Active | `rust-toolchain.toml` |
+| Release arithmetic | Release profile keeps overflow checks enabled | Active | `Cargo.toml` |
 | Core runtime | Core library crates are `no_std` | Active | `scripts/validate-engineering-policy.sh` |
 | Dependency policy | License, source, advisory, and duplicate checks | Configured | `deny.toml` |
 | Security reporting | Private-first vulnerability handling | Configured | `SECURITY.md` |
@@ -15,6 +16,7 @@ Status: baseline control map
 | Classification | Labels and clearance checks | Scaffolded | `skrifheim-policy` |
 | External error shape | `SkrifheimError::public_message()` provides generic messages for trust-boundary responses | Scaffolded | `skrifheim-core` |
 | Signature-set bounds | Maximum signature-envelope count and bounded signature key identifiers before durable ingest accepts untrusted commits | Scaffolded | `skrifheim-crypto` |
+| Signature algorithm admission | Named and hybrid signature algorithm identifiers require a closed approved list | Scaffolded | `skrifheim-crypto` |
 | Fact-builder complexity | O(n log n) deduplication, fail-fast builder bounds, and bounded text/byte fact payloads | Scaffolded | `skrifheim-fact` |
 | Blast-radius invalidation | Forward causal DAG traversal identifies tainted downstream facts, projections, releases, and AI artifacts | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | Declassification | Write-downs require signed provenance-bearing declassification proofs | Planned | `docs/IMPLEMENTATION_PLAN.md` |
@@ -22,6 +24,7 @@ Status: baseline control map
 | Confidence and mandatory access control | Propagated confidence is evaluated together with mandatory access control | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | Timing side channels | Policy-token checks use fixed-slot byte sets, local compiler barriers, bounded scans, and fail-closed oversize guards; production constant-time evidence remains required | Scaffolded | `docs/engineering-policy.md` |
 | Query inference | Public query plans expose aggregate proof/decision state, not per-label decisions | Scaffolded | `skrifheim-query` |
+| Query request memory | Query requests use constructor-enforced label limits and explicit fixed-label memory budget | Scaffolded | `skrifheim-query` |
 | Crypto agility | Algorithm and signature envelopes | Scaffolded | `skrifheim-crypto` |
 | Key hierarchy | Root trust, deployment, region, tenant, compartment, segment, and data key parent metadata with tenant deployment/region binding | Scaffolded | `skrifheim-crypto` |
 | Encryption control plane | Key hierarchy, lifecycle, domains, memory secrecy, encrypted projections, and compromise handling | Planned | `docs/encryption-architecture.md` |

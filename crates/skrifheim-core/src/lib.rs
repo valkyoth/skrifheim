@@ -174,6 +174,8 @@ impl SecurityLabel {
     }
 }
 
+pub const SECURITY_LABEL_FIXED_STORAGE_BYTES: usize = core::mem::size_of::<SecurityLabel>();
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Value {
     Text(String),

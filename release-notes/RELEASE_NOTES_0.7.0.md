@@ -18,6 +18,8 @@ fact-builder deduplication/allocation bounds.
 - Bounded signature sets with `MAX_SIGNATURES_PER_SET`.
 - Bounded signature envelope key IDs with explicit length and character
   validation.
+- Added closed allow-list validation for `Named` and `HybridClassicalPq`
+  signature algorithm identifiers before real verification dispatch exists.
 - Hardened policy-token equality with local compiler barriers while keeping the
   no-external-dependency posture.
 - Changed policy-token storage to a fixed-slot byte representation for
@@ -37,8 +39,11 @@ fact-builder deduplication/allocation bounds.
 - Added `FACT_OBJECT_MAX_BYTES` validation for fact text and byte payloads.
 - Removed per-label planner decisions from `QueryPlan`; the public query plan
   surface exposes aggregate proof/decision state only.
+- Changed `QueryRequest` to constructor-based creation with a reduced
+  `QUERY_REQUEST_LABEL_MAX_ITEMS` and explicit label memory budget.
 - Made deterministic world-id derivation infallible in its type signature,
   removing a misleading unreachable error branch.
+- Enabled release-profile overflow checks.
 - Bumped workspace and internal crate dependency versions to `0.7.0`.
 - Re-checked the stable Rust channel on 2026-06-13. Rust stable remains
   `1.96.0`, dated 2026-05-28 in the official stable manifest.
@@ -67,9 +72,14 @@ evidence remains required before production claims for classified labels.
 Deterministic world identifiers remain non-secret, non-capability identifiers.
 Replacing the current local deterministic hash with an admitted
 collision-resistant hash remains planned before durable storage uses world
-identity as an authoritative storage key.
+identity as an authoritative storage key. Storage-backed world creation must
+also enforce collision checks for different tuples that derive the same
+`WorldId`.
+
+Future key-material types must follow the existing `sanitization` dependency
+admission rule for memory cleanup; `zeroize` is not admitted for this project.
 
 ## Pentest Status
 
-First, second, and third pentest passes resolved. Root `PENTEST.md` has been
-removed after the findings were handled.
+First, second, third, and fourth pentest passes resolved. Root `PENTEST.md` has
+been removed after the findings were handled.

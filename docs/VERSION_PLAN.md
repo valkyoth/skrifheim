@@ -153,11 +153,15 @@ Deliverables:
 - fixed-slot policy-token representation for authorization hot paths,
 - maximum signature-envelope count per `SignatureSet`,
 - bounded signature key identifiers,
+- closed allow-list validation for named and hybrid signature algorithm
+  identifiers,
 - O(n log n) fact-builder deduplication for evidence and causal links,
 - fail-fast fact-builder bounds before incremental link vectors can grow
   beyond `FACT_LINK_LIST_MAX_ITEMS`,
 - bounded fact text/byte payload size before durable ingest,
-- aggregate-only public query-plan proof surface,
+- constructor-enforced query-label limits and aggregate-only public query-plan
+  proof surface,
+- release-profile overflow checks,
 - tests for invalid hierarchy edges, including segment/data key parent checks.
 
 ## v0.8.0 - Key Lifecycle And Epochs
@@ -316,6 +320,8 @@ Deliverables:
 - policy epoch field,
 - crypto epoch field,
 - encryption domain inventory,
+- world-id collision detection that rejects an existing `WorldId` for a
+  different `(tenant_id, kind, depth, parent, name)` tuple,
 - manifest validation tests.
 
 ## v0.20.0 - Startup Recovery Integration

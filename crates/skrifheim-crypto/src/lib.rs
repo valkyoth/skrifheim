@@ -21,6 +21,8 @@ pub const SLH_DSA_SHA2_S128S_SIG_BYTES: usize = 7856;
 pub const MAX_VARIABLE_SIGNATURE_BYTES: usize = 16 * 1024;
 pub const MAX_SIGNATURES_PER_SET: usize = 16;
 pub const KEY_ID_MAX_BYTES: usize = 128;
+pub const APPROVED_NAMED_SIGNATURE_ALGORITHMS: &[&str] = &["SKRIFHEIM-TEST-SIG"];
+pub const APPROVED_HYBRID_SIGNATURE_COMPONENTS: &[&str] = &["ED25519", "ML-DSA-65"];
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum AlgorithmId {
@@ -58,9 +60,14 @@ impl AlgorithmId {
                 post_quantum,
             } => {
                 validate_algorithm_name(classical)?;
-                validate_algorithm_name(post_quantum)
+                validate_algorithm_name(post_quantum)?;
+                require_approved_algorithm_name(classical, APPROVED_HYBRID_SIGNATURE_COMPONENTS)?;
+                require_approved_algorithm_name(post_quantum, APPROVED_HYBRID_SIGNATURE_COMPONENTS)
             }
-            Self::Named(name) => validate_algorithm_name(name),
+            Self::Named(name) => {
+                validate_algorithm_name(name)?;
+                require_approved_algorithm_name(name, APPROVED_NAMED_SIGNATURE_ALGORITHMS)
+            }
             Self::Ed25519 | Self::MlDsa65 | Self::SlhDsaSha2S128s => Ok(()),
         }
     }
@@ -200,6 +207,16 @@ fn validate_signature_envelope_parts(algorithm: &AlgorithmId, signature: &[u8]) 
         return Err(SkrifheimError::InvalidSignatureLength);
     }
     Ok(())
+}
+
+fn require_approved_algorithm_name(name: &str, approved: &[&str]) -> Result<()> {
+    if approved.contains(&name) {
+        Ok(())
+    } else {
+        Err(SkrifheimError::InvalidSignatureEnvelope(
+            "algorithm name is not approved for signatures",
+        ))
+    }
 }
 
 fn validate_algorithm_name(name: &str) -> Result<()> {

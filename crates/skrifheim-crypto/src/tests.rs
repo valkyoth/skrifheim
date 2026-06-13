@@ -39,12 +39,7 @@ fn signature_set_count_is_bounded() -> Result<()> {
 #[test]
 fn empty_signature_bytes_are_rejected() {
     assert_eq!(
-        SignatureEnvelope::new(
-            AlgorithmId::Named(String::from("test")),
-            CryptoEpoch(1),
-            "k",
-            Vec::new()
-        ),
+        SignatureEnvelope::new(AlgorithmId::Ed25519, CryptoEpoch(1), "k", Vec::new()),
         Err(SkrifheimError::EmptySignatureSet)
     );
 }
@@ -95,7 +90,7 @@ fn ed25519_signature_length_is_enforced() {
 fn variable_signature_length_is_bounded() {
     assert_eq!(
         SignatureEnvelope::new(
-            AlgorithmId::Named(String::from("TEST-SIG")),
+            AlgorithmId::Named(String::from("SKRIFHEIM-TEST-SIG")),
             CryptoEpoch(1),
             "k",
             vec![1; MAX_VARIABLE_SIGNATURE_BYTES + 1],
@@ -104,7 +99,7 @@ fn variable_signature_length_is_bounded() {
     );
     assert!(
         SignatureEnvelope::new(
-            AlgorithmId::Named(String::from("TEST-SIG")),
+            AlgorithmId::Named(String::from("SKRIFHEIM-TEST-SIG")),
             CryptoEpoch(1),
             "k",
             vec![1; MAX_VARIABLE_SIGNATURE_BYTES],
@@ -139,6 +134,21 @@ fn empty_named_algorithm_is_rejected_in_signature_contexts() {
 }
 
 #[test]
+fn unapproved_named_algorithm_is_rejected_in_signature_contexts() {
+    assert_eq!(
+        SignatureEnvelope::new(
+            AlgorithmId::Named(String::from("DEBUG-SKIP")),
+            CryptoEpoch(1),
+            "k",
+            vec![1]
+        ),
+        Err(SkrifheimError::InvalidSignatureEnvelope(
+            "algorithm name is not approved for signatures"
+        ))
+    );
+}
+
+#[test]
 fn hybrid_algorithm_names_are_validated() {
     assert_eq!(
         SignatureEnvelope::new(
@@ -152,6 +162,24 @@ fn hybrid_algorithm_names_are_validated() {
         ),
         Err(SkrifheimError::InvalidSignatureEnvelope(
             "algorithm name is empty or too long"
+        ))
+    );
+}
+
+#[test]
+fn hybrid_algorithm_components_must_be_approved() {
+    assert_eq!(
+        SignatureEnvelope::new(
+            AlgorithmId::HybridClassicalPq {
+                classical: String::from("ED25519"),
+                post_quantum: String::from("DEBUG-SKIP"),
+            },
+            CryptoEpoch(1),
+            "k",
+            vec![1]
+        ),
+        Err(SkrifheimError::InvalidSignatureEnvelope(
+            "algorithm name is not approved for signatures"
         ))
     );
 }
