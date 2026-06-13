@@ -1,6 +1,6 @@
 # skrifheim 0.7.0 Release Notes
 
-Status: implementation stop, pending pentest.
+Status: release stop, pentest complete.
 
 ## Scope
 
