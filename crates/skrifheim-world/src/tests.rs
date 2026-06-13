@@ -95,6 +95,17 @@ fn diff_requires_direct_child_relationship() -> Result<()> {
 }
 
 #[test]
+fn diff_requires_same_tenant() -> Result<()> {
+    let production = World::root(tenant(1)?, "production", WorldKind::Production)?;
+    let other_tenant = World::root(tenant(2)?, "production", WorldKind::Production)?;
+    assert_eq!(
+        WorldDiff::between(&production, &other_tenant),
+        Err(SkrifheimError::InvalidWorldDiff)
+    );
+    Ok(())
+}
+
+#[test]
 fn diff_returns_delta_against_parent() -> Result<()> {
     let mut production = World::root(tenant(1)?, "production", WorldKind::Production)?;
     production.add_fact(id(FactId::from_u128(7))?);

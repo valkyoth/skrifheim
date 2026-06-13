@@ -25,7 +25,9 @@ pub struct WorldDiff {
 
 impl WorldDiff {
     pub fn between(from: &World, to: &World) -> Result<Self> {
-        if from.id() != to.id() && to.parent() != Some(from.id()) {
+        if from.tenant_id() != to.tenant_id()
+            || (from.id() != to.id() && to.parent() != Some(from.id()))
+        {
             return Err(SkrifheimError::InvalidWorldDiff);
         }
         Ok(Self {
@@ -44,6 +46,10 @@ pub struct PromotionPreflight {
 }
 
 impl PromotionPreflight {
+    /// Builds a parent-vs-child promotion preflight.
+    ///
+    /// This scaffold does not inspect transitive ancestry. Future storage-backed
+    /// promotion must validate the full ancestor chain before executing a merge.
     pub fn between(parent: &World, candidate: &World) -> Result<Self> {
         Ok(Self {
             diff: WorldDiff::between(parent, candidate)?,
@@ -67,6 +73,11 @@ pub struct RollbackPreflight {
 }
 
 impl RollbackPreflight {
+    /// Builds a parent-vs-child rollback preflight.
+    ///
+    /// This scaffold does not inspect transitive ancestry. Future storage-backed
+    /// rollback must validate the full ancestor chain before executing a
+    /// rollback.
     pub fn from_child(parent: &World, child: &World) -> Result<Self> {
         let diff = WorldDiff::between(parent, child)?;
         Ok(Self {

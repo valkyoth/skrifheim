@@ -18,6 +18,9 @@ and explicit conflict categories for the current world-overlay scaffold.
   them.
 - Added `World::diff_to_child`, `World::promotion_preflight`, and
   `World::rollback_preflight`.
+- Added an explicit tenant consistency check to world diff/preflight boundaries.
+- Documented that promotion and rollback preflight are parent-vs-child scaffold
+  checks and do not yet validate full transitive ancestry.
 - Added tests for clean promotion, non-child promotion rejection, conflict
   detection, and rollback inverse-delta reporting.
 - Bounded variable-length `Named` and `HybridClassicalPq` signature payloads to
@@ -46,10 +49,10 @@ and explicit conflict categories for the current world-overlay scaffold.
 ## Non-Claims
 
 This release is not a usable database engine. It does not provide durable
-storage, merge execution, promotion execution, rollback execution, full ancestor
-visibility, cryptographic verification, or production conflict resolution. The
-preflight model reports deterministic scaffold conflicts before storage-backed
-world history exists.
+storage, merge execution, promotion execution, rollback execution, transitive
+ancestor validation, cryptographic verification, or production conflict
+resolution. The preflight model reports deterministic parent-vs-child scaffold
+conflicts before storage-backed world history exists.
 
 ## Pentest Status
 
