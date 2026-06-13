@@ -205,6 +205,7 @@ pub enum SkrifheimError {
     InvalidConfidence,
     EmptyEvidence,
     EmptySignatureSet,
+    TooManySignatures,
     MissingFactField(&'static str),
     DuplicateEvidence,
     DuplicateFactLink,
@@ -219,6 +220,7 @@ pub enum SkrifheimError {
     PolicyDenied(AccessDeniedReason),
     InvalidStorageHeader(String),
     InvalidWorldDiff,
+    InvalidKeyHierarchy,
 }
 
 impl fmt::Display for SkrifheimError {
@@ -229,6 +231,7 @@ impl fmt::Display for SkrifheimError {
             Self::InvalidConfidence => write!(f, "confidence must be in range 0..=1000"),
             Self::EmptyEvidence => write!(f, "fact must carry at least one evidence source"),
             Self::EmptySignatureSet => write!(f, "commit or fact must carry signatures"),
+            Self::TooManySignatures => write!(f, "signature set contains too many signatures"),
             Self::MissingFactField(field) => write!(f, "fact builder is missing field: {field}"),
             Self::DuplicateEvidence => write!(f, "fact evidence must not contain duplicates"),
             Self::DuplicateFactLink => write!(f, "fact links must not contain duplicates"),
@@ -245,6 +248,7 @@ impl fmt::Display for SkrifheimError {
             Self::PolicyDenied(_) => write!(f, "policy denied operation: access denied"),
             Self::InvalidStorageHeader(reason) => write!(f, "invalid storage header: {reason}"),
             Self::InvalidWorldDiff => write!(f, "target world is not a child of source world"),
+            Self::InvalidKeyHierarchy => write!(f, "invalid key hierarchy"),
         }
     }
 }
@@ -262,6 +266,7 @@ impl SkrifheimError {
             Self::InvalidConfidence => "invalid confidence",
             Self::EmptyEvidence => "invalid fact",
             Self::EmptySignatureSet => "invalid signature set",
+            Self::TooManySignatures => "invalid signature set",
             Self::DuplicateEvidence => "invalid fact",
             Self::DuplicateFactLink => "invalid fact",
             Self::TooManyFactLinks => "invalid fact",
@@ -272,6 +277,7 @@ impl SkrifheimError {
             Self::InvalidQueryRequest => "invalid query request",
             Self::SelfReferentialFact => "invalid fact",
             Self::InvalidWorldDiff => "invalid world diff",
+            Self::InvalidKeyHierarchy => "invalid key hierarchy",
         }
     }
 }

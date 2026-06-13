@@ -1,4 +1,5 @@
 use alloc::{collections::BTreeSet, string::String, vec::Vec};
+use core::hint::black_box;
 
 use crate::{Result, SkrifheimError};
 
@@ -27,8 +28,17 @@ pub fn contains_policy_token_ct(tokens: &BTreeSet<String>, needle: &str) -> bool
         Err(_) => return false,
     };
     let mut found = 0_u8;
-    for token in tokens {
-        found |= policy_token_eq_ct(token, &needle);
+    let mut tokens = tokens.iter();
+    let mut index = 0;
+    while index < POLICY_TOKEN_SET_MAX_ITEMS {
+        let token = tokens.next();
+        let present = token.is_some() as u8;
+        let token = match token {
+            Some(token) => token.as_str(),
+            None => "SKRIFHEIM-NOOP",
+        };
+        found |= present & policy_token_eq_ct(token, &needle);
+        index += 1;
     }
     found == 1
 }
@@ -42,17 +52,17 @@ fn is_valid_policy_token(value: &str) -> bool {
 }
 
 fn policy_token_eq_ct(left: &str, right: &str) -> u8 {
-    let left = left.as_bytes();
-    let right = right.as_bytes();
-    let mut diff = left.len() ^ right.len();
+    let left = black_box(left.as_bytes());
+    let right = black_box(right.as_bytes());
+    let mut diff = black_box(left.len() ^ right.len());
     let mut index = 0;
     while index < POLICY_TOKEN_MAX_BYTES {
-        let left_byte = byte_at(left, index);
-        let right_byte = byte_at(right, index);
+        let left_byte = black_box(byte_at(left, black_box(index)));
+        let right_byte = black_box(byte_at(right, black_box(index)));
         diff |= usize::from(left_byte ^ right_byte);
         index += 1;
     }
-    usize_is_zero(diff)
+    black_box(usize_is_zero(black_box(diff)))
 }
 
 fn byte_at(bytes: &[u8], index: usize) -> u8 {

@@ -8,8 +8,8 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-skrifheim-core = { version = "0.6.0", path = "../skrifheim-core" }
-skrifheim-policy = { version = "0.6.0", path = "../skrifheim-policy" }
+skrifheim-core = { version = "0.7.0", path = "../skrifheim-core" }
+skrifheim-policy = { version = "0.7.0", path = "../skrifheim-policy" }
 
 [lints]
 workspace = true

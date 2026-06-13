@@ -1,6 +1,7 @@
+use alloc::{collections::BTreeSet, string::String};
 use skrifheim_core::{
-    AccessDeniedReason, Classification, Result, SecurityLabel, SkrifheimError,
-    contains_policy_token_ct,
+    AccessDeniedReason, Classification, POLICY_TOKEN_SET_MAX_ITEMS, Result, SecurityLabel,
+    SkrifheimError, contains_policy_token_ct,
 };
 
 use crate::AuthorityContext;
@@ -163,25 +164,19 @@ fn evaluate_label(authority: &AuthorityContext, label: &SecurityLabel) -> Decisi
         .clearance()
         .dominates(label_classification) as u8;
 
-    let mut compartment_allowed = 1_u8;
-    for compartment in label.compartments() {
-        compartment_allowed &=
-            contains_policy_token_ct(authority.subject().compartments(), compartment) as u8;
-        compartment_allowed &=
-            contains_policy_token_ct(authority.device().compartments(), compartment) as u8;
-        compartment_allowed &=
-            contains_policy_token_ct(authority.workload().compartments(), compartment) as u8;
-    }
+    let compartment_allowed = evaluate_required_tokens(
+        label.compartments(),
+        authority.subject().compartments(),
+        authority.device().compartments(),
+        authority.workload().compartments(),
+    );
 
-    let mut releasability_allowed = 1_u8;
-    for releasability in label.releasable_to() {
-        releasability_allowed &=
-            contains_policy_token_ct(authority.subject().releasable_to(), releasability) as u8;
-        releasability_allowed &=
-            contains_policy_token_ct(authority.device().releasable_to(), releasability) as u8;
-        releasability_allowed &=
-            contains_policy_token_ct(authority.workload().releasable_to(), releasability) as u8;
-    }
+    let releasability_allowed = evaluate_required_tokens(
+        label.releasable_to(),
+        authority.subject().releasable_to(),
+        authority.device().releasable_to(),
+        authority.workload().releasable_to(),
+    );
 
     let mut rejected = 0_u8;
     rejected |= (clearance_allowed == 0) as u8;
@@ -196,6 +191,32 @@ fn evaluate_label(authority: &AuthorityContext, label: &SecurityLabel) -> Decisi
     }
 
     DecisionKind::Allow
+}
+
+fn evaluate_required_tokens(
+    required: &BTreeSet<String>,
+    subject: &BTreeSet<String>,
+    device: &BTreeSet<String>,
+    workload: &BTreeSet<String>,
+) -> u8 {
+    let mut allowed = 1_u8;
+    let mut required = required.iter();
+    let mut index = 0;
+    while index < POLICY_TOKEN_SET_MAX_ITEMS {
+        let token = required.next();
+        let present = token.is_some() as u8;
+        let token = match token {
+            Some(token) => token.as_str(),
+            None => "SKRIFHEIM-NOOP",
+        };
+        let mut token_allowed = 1_u8;
+        token_allowed &= contains_policy_token_ct(subject, token) as u8;
+        token_allowed &= contains_policy_token_ct(device, token) as u8;
+        token_allowed &= contains_policy_token_ct(workload, token) as u8;
+        allowed &= (present ^ 1) | token_allowed;
+        index += 1;
+    }
+    allowed
 }
 
 pub fn require_allowed(decision: PlannerDecision) -> Result<()> {

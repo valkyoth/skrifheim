@@ -100,7 +100,7 @@ impl FactBuilder {
 
     #[must_use]
     pub fn add_evidence(mut self, source: SourceId) -> Self {
-        push_unique(&mut self.evidence, source);
+        self.evidence.push(source);
         self
     }
 
@@ -118,7 +118,7 @@ impl FactBuilder {
 
     #[must_use]
     pub fn add_caused_by(mut self, fact_id: FactId) -> Self {
-        push_unique(&mut self.caused_by, fact_id);
+        self.caused_by.push(fact_id);
         self
     }
 
@@ -168,11 +168,11 @@ impl FactBuilder {
             valid_time: self.valid_time.ok_or(missing_field("valid_time"))?,
             committed_at: self.committed_at.ok_or(missing_field("committed_at"))?,
             asserted_by: self.asserted_by.ok_or(missing_field("asserted_by"))?,
-            evidence: self.evidence,
+            evidence: dedup(self.evidence),
             confidence: self.confidence,
-            caused_by: self.caused_by,
-            supersedes: self.supersedes,
-            invalidates: self.invalidates,
+            caused_by: dedup(self.caused_by),
+            supersedes: dedup(self.supersedes),
+            invalidates: dedup(self.invalidates),
             policy_id: self.policy_id.ok_or(missing_field("policy_id"))?,
             label: self.label.ok_or(missing_field("label"))?,
             signatures: self.signatures.ok_or(missing_field("signatures"))?,
@@ -192,16 +192,8 @@ fn missing_field(field: &'static str) -> SkrifheimError {
     SkrifheimError::MissingFactField(field)
 }
 
-fn dedup<T: Copy + Eq>(values: Vec<T>) -> Vec<T> {
-    let mut deduped = Vec::new();
-    for value in values {
-        push_unique(&mut deduped, value);
-    }
-    deduped
-}
-
-fn push_unique<T: Copy + Eq>(values: &mut Vec<T>, value: T) {
-    if !values.contains(&value) {
-        values.push(value);
-    }
+fn dedup<T: Copy + Ord>(mut values: Vec<T>) -> Vec<T> {
+    values.sort();
+    values.dedup();
+    values
 }
