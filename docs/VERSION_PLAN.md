@@ -133,7 +133,8 @@ Deliverables:
 
 ## v0.7.0 - Key Hierarchy Model
 
-Goal: define encryption authority before durable storage exists.
+Goal: define encryption authority before durable storage exists, and close
+scaffold hardening gaps that would affect policy, signature, and key paths.
 
 Deliverables:
 
@@ -141,6 +142,12 @@ Deliverables:
 - key hierarchy metadata,
 - parent/child key relationship validation,
 - no database-wide-key shortcut,
+- constant-time policy-token comparison hardening, either through admitted
+  `subtle` or documented local compiler-barrier/codegen evidence,
+- fixed-shape policy-label evaluation over bounded compartment and
+  releasability slots,
+- maximum signature-envelope count per `SignatureSet`,
+- O(n log n) fact-builder deduplication for evidence and causal links,
 - tests for invalid hierarchy edges.
 
 ## v0.8.0 - Key Lifecycle And Epochs

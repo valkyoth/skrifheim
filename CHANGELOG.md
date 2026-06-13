@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Added 0.7.0 roadmap requirements for constant-time policy hardening,
+  fixed-shape label evaluation, signature-set bounds, and O(n log n)
+  fact-builder deduplication.
+
 ## 0.6.0
 
 - Added deterministic world diff preflight types for promotion and rollback checks.

@@ -14,11 +14,13 @@ Status: baseline control map
 | World promotion safety | Promotion and rollback preflight expose deterministic conflict categories before merge/promotion logic exists | Scaffolded | `skrifheim-world` |
 | Classification | Labels and clearance checks | Scaffolded | `skrifheim-policy` |
 | External error shape | `SkrifheimError::public_message()` provides generic messages for trust-boundary responses | Scaffolded | `skrifheim-core` |
+| Signature-set bounds | Maximum signature-envelope count per set before durable ingest accepts untrusted commits | Planned for v0.7.0 | `docs/VERSION_PLAN.md` |
+| Fact-builder complexity | O(n log n) deduplication for evidence and causal-link builder inputs | Planned for v0.7.0 | `docs/VERSION_PLAN.md` |
 | Blast-radius invalidation | Forward causal DAG traversal identifies tainted downstream facts, projections, releases, and AI artifacts | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | Declassification | Write-downs require signed provenance-bearing declassification proofs | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | AI derivation cones | AI writes are capability-scoped with classification ceilings and traceable derivation cones | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | Confidence and mandatory access control | Propagated confidence is evaluated together with mandatory access control | Planned | `docs/IMPLEMENTATION_PLAN.md` |
-| Timing side channels | Bounded local policy-token comparison exists; production constant-time primitives require dependency or local evidence review | Planned | `docs/engineering-policy.md` |
+| Timing side channels | Policy-token comparison and label evaluation need constant-time evidence and fixed-shape checks before production claims | Planned for v0.7.0 | `docs/engineering-policy.md` |
 | Crypto agility | Algorithm and signature envelopes | Scaffolded | `skrifheim-crypto` |
 | Encryption control plane | Key hierarchy, lifecycle, domains, memory secrecy, encrypted projections, and compromise handling | Planned | `docs/encryption-architecture.md` |
 | Legal/compliance planning | Instance/node, data, and operation passports with signed law-pack metadata and legal operation/transfer decisions | Planned | `docs/hyve-cluster-and-compliance-roadmap.md` |

@@ -110,12 +110,18 @@ The planner must answer:
 
 Rejected plans must be deterministic and constant-shape where practical.
 
+Before key hierarchy work proceeds beyond metadata, the policy planner must
+close known scaffold timing leaks: policy-token comparison needs admitted
+constant-time evidence, and label evaluation must avoid exposing compartment or
+releasability set size through variable loop shape.
+
 ## Phase 5: Cryptographic Control Plane
 
 Build crypto-agile metadata before hard-coding any final algorithm:
 
 - algorithm registry,
 - signature envelopes,
+- bounded signature-set size,
 - key hierarchy from root trust to deployment, region, tenant, compartment, and segment/data keys,
 - key lifecycle states for creation, activation, rotation, expiration, compromise, quarantine, and destruction,
 - encryption domains for tenant, region, classification, compartment, world, WAL, segment, projection, backup, export capsule, AI artifact, WASM/plugin secret, and audit log,
@@ -135,6 +141,10 @@ Build crypto-agile metadata before hard-coding any final algorithm:
 - offline verification.
 
 Post-quantum readiness is a metadata and migration requirement from day one.
+
+Fact and signature validation must stay bounded before durable ingest exists:
+fact-builder deduplication should use O(n log n) behavior, and signature sets
+must cap the number of envelopes as well as individual signature payload sizes.
 
 See [Encryption Architecture](encryption-architecture.md).
 
