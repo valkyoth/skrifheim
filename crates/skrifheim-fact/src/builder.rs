@@ -5,7 +5,7 @@ use skrifheim_core::{
 };
 use skrifheim_crypto::SignatureSet;
 
-use crate::{Confidence, Fact};
+use crate::{Confidence, FACT_LINK_LIST_MAX_ITEMS, Fact};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct FactBuilder {
@@ -98,16 +98,20 @@ impl FactBuilder {
         self
     }
 
-    #[must_use]
-    pub fn add_evidence(mut self, source: SourceId) -> Self {
+    pub fn add_evidence(mut self, source: SourceId) -> Result<Self> {
+        if self.evidence.len() >= FACT_LINK_LIST_MAX_ITEMS {
+            return Err(SkrifheimError::TooManyFactLinks);
+        }
         self.evidence.push(source);
-        self
+        Ok(self)
     }
 
-    #[must_use]
-    pub fn evidence(mut self, evidence: Vec<SourceId>) -> Self {
+    pub fn evidence(mut self, evidence: Vec<SourceId>) -> Result<Self> {
+        if evidence.len() > FACT_LINK_LIST_MAX_ITEMS {
+            return Err(SkrifheimError::TooManyFactLinks);
+        }
         self.evidence = dedup(evidence);
-        self
+        Ok(self)
     }
 
     #[must_use]
@@ -116,28 +120,36 @@ impl FactBuilder {
         self
     }
 
-    #[must_use]
-    pub fn add_caused_by(mut self, fact_id: FactId) -> Self {
+    pub fn add_caused_by(mut self, fact_id: FactId) -> Result<Self> {
+        if self.caused_by.len() >= FACT_LINK_LIST_MAX_ITEMS {
+            return Err(SkrifheimError::TooManyFactLinks);
+        }
         self.caused_by.push(fact_id);
-        self
+        Ok(self)
     }
 
-    #[must_use]
-    pub fn caused_by(mut self, caused_by: Vec<FactId>) -> Self {
+    pub fn caused_by(mut self, caused_by: Vec<FactId>) -> Result<Self> {
+        if caused_by.len() > FACT_LINK_LIST_MAX_ITEMS {
+            return Err(SkrifheimError::TooManyFactLinks);
+        }
         self.caused_by = dedup(caused_by);
-        self
+        Ok(self)
     }
 
-    #[must_use]
-    pub fn supersedes(mut self, supersedes: Vec<FactId>) -> Self {
+    pub fn supersedes(mut self, supersedes: Vec<FactId>) -> Result<Self> {
+        if supersedes.len() > FACT_LINK_LIST_MAX_ITEMS {
+            return Err(SkrifheimError::TooManyFactLinks);
+        }
         self.supersedes = dedup(supersedes);
-        self
+        Ok(self)
     }
 
-    #[must_use]
-    pub fn invalidates(mut self, invalidates: Vec<FactId>) -> Self {
+    pub fn invalidates(mut self, invalidates: Vec<FactId>) -> Result<Self> {
+        if invalidates.len() > FACT_LINK_LIST_MAX_ITEMS {
+            return Err(SkrifheimError::TooManyFactLinks);
+        }
         self.invalidates = dedup(invalidates);
-        self
+        Ok(self)
     }
 
     #[must_use]

@@ -59,9 +59,9 @@ fn base_builder() -> Result<FactBuilder> {
         .valid_time(TimeRange::new(Timestamp(5), None)?)
         .committed_at(id(TxId::from_u128(6))?)
         .asserted_by(id(ActorId::from_u128(7))?)
-        .add_evidence(id(SourceId::from_u128(8))?)
+        .add_evidence(id(SourceId::from_u128(8))?)?
         .confidence(Confidence::max())
-        .add_caused_by(id(FactId::from_u128(9))?)
+        .add_caused_by(id(FactId::from_u128(9))?)?
         .policy_id(id(PolicyId::from_u128(10))?)
         .label(SecurityLabel::new(
             Classification::Restricted,
@@ -96,7 +96,7 @@ fn builder_requires_all_required_fields() {
 
 #[test]
 fn builder_requires_evidence() -> Result<()> {
-    let result = base_builder()?.evidence(Vec::new()).build();
+    let result = base_builder()?.evidence(Vec::new())?.build();
     assert_eq!(result, Err(SkrifheimError::EmptyEvidence));
     Ok(())
 }
@@ -119,7 +119,7 @@ fn confidence_rejects_out_of_range_values() {
 #[test]
 fn fact_rejects_self_referential_causality() -> Result<()> {
     let fact = fact()?;
-    let result = base_builder()?.add_caused_by(fact.id()).build();
+    let result = base_builder()?.add_caused_by(fact.id())?.build();
     assert_eq!(result, Err(SkrifheimError::SelfReferentialFact));
     Ok(())
 }
@@ -136,8 +136,8 @@ fn builder_deduplicates_evidence_and_causal_links() -> Result<()> {
     let source = id(SourceId::from_u128(8))?;
     let cause = id(FactId::from_u128(9))?;
     let fact = base_builder()?
-        .add_evidence(source)
-        .add_caused_by(cause)
+        .add_evidence(source)?
+        .add_caused_by(cause)?
         .build()?;
     assert_eq!(fact.evidence(), &[source]);
     assert_eq!(fact.caused_by(), &[cause]);
@@ -147,7 +147,7 @@ fn builder_deduplicates_evidence_and_causal_links() -> Result<()> {
 #[test]
 fn builder_deduplicates_bulk_fact_links() -> Result<()> {
     let cause = id(FactId::from_u128(9))?;
-    let fact = base_builder()?.caused_by(vec![cause, cause]).build()?;
+    let fact = base_builder()?.caused_by(vec![cause, cause])?.build()?;
     assert_eq!(fact.caused_by(), &[cause]);
     Ok(())
 }
@@ -158,7 +158,7 @@ fn validation_rejects_oversized_fact_link_lists() -> Result<()> {
     for index in 0..=FACT_LINK_LIST_MAX_ITEMS {
         links.push(id(FactId::from_u128((index + 20) as u128))?);
     }
-    let result = base_builder()?.caused_by(links).build();
+    let result = base_builder()?.caused_by(links);
     assert_eq!(result, Err(SkrifheimError::TooManyFactLinks));
     Ok(())
 }
@@ -169,7 +169,20 @@ fn validation_rejects_oversized_evidence_lists() -> Result<()> {
     for index in 0..=FACT_LINK_LIST_MAX_ITEMS {
         evidence.push(id(SourceId::from_u128((index + 20) as u128))?);
     }
-    let result = base_builder()?.evidence(evidence).build();
+    let result = base_builder()?.evidence(evidence);
     assert_eq!(result, Err(SkrifheimError::TooManyFactLinks));
+    Ok(())
+}
+
+#[test]
+fn builder_rejects_incremental_evidence_before_unbounded_growth() -> Result<()> {
+    let mut builder = base_builder()?.evidence(Vec::new())?;
+    for index in 0..FACT_LINK_LIST_MAX_ITEMS {
+        builder = builder.add_evidence(id(SourceId::from_u128((index + 20) as u128))?)?;
+    }
+    assert_eq!(
+        builder.add_evidence(id(SourceId::from_u128(5000))?),
+        Err(SkrifheimError::TooManyFactLinks)
+    );
     Ok(())
 }

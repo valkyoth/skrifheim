@@ -117,8 +117,9 @@ Rejected plans must be deterministic and constant-shape where practical.
 
 Before key hierarchy work proceeds beyond metadata, the policy planner must
 close known scaffold timing leaks: policy-token comparison needs admitted
-constant-time evidence, and label evaluation must avoid exposing compartment or
-releasability set size through variable loop shape.
+constant-time evidence, policy-token storage must use fixed-slot authorization
+sets, and label evaluation must avoid exposing compartment or releasability set
+size through variable loop shape.
 
 ## Phase 5: Cryptographic Control Plane
 

@@ -1,7 +1,6 @@
-use alloc::{collections::BTreeSet, string::String};
 use skrifheim_core::{
-    AccessDeniedReason, Classification, POLICY_TOKEN_SET_MAX_ITEMS, Result, SecurityLabel,
-    SkrifheimError, contains_policy_token_ct,
+    AccessDeniedReason, Classification, POLICY_TOKEN_SET_MAX_ITEMS, PolicyTokenSet, Result,
+    SecurityLabel, SkrifheimError, contains_policy_token_slot_ct,
 };
 
 use crate::AuthorityContext;
@@ -194,10 +193,10 @@ fn evaluate_label(authority: &AuthorityContext, label: &SecurityLabel) -> Decisi
 }
 
 fn evaluate_required_tokens(
-    required: &BTreeSet<String>,
-    subject: &BTreeSet<String>,
-    device: &BTreeSet<String>,
-    workload: &BTreeSet<String>,
+    required: &PolicyTokenSet,
+    subject: &PolicyTokenSet,
+    device: &PolicyTokenSet,
+    workload: &PolicyTokenSet,
 ) -> u8 {
     if required.len() > POLICY_TOKEN_SET_MAX_ITEMS
         || subject.len() > POLICY_TOKEN_SET_MAX_ITEMS
@@ -208,19 +207,14 @@ fn evaluate_required_tokens(
     }
 
     let mut allowed = 1_u8;
-    let mut required = required.iter();
     let mut index = 0;
     while index < POLICY_TOKEN_SET_MAX_ITEMS {
-        let token = required.next();
-        let present = token.is_some() as u8;
-        let token = match token {
-            Some(token) => token.as_str(),
-            None => "SKRIFHEIM-NOOP",
-        };
+        let token = required.slot(index);
+        let present = token.present_mask();
         let mut token_allowed = 1_u8;
-        token_allowed &= contains_policy_token_ct(subject, token) as u8;
-        token_allowed &= contains_policy_token_ct(device, token) as u8;
-        token_allowed &= contains_policy_token_ct(workload, token) as u8;
+        token_allowed &= contains_policy_token_slot_ct(subject, token) as u8;
+        token_allowed &= contains_policy_token_slot_ct(device, token) as u8;
+        token_allowed &= contains_policy_token_slot_ct(workload, token) as u8;
         allowed &= (present ^ 1) | token_allowed;
         index += 1;
     }
@@ -239,17 +233,16 @@ pub fn require_allowed(decision: PlannerDecision) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloc::format;
+    use alloc::{format, vec::Vec};
 
     #[test]
-    fn required_token_evaluation_fails_closed_on_oversized_sets() {
-        let mut required = BTreeSet::new();
-        let mut authority_tokens = BTreeSet::new();
-        for index in 0..=POLICY_TOKEN_SET_MAX_ITEMS {
-            let token = format!("TOKEN-{index}");
-            required.insert(token.clone());
-            authority_tokens.insert(token);
+    fn required_token_evaluation_uses_fixed_slots() -> Result<()> {
+        let mut tokens = Vec::new();
+        for index in 0..POLICY_TOKEN_SET_MAX_ITEMS {
+            tokens.push(format!("TOKEN-{index}"));
         }
+        let required = PolicyTokenSet::new(tokens.clone())?;
+        let authority_tokens = PolicyTokenSet::new(tokens)?;
 
         assert_eq!(
             evaluate_required_tokens(
@@ -258,7 +251,8 @@ mod tests {
                 &authority_tokens,
                 &authority_tokens,
             ),
-            0
+            1
         );
+        Ok(())
     }
 }

@@ -150,8 +150,11 @@ Deliverables:
   `subtle` or documented local compiler-barrier/codegen evidence,
 - fixed-shape policy-label evaluation over bounded compartment and
   releasability slots,
+- fixed-slot policy-token representation for authorization hot paths,
 - maximum signature-envelope count per `SignatureSet`,
 - O(n log n) fact-builder deduplication for evidence and causal links,
+- fail-fast fact-builder bounds before incremental link vectors can grow
+  beyond `FACT_LINK_LIST_MAX_ITEMS`,
 - tests for invalid hierarchy edges, including segment/data key parent checks.
 
 ## v0.8.0 - Key Lifecycle And Epochs

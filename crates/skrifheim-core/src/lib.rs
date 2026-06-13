@@ -3,15 +3,16 @@
 
 extern crate alloc;
 
-use alloc::{collections::BTreeSet, string::String, vec::Vec};
+use alloc::{string::String, vec::Vec};
 use core::fmt;
 use core::num::NonZeroU128;
 
 mod policy_token;
 
 pub use policy_token::{
-    POLICY_TOKEN_MAX_BYTES, POLICY_TOKEN_SET_MAX_ITEMS, canonical_policy_set,
-    canonical_policy_token, contains_policy_token_ct,
+    POLICY_TOKEN_MAX_BYTES, POLICY_TOKEN_SET_MAX_ITEMS, PolicyTokenSet, PolicyTokenSlot,
+    canonical_policy_set, canonical_policy_token, contains_policy_token_ct,
+    contains_policy_token_slot_ct,
 };
 
 macro_rules! nonzero_id {
@@ -131,8 +132,8 @@ impl Classification {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SecurityLabel {
     classification: Classification,
-    compartments: BTreeSet<String>,
-    releasable_to: BTreeSet<String>,
+    compartments: PolicyTokenSet,
+    releasable_to: PolicyTokenSet,
 }
 
 impl SecurityLabel {
@@ -140,8 +141,8 @@ impl SecurityLabel {
     pub fn public() -> Self {
         Self {
             classification: Classification::Public,
-            compartments: BTreeSet::new(),
-            releasable_to: BTreeSet::new(),
+            compartments: PolicyTokenSet::empty(),
+            releasable_to: PolicyTokenSet::empty(),
         }
     }
 
@@ -163,12 +164,12 @@ impl SecurityLabel {
     }
 
     #[must_use]
-    pub const fn compartments(&self) -> &BTreeSet<String> {
+    pub const fn compartments(&self) -> &PolicyTokenSet {
         &self.compartments
     }
 
     #[must_use]
-    pub const fn releasable_to(&self) -> &BTreeSet<String> {
+    pub const fn releasable_to(&self) -> &PolicyTokenSet {
         &self.releasable_to
     }
 }
@@ -287,7 +288,7 @@ pub type Result<T> = core::result::Result<T, SkrifheimError>;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloc::{format, vec};
+    use alloc::vec;
 
     #[test]
     fn open_time_range_contains_later_time() -> Result<()> {
@@ -391,12 +392,15 @@ mod tests {
     }
 
     #[test]
-    fn constant_time_policy_token_lookup_fails_closed_on_oversized_sets() {
-        let mut tokens = alloc::collections::BTreeSet::new();
-        for index in 0..=POLICY_TOKEN_SET_MAX_ITEMS {
-            tokens.insert(format!("TOKEN-{index}"));
+    fn constant_time_policy_token_lookup_scans_full_token_sets() -> Result<()> {
+        let mut tokens = Vec::new();
+        for index in 0..POLICY_TOKEN_SET_MAX_ITEMS {
+            tokens.push(alloc::format!("TOKEN-{index}"));
         }
-        assert!(!contains_policy_token_ct(&tokens, "TOKEN-1"));
+        let tokens = PolicyTokenSet::new(tokens)?;
+        assert!(contains_policy_token_ct(&tokens, "TOKEN-63"));
+        assert!(!contains_policy_token_ct(&tokens, "TOKEN-64"));
+        Ok(())
     }
 
     #[test]

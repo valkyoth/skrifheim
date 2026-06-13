@@ -6,7 +6,7 @@ Status: implementation stop, pending pentest.
 
 `0.7.0` adds key hierarchy metadata and closes scaffold hardening gaps in
 policy-token comparison, policy-label evaluation, signature-set validation, and
-fact-builder deduplication.
+fact-builder deduplication/allocation bounds.
 
 ## Changes
 
@@ -18,7 +18,10 @@ fact-builder deduplication.
 - Bounded signature sets with `MAX_SIGNATURES_PER_SET`.
 - Hardened policy-token equality with local compiler barriers while keeping the
   no-external-dependency posture.
-- Changed policy-token set membership scans to fixed bounded slot counts.
+- Changed policy-token storage to a fixed-slot byte representation for
+  authorization checks.
+- Changed policy-token set membership scans to fixed bounded slot counts without
+  `BTreeSet` traversal in the policy hot path.
 - Added fail-closed guards for oversized token sets at policy lookup and label
   evaluation boundaries.
 - Changed policy-label compartment and releasability evaluation to fixed
@@ -27,6 +30,8 @@ fact-builder deduplication.
   representable separately from a missing CRC.
 - Changed fact-builder evidence and causal-link deduplication to sort/dedup
   behavior.
+- Changed fact-builder link mutation methods to fail before accepting more than
+  `FACT_LINK_LIST_MAX_ITEMS` entries.
 - Bumped workspace and internal crate dependency versions to `0.7.0`.
 - Re-checked the stable Rust channel on 2026-06-13. Rust stable remains
   `1.96.0`, dated 2026-05-28 in the official stable manifest.
@@ -58,5 +63,5 @@ identity as an authoritative storage key.
 
 ## Pentest Status
 
-First pentest pass resolved. Root `PENTEST.md` has been removed after the
-findings were handled.
+First and second pentest passes resolved. Root `PENTEST.md` has been removed
+after the findings were handled.

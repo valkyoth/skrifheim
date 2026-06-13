@@ -1,11 +1,13 @@
-use alloc::{collections::BTreeSet, string::String, vec::Vec};
-use skrifheim_core::{Classification, DeviceId, Result, WorkloadId, canonical_policy_set};
+use alloc::{string::String, vec::Vec};
+use skrifheim_core::{
+    Classification, DeviceId, PolicyTokenSet, Result, WorkloadId, canonical_policy_set,
+};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SubjectContext {
     clearance: Classification,
-    compartments: BTreeSet<String>,
-    releasable_to: BTreeSet<String>,
+    compartments: PolicyTokenSet,
+    releasable_to: PolicyTokenSet,
 }
 
 impl SubjectContext {
@@ -27,12 +29,12 @@ impl SubjectContext {
     }
 
     #[must_use]
-    pub const fn compartments(&self) -> &BTreeSet<String> {
+    pub const fn compartments(&self) -> &PolicyTokenSet {
         &self.compartments
     }
 
     #[must_use]
-    pub const fn releasable_to(&self) -> &BTreeSet<String> {
+    pub const fn releasable_to(&self) -> &PolicyTokenSet {
         &self.releasable_to
     }
 }
@@ -41,8 +43,8 @@ impl SubjectContext {
 pub struct DeviceContext {
     device_id: DeviceId,
     clearance: Classification,
-    compartments: BTreeSet<String>,
-    releasable_to: BTreeSet<String>,
+    compartments: PolicyTokenSet,
+    releasable_to: PolicyTokenSet,
 }
 
 impl DeviceContext {
@@ -71,12 +73,12 @@ impl DeviceContext {
     }
 
     #[must_use]
-    pub const fn compartments(&self) -> &BTreeSet<String> {
+    pub const fn compartments(&self) -> &PolicyTokenSet {
         &self.compartments
     }
 
     #[must_use]
-    pub const fn releasable_to(&self) -> &BTreeSet<String> {
+    pub const fn releasable_to(&self) -> &PolicyTokenSet {
         &self.releasable_to
     }
 }
@@ -85,8 +87,8 @@ impl DeviceContext {
 pub struct WorkloadContext {
     workload_id: WorkloadId,
     clearance: Classification,
-    compartments: BTreeSet<String>,
-    releasable_to: BTreeSet<String>,
+    compartments: PolicyTokenSet,
+    releasable_to: PolicyTokenSet,
 }
 
 impl WorkloadContext {
@@ -115,12 +117,12 @@ impl WorkloadContext {
     }
 
     #[must_use]
-    pub const fn compartments(&self) -> &BTreeSet<String> {
+    pub const fn compartments(&self) -> &PolicyTokenSet {
         &self.compartments
     }
 
     #[must_use]
-    pub const fn releasable_to(&self) -> &BTreeSet<String> {
+    pub const fn releasable_to(&self) -> &PolicyTokenSet {
         &self.releasable_to
     }
 }
