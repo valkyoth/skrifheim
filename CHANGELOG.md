@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.6.0
+
+- Added deterministic world diff preflight types for promotion and rollback checks.
+- Added world conflict categories for facts added and hidden in the same overlay and facts reintroduced after parent hiding.
+- Added `0.6.0` release metadata and gate script.
+
 ## 0.5.0
 
 - Added deterministic world metadata identities and branch-depth tracking.

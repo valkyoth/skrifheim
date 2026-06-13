@@ -11,6 +11,7 @@ Status: baseline control map
 | Unsafe code | Forbidden in scaffold | Active | `scripts/validate-security-policy.sh` |
 | Modularity | Focused crates and file-size gate | Active | `docs/modularity-policy.md` |
 | Canonical truth | Facts are versioned and evidence-bound | Scaffolded | `skrifheim-fact` |
+| World promotion safety | Promotion and rollback preflight expose deterministic conflict categories before merge/promotion logic exists | Scaffolded | `skrifheim-world` |
 | Classification | Labels and clearance checks | Scaffolded | `skrifheim-policy` |
 | Blast-radius invalidation | Forward causal DAG traversal identifies tainted downstream facts, projections, releases, and AI artifacts | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | Declassification | Write-downs require signed provenance-bearing declassification proofs | Planned | `docs/IMPLEMENTATION_PLAN.md` |

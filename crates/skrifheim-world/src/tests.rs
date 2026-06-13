@@ -109,6 +109,88 @@ fn diff_returns_delta_against_parent() -> Result<()> {
 }
 
 #[test]
+fn promotion_preflight_allows_clean_child() -> Result<()> {
+    let mut production = World::root(tenant(1)?, "production", WorldKind::Production)?;
+    production.add_fact(id(FactId::from_u128(7))?);
+    let mut child = production.fork("review", WorldKind::Staging)?;
+    child.add_fact(id(FactId::from_u128(8))?);
+    child.hide_fact(id(FactId::from_u128(7))?);
+
+    let preflight = production.promotion_preflight(&child)?;
+    assert!(preflight.can_promote());
+    assert_eq!(preflight.diff.added, vec![id(FactId::from_u128(8))?]);
+    assert_eq!(preflight.diff.hidden, vec![id(FactId::from_u128(7))?]);
+    Ok(())
+}
+
+#[test]
+fn promotion_preflight_rejects_non_child_relationship() -> Result<()> {
+    let production = World::root(tenant(1)?, "production", WorldKind::Production)?;
+    let unrelated = World::root(tenant(1)?, "unrelated", WorldKind::Staging)?;
+
+    assert_eq!(
+        production.promotion_preflight(&unrelated),
+        Err(SkrifheimError::InvalidWorldDiff)
+    );
+    Ok(())
+}
+
+#[test]
+fn promotion_preflight_detects_fact_added_and_hidden() -> Result<()> {
+    let production = World::root(tenant(1)?, "production", WorldKind::Production)?;
+    let mut child = production.fork("review", WorldKind::Staging)?;
+    child.add_fact(id(FactId::from_u128(8))?);
+    child.hide_fact(id(FactId::from_u128(8))?);
+
+    let preflight = production.promotion_preflight(&child)?;
+    assert!(!preflight.can_promote());
+    assert_eq!(
+        preflight.conflicts,
+        vec![WorldConflict {
+            kind: WorldConflictKind::AddedAndHiddenSameFact,
+            fact_id: id(FactId::from_u128(8))?,
+        }]
+    );
+    Ok(())
+}
+
+#[test]
+fn promotion_preflight_detects_reintroduced_hidden_fact() -> Result<()> {
+    let mut production = World::root(tenant(1)?, "production", WorldKind::Production)?;
+    production.hide_fact(id(FactId::from_u128(7))?);
+    let mut child = production.fork("review", WorldKind::Staging)?;
+    child.add_fact(id(FactId::from_u128(7))?);
+
+    let preflight = production.promotion_preflight(&child)?;
+    assert!(!preflight.can_promote());
+    assert_eq!(
+        preflight.conflicts,
+        vec![WorldConflict {
+            kind: WorldConflictKind::ReintroducesParentHiddenFact,
+            fact_id: id(FactId::from_u128(7))?,
+        }]
+    );
+    Ok(())
+}
+
+#[test]
+fn rollback_preflight_reports_inverse_delta() -> Result<()> {
+    let mut production = World::root(tenant(1)?, "production", WorldKind::Production)?;
+    production.add_fact(id(FactId::from_u128(7))?);
+    let mut child = production.fork("review", WorldKind::Staging)?;
+    child.add_fact(id(FactId::from_u128(8))?);
+    child.hide_fact(id(FactId::from_u128(7))?);
+
+    let preflight = production.rollback_preflight(&child)?;
+    assert!(preflight.can_rollback());
+    assert_eq!(preflight.from, child.id());
+    assert_eq!(preflight.to, production.id());
+    assert_eq!(preflight.reverts_added, vec![id(FactId::from_u128(8))?]);
+    assert_eq!(preflight.restores_hidden, vec![id(FactId::from_u128(7))?]);
+    Ok(())
+}
+
+#[test]
 fn root_rejects_invalid_world_names() -> Result<()> {
     assert_eq!(
         World::root(tenant(1)?, "", WorldKind::Production),

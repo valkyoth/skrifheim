@@ -6,6 +6,12 @@ extern crate alloc;
 use alloc::{string::String, vec::Vec};
 use skrifheim_core::{FactId, Result, SkrifheimError, TenantId, WorldId};
 
+mod diff;
+
+pub use diff::{
+    PromotionPreflight, RollbackPreflight, WorldConflict, WorldConflictKind, WorldDiff,
+};
+
 #[cfg(test)]
 mod tests;
 
@@ -203,6 +209,18 @@ impl World {
             self.hidden_facts.push(fact_id);
         }
     }
+
+    pub fn diff_to_child(&self, child: &Self) -> Result<WorldDiff> {
+        WorldDiff::between(self, child)
+    }
+
+    pub fn promotion_preflight(&self, candidate: &Self) -> Result<PromotionPreflight> {
+        PromotionPreflight::between(self, candidate)
+    }
+
+    pub fn rollback_preflight(&self, child: &Self) -> Result<RollbackPreflight> {
+        RollbackPreflight::from_child(self, child)
+    }
 }
 
 fn validate_world_name(name: String) -> Result<String> {
@@ -250,36 +268,4 @@ fn hash_bytes(mut state: u128, bytes: &[u8]) -> u128 {
         state = state.wrapping_mul(WORLD_ID_PRIME);
     }
     state
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct WorldDiff {
-    pub from: WorldId,
-    pub to: WorldId,
-    pub added: Vec<FactId>,
-    pub hidden: Vec<FactId>,
-}
-
-impl WorldDiff {
-    pub fn between(from: &World, to: &World) -> Result<Self> {
-        if from.id() != to.id() && to.parent() != Some(from.id()) {
-            return Err(SkrifheimError::InvalidWorldDiff);
-        }
-        Ok(Self {
-            from: from.id(),
-            to: to.id(),
-            added: to
-                .added_facts
-                .iter()
-                .filter(|fact_id| !from.added_facts.contains(fact_id))
-                .copied()
-                .collect(),
-            hidden: to
-                .hidden_facts
-                .iter()
-                .filter(|fact_id| !from.hidden_facts.contains(fact_id))
-                .copied()
-                .collect(),
-        })
-    }
 }
