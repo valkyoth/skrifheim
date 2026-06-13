@@ -5,7 +5,7 @@ use skrifheim_core::{
 };
 use skrifheim_crypto::SignatureSet;
 
-use crate::{Confidence, FACT_LINK_LIST_MAX_ITEMS, Fact};
+use crate::{Confidence, FACT_LINK_LIST_MAX_ITEMS, Fact, validate_object_size};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct FactBuilder {
@@ -74,10 +74,10 @@ impl FactBuilder {
         self
     }
 
-    #[must_use]
-    pub fn object(mut self, object: Value) -> Self {
+    pub fn object(mut self, object: Value) -> Result<Self> {
+        validate_object_size(&object)?;
         self.object = Some(object);
-        self
+        Ok(self)
     }
 
     #[must_use]

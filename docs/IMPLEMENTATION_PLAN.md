@@ -57,6 +57,9 @@ Build append-only facts with:
 
 The first correctness question is: can `skrifheim` prove what was true, who asserted it, which policy governed it, and which evidence supported it?
 
+Fact payloads are bounded at the canonical layer. Text and byte values must be
+rejected before durable ingest when they exceed the active fact-object limit.
+
 Causal links are not passive metadata. They must become a live dependency graph
 that can answer blast-radius questions such as: which facts, decisions,
 projections, releases, and AI artifacts become tainted when a source, model,
@@ -151,7 +154,8 @@ Post-quantum readiness is a metadata and migration requirement from day one.
 
 Fact and signature validation must stay bounded before durable ingest exists:
 fact-builder deduplication should use O(n log n) behavior, and signature sets
-must cap the number of envelopes as well as individual signature payload sizes.
+must cap the number of envelopes, signature key identifiers, and individual
+signature payload sizes.
 
 See [Encryption Architecture](encryption-architecture.md).
 

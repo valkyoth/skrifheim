@@ -11,6 +11,7 @@ use skrifheim_core::{
 use skrifheim_crypto::SignatureSet;
 
 pub const FACT_LINK_LIST_MAX_ITEMS: usize = 1024;
+pub const FACT_OBJECT_MAX_BYTES: usize = 64 * 1024;
 
 mod builder;
 #[cfg(test)]
@@ -72,6 +73,7 @@ impl Fact {
     }
 
     pub fn validate(&self) -> Result<()> {
+        validate_object_size(&self.object)?;
         if self.evidence.is_empty() {
             return Err(SkrifheimError::EmptyEvidence);
         }
@@ -186,6 +188,18 @@ impl Fact {
     pub const fn signatures(&self) -> &SignatureSet {
         &self.signatures
     }
+}
+
+pub(crate) fn validate_object_size(object: &Value) -> Result<()> {
+    let len = match object {
+        Value::Text(value) => value.len(),
+        Value::Bytes(value) => value.len(),
+        Value::Integer(_) | Value::Boolean(_) | Value::Ref(_) => 0,
+    };
+    if len > FACT_OBJECT_MAX_BYTES {
+        return Err(SkrifheimError::ValueTooLarge);
+    }
+    Ok(())
 }
 
 fn has_duplicates<T: Copy + Ord>(values: &[T]) -> bool {

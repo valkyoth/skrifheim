@@ -211,6 +211,7 @@ pub enum SkrifheimError {
     DuplicateEvidence,
     DuplicateFactLink,
     TooManyFactLinks,
+    ValueTooLarge,
     InvalidSignatureEnvelope(&'static str),
     InvalidSignatureLength,
     InvalidSecurityToken,
@@ -237,6 +238,7 @@ impl fmt::Display for SkrifheimError {
             Self::DuplicateEvidence => write!(f, "fact evidence must not contain duplicates"),
             Self::DuplicateFactLink => write!(f, "fact links must not contain duplicates"),
             Self::TooManyFactLinks => write!(f, "fact link list is too large"),
+            Self::ValueTooLarge => write!(f, "fact value is too large"),
             Self::InvalidSignatureEnvelope(reason) => {
                 write!(f, "invalid signature envelope: {reason}")
             }
@@ -271,6 +273,7 @@ impl SkrifheimError {
             Self::DuplicateEvidence => "invalid fact",
             Self::DuplicateFactLink => "invalid fact",
             Self::TooManyFactLinks => "invalid fact",
+            Self::ValueTooLarge => "invalid fact",
             Self::InvalidSignatureLength => "invalid signature length",
             Self::InvalidSecurityToken => "invalid security token",
             Self::InvalidWorldName => "invalid world name",

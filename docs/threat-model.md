@@ -35,6 +35,8 @@ Status: baseline
 
 - classify facts, projections, blobs, query results, and AI artifacts,
 - reject unsafe query plans before execution,
+- expose aggregate query proof state only across public API boundaries, not
+  per-label planner decisions,
 - bind subject, device, and workload context at the authenticated API boundary
   before policy evaluation,
 - keep projections rebuildable,

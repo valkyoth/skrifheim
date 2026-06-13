@@ -14,13 +14,14 @@ Status: baseline control map
 | World promotion safety | Promotion and rollback preflight expose deterministic conflict categories before merge/promotion logic exists | Scaffolded | `skrifheim-world` |
 | Classification | Labels and clearance checks | Scaffolded | `skrifheim-policy` |
 | External error shape | `SkrifheimError::public_message()` provides generic messages for trust-boundary responses | Scaffolded | `skrifheim-core` |
-| Signature-set bounds | Maximum signature-envelope count per set before durable ingest accepts untrusted commits | Scaffolded | `skrifheim-crypto` |
-| Fact-builder complexity | O(n log n) deduplication and fail-fast builder bounds for evidence and causal-link inputs | Scaffolded | `skrifheim-fact` |
+| Signature-set bounds | Maximum signature-envelope count and bounded signature key identifiers before durable ingest accepts untrusted commits | Scaffolded | `skrifheim-crypto` |
+| Fact-builder complexity | O(n log n) deduplication, fail-fast builder bounds, and bounded text/byte fact payloads | Scaffolded | `skrifheim-fact` |
 | Blast-radius invalidation | Forward causal DAG traversal identifies tainted downstream facts, projections, releases, and AI artifacts | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | Declassification | Write-downs require signed provenance-bearing declassification proofs | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | AI derivation cones | AI writes are capability-scoped with classification ceilings and traceable derivation cones | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | Confidence and mandatory access control | Propagated confidence is evaluated together with mandatory access control | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | Timing side channels | Policy-token checks use fixed-slot byte sets, local compiler barriers, bounded scans, and fail-closed oversize guards; production constant-time evidence remains required | Scaffolded | `docs/engineering-policy.md` |
+| Query inference | Public query plans expose aggregate proof/decision state, not per-label decisions | Scaffolded | `skrifheim-query` |
 | Crypto agility | Algorithm and signature envelopes | Scaffolded | `skrifheim-crypto` |
 | Key hierarchy | Root trust, deployment, region, tenant, compartment, segment, and data key parent metadata with tenant deployment/region binding | Scaffolded | `skrifheim-crypto` |
 | Encryption control plane | Key hierarchy, lifecycle, domains, memory secrecy, encrypted projections, and compromise handling | Planned | `docs/encryption-architecture.md` |

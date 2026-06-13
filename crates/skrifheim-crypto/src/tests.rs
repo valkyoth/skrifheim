@@ -50,6 +50,39 @@ fn empty_signature_bytes_are_rejected() {
 }
 
 #[test]
+fn signature_key_ids_are_bounded() {
+    assert_eq!(
+        SignatureEnvelope::new(AlgorithmId::Ed25519, CryptoEpoch(1), "", vec![1; 64]),
+        Err(SkrifheimError::InvalidSignatureEnvelope(
+            "key id length out of range"
+        ))
+    );
+    assert_eq!(
+        SignatureEnvelope::new(
+            AlgorithmId::Ed25519,
+            CryptoEpoch(1),
+            alloc::string::String::from_utf8(vec![b'k'; KEY_ID_MAX_BYTES + 1])
+                .unwrap_or_else(|_| alloc::string::String::new()),
+            vec![1; 64]
+        ),
+        Err(SkrifheimError::InvalidSignatureEnvelope(
+            "key id length out of range"
+        ))
+    );
+    assert_eq!(
+        SignatureEnvelope::new(
+            AlgorithmId::Ed25519,
+            CryptoEpoch(1),
+            "key with spaces",
+            vec![1; 64]
+        ),
+        Err(SkrifheimError::InvalidSignatureEnvelope(
+            "key id contains invalid characters"
+        ))
+    );
+}
+
+#[test]
 fn ed25519_signature_length_is_enforced() {
     assert_eq!(
         SignatureEnvelope::new(AlgorithmId::Ed25519, CryptoEpoch(1), "k", vec![1; 63]),

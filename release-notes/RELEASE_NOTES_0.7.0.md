@@ -16,6 +16,8 @@ fact-builder deduplication/allocation bounds.
 - Bound tenant key scope metadata to explicit deployment and region IDs.
 - Added invalid hierarchy edge tests, including data-key parent validation.
 - Bounded signature sets with `MAX_SIGNATURES_PER_SET`.
+- Bounded signature envelope key IDs with explicit length and character
+  validation.
 - Hardened policy-token equality with local compiler barriers while keeping the
   no-external-dependency posture.
 - Changed policy-token storage to a fixed-slot byte representation for
@@ -32,6 +34,11 @@ fact-builder deduplication/allocation bounds.
   behavior.
 - Changed fact-builder link mutation methods to fail before accepting more than
   `FACT_LINK_LIST_MAX_ITEMS` entries.
+- Added `FACT_OBJECT_MAX_BYTES` validation for fact text and byte payloads.
+- Removed per-label planner decisions from `QueryPlan`; the public query plan
+  surface exposes aggregate proof/decision state only.
+- Made deterministic world-id derivation infallible in its type signature,
+  removing a misleading unreachable error branch.
 - Bumped workspace and internal crate dependency versions to `0.7.0`.
 - Re-checked the stable Rust channel on 2026-06-13. Rust stable remains
   `1.96.0`, dated 2026-05-28 in the official stable manifest.
@@ -54,7 +61,8 @@ generation, encryption, decryption, key rotation, KMS/HSM integration,
 cryptographic verification, durable storage, or production-grade
 constant-time evidence. Local compiler barriers reduce scaffold timing risk but
 do not replace a future reviewed constant-time primitive admission or local
-codegen evidence package.
+codegen evidence package. A statistical timing test or equivalent codegen
+evidence remains required before production claims for classified labels.
 
 Deterministic world identifiers remain non-secret, non-capability identifiers.
 Replacing the current local deterministic hash with an admitted
@@ -63,5 +71,5 @@ identity as an authoritative storage key.
 
 ## Pentest Status
 
-First and second pentest passes resolved. Root `PENTEST.md` has been removed
-after the findings were handled.
+First, second, and third pentest passes resolved. Root `PENTEST.md` has been
+removed after the findings were handled.

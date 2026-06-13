@@ -4,6 +4,7 @@
 extern crate alloc;
 
 use alloc::{string::String, vec::Vec};
+use core::num::NonZeroU128;
 use skrifheim_core::{FactId, Result, SkrifheimError, TenantId, WorldId};
 
 mod diff;
@@ -58,7 +59,7 @@ pub struct WorldMetadata {
 impl WorldMetadata {
     pub fn root(tenant_id: TenantId, name: impl Into<String>, kind: WorldKind) -> Result<Self> {
         let name = validate_world_name(name.into())?;
-        let id = derive_world_id(tenant_id, None, 0, &name, kind)?;
+        let id = derive_world_id(tenant_id, None, 0, &name, kind);
         Ok(Self {
             id,
             tenant_id,
@@ -75,7 +76,7 @@ impl WorldMetadata {
             .depth
             .checked_add(1)
             .ok_or(SkrifheimError::InvalidWorldIdentity)?;
-        let id = derive_world_id(parent.tenant_id, Some(parent.id), depth, &name, kind)?;
+        let id = derive_world_id(parent.tenant_id, Some(parent.id), depth, &name, kind);
         if id == parent.id {
             return Err(SkrifheimError::InvalidWorldIdentity);
         }
@@ -243,7 +244,7 @@ fn derive_world_id(
     depth: u32,
     name: &str,
     kind: WorldKind,
-) -> Result<WorldId> {
+) -> WorldId {
     let mut state = WORLD_ID_OFFSET;
     state = hash_bytes(state, b"skrifheim/world/v1");
     state = hash_bytes(state, &tenant_id.get().to_le_bytes());
@@ -259,7 +260,10 @@ fn derive_world_id(
         }
     }
     state = hash_bytes(state, name.as_bytes());
-    WorldId::from_u128(state | 1).ok_or(SkrifheimError::InvalidWorldIdentity)
+    match WorldId::from_u128(state | 1) {
+        Some(id) => id,
+        None => WorldId::new(NonZeroU128::MIN),
+    }
 }
 
 fn hash_bytes(mut state: u128, bytes: &[u8]) -> u128 {

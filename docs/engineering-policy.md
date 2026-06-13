@@ -96,6 +96,11 @@ No constant-time helper graduates from scaffold to production without tests,
 documentation, dependency or local-implementation review, and release-gate
 evidence.
 
+Before `skrifheim` handles real classified policy labels, the release gate must
+include statistical timing evidence, such as a dudect-style harness or
+equivalent codegen review, for policy-token comparison and other
+timing-sensitive authorization helpers.
+
 ## Unsafe Boundary Rule
 
 Unsafe Rust is not allowed in core crates.

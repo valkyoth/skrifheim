@@ -20,6 +20,7 @@ pub const ML_DSA_65_SIG_BYTES: usize = 3293;
 pub const SLH_DSA_SHA2_S128S_SIG_BYTES: usize = 7856;
 pub const MAX_VARIABLE_SIGNATURE_BYTES: usize = 16 * 1024;
 pub const MAX_SIGNATURES_PER_SET: usize = 16;
+pub const KEY_ID_MAX_BYTES: usize = 128;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum AlgorithmId {
@@ -84,9 +85,16 @@ impl SignatureEnvelope {
         signature: Vec<u8>,
     ) -> Result<Self> {
         let key_id = key_id.into();
-        if key_id.is_empty() {
+        if key_id.is_empty() || key_id.len() > KEY_ID_MAX_BYTES {
             return Err(SkrifheimError::InvalidSignatureEnvelope(
-                "key id must not be empty",
+                "key id length out of range",
+            ));
+        }
+        if !key_id.bytes().all(|byte| {
+            byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.' | b':' | b'@')
+        }) {
+            return Err(SkrifheimError::InvalidSignatureEnvelope(
+                "key id contains invalid characters",
             ));
         }
         validate_signature_envelope_parts(&algorithm, &signature)?;
@@ -148,9 +156,16 @@ impl SignatureSet {
         }
         for signature in &self.signatures {
             validate_signature_envelope_parts(&signature.algorithm, &signature.signature)?;
-            if signature.key_id.is_empty() {
+            if signature.key_id.is_empty() || signature.key_id.len() > KEY_ID_MAX_BYTES {
                 return Err(SkrifheimError::InvalidSignatureEnvelope(
-                    "key id must not be empty",
+                    "key id length out of range",
+                ));
+            }
+            if !signature.key_id.bytes().all(|byte| {
+                byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.' | b':' | b'@')
+            }) {
+                return Err(SkrifheimError::InvalidSignatureEnvelope(
+                    "key id contains invalid characters",
                 ));
             }
         }

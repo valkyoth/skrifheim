@@ -5,9 +5,7 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 use skrifheim_core::{Result, SecurityLabel, SkrifheimError, WorldId};
-use skrifheim_policy::{
-    AuthorityContext, PlannerDecision, PolicyProof, evaluate_read, evaluate_read_set,
-};
+use skrifheim_policy::{AuthorityContext, PolicyProof, evaluate_read_set};
 
 pub const QUERY_REQUEST_LABEL_MAX_ITEMS: usize = 1024;
 
@@ -31,7 +29,6 @@ pub struct QueryPlan {
     world: WorldId,
     intent: QueryIntent,
     proof: PolicyProof,
-    decisions: Vec<PlannerDecision>,
 }
 
 impl QueryRequest {
@@ -44,11 +41,6 @@ impl QueryRequest {
             world: self.world,
             intent: self.intent.clone(),
             proof: aggregate_decision.proof().clone(),
-            decisions: self
-                .requested_labels
-                .iter()
-                .map(|label| evaluate_read(authority, label))
-                .collect(),
         })
     }
 }
@@ -75,22 +67,19 @@ impl QueryPlan {
     }
 
     #[must_use]
-    pub fn decisions(&self) -> &[PlannerDecision] {
-        &self.decisions
-    }
-
-    #[must_use]
     pub fn has_rejection(&self) -> bool {
-        self.decisions
-            .iter()
-            .any(|decision| matches!(decision, PlannerDecision::Reject { .. }))
+        matches!(
+            self.proof.decision(),
+            skrifheim_policy::DecisionKind::Reject
+        )
     }
 
     #[must_use]
     pub fn has_redaction(&self) -> bool {
-        self.decisions
-            .iter()
-            .any(|decision| matches!(decision, PlannerDecision::Redact { .. }))
+        matches!(
+            self.proof.decision(),
+            skrifheim_policy::DecisionKind::Redact
+        )
     }
 
     #[must_use]
@@ -143,7 +132,6 @@ mod tests {
         let plan = request.plan(&authority)?;
         assert_eq!(plan.world(), id(WorldId::from_u128(1))?);
         assert_eq!(plan.intent(), &QueryIntent::BuildContextPack);
-        assert_eq!(plan.decisions().len(), 1);
         assert!(plan.has_rejection());
         assert_eq!(
             plan.output_classification(),

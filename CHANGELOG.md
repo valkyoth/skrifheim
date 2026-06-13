@@ -9,6 +9,9 @@
 - Hardened policy-token comparison with local compiler barriers and fixed-slot bounded token-set scans.
 - Hardened policy label evaluation to process bounded compartment and releasability slots.
 - Added maximum signature count validation for `SignatureSet`.
+- Added signature key ID length and character validation.
+- Added fact object payload size validation for text and byte values.
+- Removed per-label query decisions from the public query plan surface.
 - Changed segment CRC metadata so an explicit CRC64 value of zero is representable.
 - Switched fact-builder evidence and causal-link deduplication to sort/dedup behavior with fail-fast link bounds in builder methods.
 - Added `0.7.0` release metadata and gate script.

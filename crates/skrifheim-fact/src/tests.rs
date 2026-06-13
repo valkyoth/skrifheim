@@ -5,7 +5,7 @@ use skrifheim_core::{
 };
 use skrifheim_crypto::{AlgorithmId, CryptoEpoch, SignatureEnvelope, SignatureSet};
 
-use super::{Confidence, FACT_LINK_LIST_MAX_ITEMS, Fact, FactBuilder};
+use super::{Confidence, FACT_LINK_LIST_MAX_ITEMS, FACT_OBJECT_MAX_BYTES, Fact, FactBuilder};
 
 fn id<T>(id: Option<T>) -> Result<T> {
     id.ok_or(SkrifheimError::InvalidIdentifier)
@@ -55,7 +55,7 @@ fn base_builder() -> Result<FactBuilder> {
         .world_id(id(WorldId::from_u128(2))?)
         .subject(id(EntityId::from_u128(3))?)
         .predicate(id(PredicateId::from_u128(4))?)
-        .object(Value::Boolean(true))
+        .object(Value::Boolean(true))?
         .valid_time(TimeRange::new(Timestamp(5), None)?)
         .committed_at(id(TxId::from_u128(6))?)
         .asserted_by(id(ActorId::from_u128(7))?)
@@ -184,5 +184,21 @@ fn builder_rejects_incremental_evidence_before_unbounded_growth() -> Result<()> 
         builder.add_evidence(id(SourceId::from_u128(5000))?),
         Err(SkrifheimError::TooManyFactLinks)
     );
+    Ok(())
+}
+
+#[test]
+fn validation_rejects_oversized_text_objects() -> Result<()> {
+    let oversized = String::from_utf8(vec![b'a'; FACT_OBJECT_MAX_BYTES + 1])
+        .map_err(|_| SkrifheimError::ValueTooLarge)?;
+    let result = base_builder()?.object(Value::Text(oversized));
+    assert_eq!(result, Err(SkrifheimError::ValueTooLarge));
+    Ok(())
+}
+
+#[test]
+fn validation_rejects_oversized_byte_objects() -> Result<()> {
+    let result = base_builder()?.object(Value::Bytes(vec![1; FACT_OBJECT_MAX_BYTES + 1]));
+    assert_eq!(result, Err(SkrifheimError::ValueTooLarge));
     Ok(())
 }
