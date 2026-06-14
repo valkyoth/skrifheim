@@ -42,7 +42,7 @@ impl QueryRequest {
         intent: QueryIntent,
         requested_labels: Vec<SecurityLabel>,
     ) -> Result<Self> {
-        if requested_labels.len() > QUERY_REQUEST_LABEL_MAX_ITEMS {
+        if requested_labels.is_empty() || requested_labels.len() > QUERY_REQUEST_LABEL_MAX_ITEMS {
             return Err(SkrifheimError::InvalidQueryRequest);
         }
         Ok(Self {
@@ -68,7 +68,9 @@ impl QueryRequest {
     }
 
     pub fn plan(&self, authority: &AuthorityContext) -> Result<QueryPlan> {
-        if self.requested_labels.len() > QUERY_REQUEST_LABEL_MAX_ITEMS {
+        if self.requested_labels.is_empty()
+            || self.requested_labels.len() > QUERY_REQUEST_LABEL_MAX_ITEMS
+        {
             return Err(SkrifheimError::InvalidQueryRequest);
         }
         let aggregate_decision = evaluate_read_set(authority, &self.requested_labels);
@@ -224,6 +226,25 @@ mod tests {
                 QueryIntent::ReadFacts,
                 requested_labels,
             ),
+            Err(SkrifheimError::InvalidQueryRequest)
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn plan_rejects_empty_requested_labels() -> skrifheim_core::Result<()> {
+        let world = id(WorldId::from_u128(1))?;
+        assert!(matches!(
+            QueryRequest::new(world, QueryIntent::ReadFacts, Vec::new()),
+            Err(SkrifheimError::InvalidQueryRequest)
+        ));
+        let request = QueryRequest {
+            world,
+            intent: QueryIntent::ReadFacts,
+            requested_labels: Vec::new(),
+        };
+        assert!(matches!(
+            request.plan(&authority(Classification::TopSecret)?),
             Err(SkrifheimError::InvalidQueryRequest)
         ));
         Ok(())

@@ -40,6 +40,11 @@ pub struct SegmentHeader {
 }
 
 impl SegmentHeader {
+    /// Validates only the segment header's structural metadata.
+    ///
+    /// This does not recompute or compare the body CRC/hash against segment body
+    /// bytes. Future readers with access to the body must verify both before
+    /// accepting body contents as tamper-evident.
     pub fn validate(&self) -> Result<()> {
         if self.magic != SEGMENT_MAGIC {
             return Err(SkrifheimError::InvalidStorageHeader(String::from(

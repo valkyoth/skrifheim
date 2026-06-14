@@ -25,6 +25,9 @@
 - Resolved the fifth `0.8.0` pentest pass by enforcing exact fixed-size
   hybrid/named signatures, binding segment/data keys to compartment keys, and
   documenting token canonicalization timing and tenant-level world quotas.
+- Resolved the sixth `0.8.0` pentest pass by rejecting empty query label sets,
+  rejecting zero-width time ranges, and documenting that segment header
+  validation is structural until body integrity verification is implemented.
 - Bumped workspace and internal crate dependency versions to `0.8.0`.
 - Added `0.8.0` release metadata and gate script.
 

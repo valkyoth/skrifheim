@@ -4,8 +4,7 @@
 extern crate alloc;
 
 use alloc::{string::String, vec::Vec};
-use core::fmt;
-use core::num::NonZeroU128;
+use core::{fmt, num::NonZeroU128};
 
 mod policy_token;
 
@@ -74,7 +73,7 @@ pub struct TimeRange {
 impl TimeRange {
     pub const fn new(start: Timestamp, end: Option<Timestamp>) -> Result<Self> {
         if let Some(end) = end
-            && end.0 < start.0
+            && end.0 <= start.0
         {
             return Err(SkrifheimError::InvalidTimeRange);
         }
@@ -359,10 +358,12 @@ mod tests {
 
     #[test]
     fn time_range_rejects_inverted_bounds() {
-        assert_eq!(
-            TimeRange::new(Timestamp(20), Some(Timestamp(10))),
-            Err(SkrifheimError::InvalidTimeRange)
-        );
+        for end in [Timestamp(10), Timestamp(20)] {
+            assert_eq!(
+                TimeRange::new(Timestamp(20), Some(end)),
+                Err(SkrifheimError::InvalidTimeRange)
+            );
+        }
     }
 
     #[test]

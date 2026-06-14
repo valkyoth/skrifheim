@@ -1,6 +1,6 @@
 # skrifheim 0.8.0 Release Notes
 
-Status: fifth pentest pass resolved, pending retest.
+Status: sixth pentest pass resolved, pending retest.
 
 ## Scope
 
@@ -73,6 +73,14 @@ quarantine states, destruction, and crypto-erasure records.
   as future storage/orchestration requirements.
 - Reconfirmed the key-material cleanup plan uses the project-approved
   `sanitization` path, not `zeroize`.
+- Rejected empty query requested-label sets in both request construction and
+  planning so the future executor cannot treat absent labels as policy allow.
+- Rejected zero-width `TimeRange` values where half-open range semantics would
+  make a fact valid at no timestamp.
+- Documented that `SegmentHeader::validate()` is structural only and future
+  readers must recompute body CRC/hash before accepting segment bytes.
+- Reconfirmed deterministic world ID collision resistance remains planned
+  before world IDs become storage-key authority.
 - Bumped workspace and internal crate dependency versions to `0.8.0`.
 - Added `scripts/release_0_8_gate.sh`.
 - Re-checked the stable Rust channel on 2026-06-14. Rust stable remains
@@ -101,6 +109,7 @@ admission rule for memory cleanup; `zeroize` is not admitted for this project.
 
 ## Pentest Status
 
-The first, second, third, fourth, and fifth pentest passes have been resolved.
+The first, second, third, fourth, fifth, and sixth pentest passes have been
+resolved.
 Root `PENTEST.md` is the temporary findings handoff file and must be removed
 after findings are resolved.

@@ -26,7 +26,7 @@ Status: baseline control map
 | Confidence and mandatory access control | Propagated confidence is evaluated together with mandatory access control | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | Timing side channels | Policy-token checks use fixed-slot byte sets, local compiler barriers, bounded scans, and fail-closed oversize guards; production constant-time evidence remains required | Scaffolded | `docs/engineering-policy.md` |
 | Query inference | Public query plans expose aggregate proof/decision state, not per-label decisions | Scaffolded | `skrifheim-query` |
-| Query request memory | Query requests use constructor-enforced label limits and explicit fixed-label memory budget | Scaffolded | `skrifheim-query` |
+| Query request memory | Query requests fail closed for empty label sets, use constructor-enforced label limits, and keep an explicit fixed-label memory budget | Scaffolded | `skrifheim-query` |
 | Crypto agility | Algorithm and signature envelopes | Scaffolded | `skrifheim-crypto` |
 | Key hierarchy | Root trust, deployment, region, tenant, compartment, segment, and data key parent metadata with tenant deployment/region and segment/data compartment binding | Scaffolded | `skrifheim-crypto` |
 | Key lifecycle | Creation, activation, rotation preflight, compromise, quarantine, unsafe-parent rejection, destruction, and destruction-gated crypto-erasure metadata | Scaffolded | `skrifheim-crypto` |
@@ -34,7 +34,7 @@ Status: baseline control map
 | Legal/compliance planning | Instance/node, data, and operation passports with signed law-pack metadata and legal operation/transfer decisions | Planned | `docs/hyve-cluster-and-compliance-roadmap.md` |
 | Sovereign placement | Placement and failover decisions constrained by jurisdiction, compliance, data category, and legal basis | Planned | `docs/hyve-cluster-and-compliance-roadmap.md` |
 | Cluster control plane | Future Hyve cells, control plane, policy-scoped tunnels, witness nodes, and compliance autopilot | Planned | `docs/hyve-cluster-and-compliance-roadmap.md` |
-| Tamper evidence | Segment metadata and validation, including explicit checksum presence representation | Scaffolded | `skrifheim-storage` |
+| Tamper evidence | Segment header metadata and structural validation, including explicit checksum presence representation; body CRC/hash recomputation is required before accepting segment bytes | Scaffolded | `skrifheim-storage` |
 | Segment size bounds | Segment headers reject empty and oversized bodies before future segment readers allocate | Scaffolded | `skrifheim-storage` |
 | World identity collision resistance | Deterministic world IDs are non-secret scaffold identifiers; storage must enforce uniqueness on `(tenant_id, kind, depth, parent, name)` and collision-resistant derivation is required before storage-key authority | Planned | `docs/VERSION_PLAN.md` |
 | Tenant world quotas | Tenant-level world count and aggregate tracked fact-reference budgets are required before storage-backed world creation is exposed | Planned | `docs/IMPLEMENTATION_PLAN.md` |
