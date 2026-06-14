@@ -87,6 +87,23 @@ fn builder_constructs_valid_fact() -> Result<()> {
 }
 
 #[test]
+fn debug_redacts_fact_payload_and_label_tokens() -> Result<()> {
+    let builder = base_builder()?.object(Value::Text(String::from("classified payload")))?;
+    let builder_debug = alloc::format!("{builder:?}");
+    let fact = builder.build()?;
+    let fact_debug = alloc::format!("{fact:?}");
+
+    assert!(!builder_debug.contains("classified payload"));
+    assert!(!builder_debug.contains("EU-COMMAND"));
+    assert!(!fact_debug.contains("classified payload"));
+    assert!(!fact_debug.contains("EU-COMMAND"));
+    assert!(builder_debug.contains("<redacted>"));
+    assert!(fact_debug.contains("<redacted>"));
+    assert!(fact_debug.contains("Restricted"));
+    Ok(())
+}
+
+#[test]
 fn builder_requires_all_required_fields() {
     assert_eq!(
         Fact::builder().build(),

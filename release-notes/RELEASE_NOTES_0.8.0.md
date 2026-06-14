@@ -1,6 +1,6 @@
 # skrifheim 0.8.0 Release Notes
 
-Status: first pentest pass resolved, pending retest.
+Status: second pentest pass resolved, pending retest.
 
 ## Scope
 
@@ -27,6 +27,14 @@ quarantine states, destruction, and crypto-erasure records.
   responses must use `public_message()`.
 - Recorded the future traversal rule that large fixed-slot policy structures
   should not be cloned through recursive graph walks.
+- Added redacted `Debug` implementations for sensitive labels, policy tokens,
+  fact values, facts, and fact builders.
+- Added a release-gate check that blocks direct `Debug` derives on those
+  sensitive data carriers.
+- Required keys to pass through `Destroyed` before `crypto_erase()` can move
+  metadata into `CryptoErased`.
+- Documented future raw key material memory-hygiene requirements through the
+  project-approved `sanitization` dependency path.
 - Bumped workspace and internal crate dependency versions to `0.8.0`.
 - Added `scripts/release_0_8_gate.sh`.
 - Re-checked the stable Rust channel on 2026-06-14. Rust stable remains
@@ -55,5 +63,5 @@ admission rule for memory cleanup; `zeroize` is not admitted for this project.
 
 ## Pentest Status
 
-The first pentest pass has been resolved. Root `PENTEST.md` is the temporary
+The first and second pentest passes have been resolved. Root `PENTEST.md` is the temporary
 findings handoff file and must be removed after findings are resolved.

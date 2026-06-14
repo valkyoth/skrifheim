@@ -290,7 +290,7 @@ impl KeyMetadata {
     }
 
     pub fn crypto_erase(&self, reason: KeyErasureReason) -> Result<Self> {
-        if !can_crypto_erase(self.lifecycle) {
+        if !is_valid_lifecycle_transition(self.lifecycle, KeyLifecycleState::CryptoErased) {
             return Err(SkrifheimError::InvalidKeyLifecycle);
         }
         Ok(Self {
@@ -336,16 +336,6 @@ fn is_valid_lifecycle_transition(current: KeyLifecycleState, next: KeyLifecycleS
                 KeyLifecycleState::Destroyed,
                 KeyLifecycleState::CryptoErased
             )
-    )
-}
-
-fn can_crypto_erase(lifecycle: KeyLifecycleState) -> bool {
-    matches!(
-        lifecycle,
-        KeyLifecycleState::Retired
-            | KeyLifecycleState::Compromised
-            | KeyLifecycleState::Quarantined
-            | KeyLifecycleState::Destroyed
     )
 }
 

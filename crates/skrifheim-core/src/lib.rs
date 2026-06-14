@@ -129,7 +129,7 @@ impl Classification {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct SecurityLabel {
     classification: Classification,
     compartments: PolicyTokenSet,
@@ -174,15 +174,46 @@ impl SecurityLabel {
     }
 }
 
+impl fmt::Debug for SecurityLabel {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("SecurityLabel")
+            .field("classification", &self.classification)
+            .field("compartment_count", &self.compartments.len())
+            .field("releasable_to_count", &self.releasable_to.len())
+            .field("tokens", &"<redacted>")
+            .finish()
+    }
+}
+
 pub const SECURITY_LABEL_FIXED_STORAGE_BYTES: usize = core::mem::size_of::<SecurityLabel>();
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub enum Value {
     Text(String),
     Integer(i128),
     Boolean(bool),
     Bytes(Vec<u8>),
     Ref(EntityId),
+}
+
+impl fmt::Debug for Value {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Text(value) => f
+                .debug_struct("Text")
+                .field("bytes", &value.len())
+                .field("content", &"<redacted>")
+                .finish(),
+            Self::Integer(_) => f.write_str("Integer(<redacted>)"),
+            Self::Boolean(_) => f.write_str("Boolean(<redacted>)"),
+            Self::Bytes(value) => f
+                .debug_struct("Bytes")
+                .field("bytes", &value.len())
+                .field("content", &"<redacted>")
+                .finish(),
+            Self::Ref(_) => f.write_str("Ref(<redacted>)"),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -422,6 +453,29 @@ mod tests {
 
         assert!(tokens.slot(0).is_some());
         assert_eq!(tokens.slot(POLICY_TOKEN_SET_MAX_ITEMS), None);
+        Ok(())
+    }
+
+    #[test]
+    fn debug_redacts_security_labels_policy_tokens_and_values() -> Result<()> {
+        let label = SecurityLabel::new(
+            Classification::TopSecret,
+            vec![String::from("EU-COMMAND")],
+            vec![String::from("EU")],
+        )?;
+        let token_set_debug = alloc::format!("{:?}", label.compartments());
+        let label_debug = alloc::format!("{label:?}");
+        let text_debug = alloc::format!("{:?}", Value::Text(String::from("classified payload")));
+        let bytes_debug = alloc::format!("{:?}", Value::Bytes(vec![1, 2, 3]));
+
+        assert!(!token_set_debug.contains("EU-COMMAND"));
+        assert!(!label_debug.contains("EU-COMMAND"));
+        assert!(!label_debug.contains("\"EU\""));
+        assert!(!text_debug.contains("classified payload"));
+        assert!(!bytes_debug.contains("[1, 2, 3]"));
+        assert!(label_debug.contains("TopSecret"));
+        assert!(text_debug.contains("<redacted>"));
+        assert!(bytes_debug.contains("<redacted>"));
         Ok(())
     }
 

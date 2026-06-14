@@ -54,6 +54,7 @@ The control plane must model:
 - expiration,
 - compromise,
 - quarantine,
+- destruction,
 - crypto-erasure,
 - backup key recovery,
 - threshold unlock,
@@ -61,6 +62,8 @@ The control plane must model:
 - no-escrow deployments.
 
 Dangerous key operations require audit records and future threshold approval.
+Crypto-erasure must pass through an explicit destruction checkpoint before key
+metadata enters the crypto-erased state.
 
 ## Encryption Domains
 
@@ -123,6 +126,10 @@ Planned controls:
 - no secrets in logs or panic text,
 - secret buffers cleaned with the project-approved `sanitization` crate after
   dependency admission,
+- raw key material types must implement reviewed cleanup on drop through the
+  project-approved `sanitization` path before they are admitted,
+- raw key material types must not derive `Debug` or `Clone` without an explicit
+  security review and release-gate test,
 - optional locked memory for key material where the OS supports it,
 - no swapping of long-lived key material where practical,
 - separated secure arenas for key material,

@@ -116,3 +116,31 @@ fn active_key_cannot_be_crypto_erased_directly() -> Result<()> {
     );
     Ok(())
 }
+
+#[test]
+fn compromised_or_quarantined_key_must_be_destroyed_before_crypto_erasure() -> Result<()> {
+    let compromised = KeyMetadata::with_lifecycle(
+        id(KeyId::from_u128(91))?,
+        None,
+        KeyScope::RootTrust,
+        CryptoEpoch(1),
+        KeyLifecycleState::Compromised,
+    );
+    let quarantined = KeyMetadata::with_lifecycle(
+        id(KeyId::from_u128(92))?,
+        None,
+        KeyScope::RootTrust,
+        CryptoEpoch(1),
+        KeyLifecycleState::Quarantined,
+    );
+
+    assert_eq!(
+        compromised.crypto_erase(KeyErasureReason::Compromise),
+        Err(SkrifheimError::InvalidKeyLifecycle)
+    );
+    assert_eq!(
+        quarantined.crypto_erase(KeyErasureReason::Compromise),
+        Err(SkrifheimError::InvalidKeyLifecycle)
+    );
+    Ok(())
+}

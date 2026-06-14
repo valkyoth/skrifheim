@@ -4,6 +4,7 @@
 extern crate alloc;
 
 use alloc::{collections::BTreeSet, vec::Vec};
+use core::fmt;
 use skrifheim_core::{
     ActorId, EntityId, FactId, PolicyId, PredicateId, Result, SecurityLabel, SkrifheimError,
     SourceId, TimeRange, TxId, Value, WorldId,
@@ -46,7 +47,7 @@ impl Confidence {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct Fact {
     id: FactId,
     world_id: WorldId,
@@ -64,6 +65,29 @@ pub struct Fact {
     policy_id: PolicyId,
     label: SecurityLabel,
     signatures: SignatureSet,
+}
+
+impl fmt::Debug for Fact {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Fact")
+            .field("id", &self.id)
+            .field("world_id", &self.world_id)
+            .field("subject", &self.subject)
+            .field("predicate", &self.predicate)
+            .field("object", &"<redacted>")
+            .field("valid_time", &self.valid_time)
+            .field("committed_at", &self.committed_at)
+            .field("asserted_by", &self.asserted_by)
+            .field("evidence_count", &self.evidence.len())
+            .field("confidence", &self.confidence)
+            .field("caused_by_count", &self.caused_by.len())
+            .field("supersedes_count", &self.supersedes.len())
+            .field("invalidates_count", &self.invalidates.len())
+            .field("policy_id", &self.policy_id)
+            .field("classification", &self.label.classification())
+            .field("signature_count", &self.signatures.envelopes().len())
+            .finish()
+    }
 }
 
 impl Fact {

@@ -12,6 +12,9 @@
   non-panicking, gating the test signature algorithm out of non-test builds,
   enforcing hybrid signature minimum lengths, and documenting external error
   and traversal guardrails.
+- Resolved the second `0.8.0` pentest pass by redacting sensitive Debug output,
+  requiring key destruction before crypto-erasure, and tracking raw key material
+  memory hygiene requirements.
 - Bumped workspace and internal crate dependency versions to `0.8.0`.
 - Added `0.8.0` release metadata and gate script.
 

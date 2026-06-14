@@ -15,6 +15,7 @@ Status: baseline control map
 | World promotion safety | Promotion and rollback preflight expose deterministic conflict categories before merge/promotion logic exists | Scaffolded | `skrifheim-world` |
 | Classification | Labels and clearance checks | Scaffolded | `skrifheim-policy` |
 | External error shape | `SkrifheimError::public_message()` provides generic messages for trust-boundary responses; `Display` is internal diagnostic output only | Scaffolded | `skrifheim-core` |
+| Diagnostic redaction | Sensitive fact payloads, labels, and policy tokens use redacted `Debug`; direct sensitive `Debug` derives are release-gate blocked | Scaffolded | `scripts/validate-security-policy.sh` |
 | Signature-set bounds | Maximum signature-envelope count and bounded signature key identifiers before durable ingest accepts untrusted commits | Scaffolded | `skrifheim-crypto` |
 | Signature algorithm admission | Named and hybrid signature algorithm identifiers require a closed approved list | Scaffolded | `skrifheim-crypto` |
 | Fact-builder complexity | O(n log n) deduplication, fail-fast builder bounds, and bounded text/byte fact payloads | Scaffolded | `skrifheim-fact` |
@@ -27,7 +28,7 @@ Status: baseline control map
 | Query request memory | Query requests use constructor-enforced label limits and explicit fixed-label memory budget | Scaffolded | `skrifheim-query` |
 | Crypto agility | Algorithm and signature envelopes | Scaffolded | `skrifheim-crypto` |
 | Key hierarchy | Root trust, deployment, region, tenant, compartment, segment, and data key parent metadata with tenant deployment/region binding | Scaffolded | `skrifheim-crypto` |
-| Key lifecycle | Creation, activation, rotation preflight, compromise, quarantine, destruction, and crypto-erasure metadata | Scaffolded | `skrifheim-crypto` |
+| Key lifecycle | Creation, activation, rotation preflight, compromise, quarantine, destruction, and destruction-gated crypto-erasure metadata | Scaffolded | `skrifheim-crypto` |
 | Encryption control plane | Key hierarchy, lifecycle, domains, memory secrecy, encrypted projections, and compromise handling | Planned | `docs/encryption-architecture.md` |
 | Legal/compliance planning | Instance/node, data, and operation passports with signed law-pack metadata and legal operation/transfer decisions | Planned | `docs/hyve-cluster-and-compliance-roadmap.md` |
 | Sovereign placement | Placement and failover decisions constrained by jurisdiction, compliance, data category, and legal basis | Planned | `docs/hyve-cluster-and-compliance-roadmap.md` |

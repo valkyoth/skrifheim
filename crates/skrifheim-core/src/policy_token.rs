@@ -1,6 +1,6 @@
 use alloc::{string::String, vec::Vec};
-use core::array;
 use core::hint::black_box;
+use core::{array, fmt};
 
 use crate::{Result, SkrifheimError};
 
@@ -9,7 +9,7 @@ pub const POLICY_TOKEN_SET_MAX_ITEMS: usize = 64;
 const NOOP_POLICY_TOKEN: PolicyTokenSlot = PolicyTokenSlot::empty();
 const INVALID_POLICY_TOKEN_NEEDLE: PolicyTokenSlot = PolicyTokenSlot::invalid_needle();
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct PolicyTokenSet {
     slots: [PolicyTokenSlot; POLICY_TOKEN_SET_MAX_ITEMS],
     len: usize,
@@ -75,7 +75,17 @@ impl PolicyTokenSet {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+impl fmt::Debug for PolicyTokenSet {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("PolicyTokenSet")
+            .field("len", &self.len)
+            .field("capacity", &POLICY_TOKEN_SET_MAX_ITEMS)
+            .field("tokens", &"<redacted>")
+            .finish()
+    }
+}
+
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub struct PolicyTokenSlot {
     bytes: [u8; POLICY_TOKEN_MAX_BYTES],
     len: usize,
@@ -116,6 +126,18 @@ impl PolicyTokenSlot {
     #[must_use]
     pub const fn present_mask(self) -> u8 {
         self.present
+    }
+}
+
+impl fmt::Debug for PolicyTokenSlot {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.present == 0 {
+            return f.write_str("PolicyTokenSlot(<empty>)");
+        }
+        f.debug_struct("PolicyTokenSlot")
+            .field("len", &self.len)
+            .field("token", &"<redacted>")
+            .finish()
     }
 }
 

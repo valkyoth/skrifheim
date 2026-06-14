@@ -10,3 +10,33 @@ if grep -R "Fluxheim\\|Aesynx\\|Mjolni\\|CMS_PLAN\\|IDEA.md\\|IDEA.MD\\|CMS_IDEA
     echo "repository documentation contains copied or retired project wording" >&2
     exit 1
 fi
+
+check_no_sensitive_debug_derive() {
+    file="$1"
+    type_name="$2"
+    if awk -v type_name="$type_name" '
+        /#\[derive\(.*Debug.*\)\]/ {
+            pending = 1
+            next
+        }
+        pending && $0 ~ "^[[:space:]]*pub[[:space:]]+(struct|enum)[[:space:]]+" type_name "([^[:alnum:]_]|$)" {
+            found = 1
+        }
+        pending && $0 !~ "^[[:space:]]*#\\[" && $0 !~ "^[[:space:]]*$" {
+            pending = 0
+        }
+        END {
+            exit found ? 0 : 1
+        }
+    ' "$file"; then
+        echo "$file must not derive Debug for sensitive type $type_name" >&2
+        exit 1
+    fi
+}
+
+check_no_sensitive_debug_derive crates/skrifheim-core/src/lib.rs SecurityLabel
+check_no_sensitive_debug_derive crates/skrifheim-core/src/lib.rs Value
+check_no_sensitive_debug_derive crates/skrifheim-core/src/policy_token.rs PolicyTokenSet
+check_no_sensitive_debug_derive crates/skrifheim-core/src/policy_token.rs PolicyTokenSlot
+check_no_sensitive_debug_derive crates/skrifheim-fact/src/lib.rs Fact
+check_no_sensitive_debug_derive crates/skrifheim-fact/src/builder.rs FactBuilder

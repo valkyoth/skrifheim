@@ -1,4 +1,5 @@
 use alloc::vec::Vec;
+use core::fmt;
 use skrifheim_core::{
     ActorId, EntityId, FactId, PolicyId, PredicateId, Result, SecurityLabel, SkrifheimError,
     SourceId, TimeRange, TxId, Value, WorldId,
@@ -7,7 +8,7 @@ use skrifheim_crypto::SignatureSet;
 
 use crate::{Confidence, FACT_LINK_LIST_MAX_ITEMS, Fact, validate_object_size};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub struct FactBuilder {
     id: Option<FactId>,
     world_id: Option<WorldId>,
@@ -25,6 +26,38 @@ pub struct FactBuilder {
     policy_id: Option<PolicyId>,
     label: Option<SecurityLabel>,
     signatures: Option<SignatureSet>,
+}
+
+impl fmt::Debug for FactBuilder {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("FactBuilder")
+            .field("id", &self.id)
+            .field("world_id", &self.world_id)
+            .field("subject", &self.subject)
+            .field("predicate", &self.predicate)
+            .field("object", &self.object.as_ref().map(|_| "<redacted>"))
+            .field("valid_time", &self.valid_time)
+            .field("committed_at", &self.committed_at)
+            .field("asserted_by", &self.asserted_by)
+            .field("evidence_count", &self.evidence.len())
+            .field("confidence", &self.confidence)
+            .field("caused_by_count", &self.caused_by.len())
+            .field("supersedes_count", &self.supersedes.len())
+            .field("invalidates_count", &self.invalidates.len())
+            .field("policy_id", &self.policy_id)
+            .field(
+                "classification",
+                &self.label.as_ref().map(SecurityLabel::classification),
+            )
+            .field(
+                "signature_count",
+                &self
+                    .signatures
+                    .as_ref()
+                    .map(|signatures| signatures.envelopes().len()),
+            )
+            .finish()
+    }
 }
 
 impl FactBuilder {
