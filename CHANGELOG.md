@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+## 0.8.0
+
+- Added key lifecycle states for creation, activation, rotation, retirement, compromise, quarantine, destruction, and crypto-erasure.
+- Added key lifecycle transition validation and invalid-transition tests.
+- Added rotation preflight metadata for active-to-candidate key rotation.
+- Added crypto-erasure metadata records and tests for compromise/quarantine/destruction handling.
+- Bumped workspace and internal crate dependency versions to `0.8.0`.
+- Added `0.8.0` release metadata and gate script.
+
 ## 0.7.0
 
 - Added key hierarchy metadata for root trust, deployment, region, tenant, compartment, segment, and data key scopes.

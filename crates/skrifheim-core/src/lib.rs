@@ -225,6 +225,7 @@ pub enum SkrifheimError {
     InvalidStorageHeader(String),
     InvalidWorldDiff,
     InvalidKeyHierarchy,
+    InvalidKeyLifecycle,
 }
 
 impl fmt::Display for SkrifheimError {
@@ -254,6 +255,7 @@ impl fmt::Display for SkrifheimError {
             Self::InvalidStorageHeader(reason) => write!(f, "invalid storage header: {reason}"),
             Self::InvalidWorldDiff => write!(f, "target world is not a child of source world"),
             Self::InvalidKeyHierarchy => write!(f, "invalid key hierarchy"),
+            Self::InvalidKeyLifecycle => write!(f, "invalid key lifecycle"),
         }
     }
 }
@@ -284,6 +286,7 @@ impl SkrifheimError {
             Self::SelfReferentialFact => "invalid fact",
             Self::InvalidWorldDiff => "invalid world diff",
             Self::InvalidKeyHierarchy => "invalid key hierarchy",
+            Self::InvalidKeyLifecycle => "invalid key lifecycle",
         }
     }
 }

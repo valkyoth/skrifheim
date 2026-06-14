@@ -12,7 +12,8 @@ mod key;
 mod tests;
 
 pub use key::{
-    CompartmentKeyId, DeploymentKeyId, KeyId, KeyMetadata, KeyScope, RegionKeyId, SegmentKeyId,
+    CompartmentKeyId, DeploymentKeyId, KeyErasureMetadata, KeyErasureReason, KeyId,
+    KeyLifecycleState, KeyMetadata, KeyRotationPreflight, KeyScope, RegionKeyId, SegmentKeyId,
 };
 
 pub const ED25519_SIG_BYTES: usize = 64;
