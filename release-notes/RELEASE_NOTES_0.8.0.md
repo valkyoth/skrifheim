@@ -1,6 +1,6 @@
 # skrifheim 0.8.0 Release Notes
 
-Status: fourth pentest pass resolved, pending retest.
+Status: fifth pentest pass resolved, pending retest.
 
 ## Scope
 
@@ -61,6 +61,18 @@ quarantine states, destruction, and crypto-erasure records.
   remain acceptable, private token-slot copying is documented at its invariant,
   lifecycle audit history must preserve repeated state movement, and supply
   chain remains dependency-free.
+- Enforced exact lengths for currently approved fixed-size hybrid and named
+  signature envelopes, removing trailing-byte slack.
+- Added `compartment_id` to segment/data key scopes and required parent
+  compartment keys to match that compartment.
+- Changed policy required-token evaluation to iterate fixed token slots
+  directly instead of handling an impossible out-of-range slot branch.
+- Documented that policy-token needle canonicalization is not constant-time;
+  only fixed-slot comparison is constant-shape.
+- Documented tenant-level world count and aggregate world fact-reference quotas
+  as future storage/orchestration requirements.
+- Reconfirmed the key-material cleanup plan uses the project-approved
+  `sanitization` path, not `zeroize`.
 - Bumped workspace and internal crate dependency versions to `0.8.0`.
 - Added `scripts/release_0_8_gate.sh`.
 - Re-checked the stable Rust channel on 2026-06-14. Rust stable remains
@@ -89,6 +101,6 @@ admission rule for memory cleanup; `zeroize` is not admitted for this project.
 
 ## Pentest Status
 
-The first, second, third, and fourth pentest passes have been resolved. Root
-`PENTEST.md` is the temporary findings handoff file and must be removed after
-findings are resolved.
+The first, second, third, fourth, and fifth pentest passes have been resolved.
+Root `PENTEST.md` is the temporary findings handoff file and must be removed
+after findings are resolved.

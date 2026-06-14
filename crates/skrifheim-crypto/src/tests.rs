@@ -129,12 +129,21 @@ fn variable_signature_length_is_bounded() {
         ),
         Err(SkrifheimError::InvalidSignatureLength)
     ));
+    assert!(matches!(
+        SignatureEnvelope::new(
+            AlgorithmId::Named(String::from("SKRIFHEIM-TEST-SIG")),
+            CryptoEpoch(1),
+            "k",
+            vec![1; ED25519_SIG_BYTES + 1],
+        ),
+        Err(SkrifheimError::InvalidSignatureLength)
+    ));
     assert!(
         SignatureEnvelope::new(
             AlgorithmId::Named(String::from("SKRIFHEIM-TEST-SIG")),
             CryptoEpoch(1),
             "k",
-            vec![1; MAX_VARIABLE_SIGNATURE_BYTES],
+            vec![1; ED25519_SIG_BYTES],
         )
         .is_ok()
     );
@@ -150,6 +159,10 @@ fn hybrid_signature_length_requires_component_minimums() {
 
     assert!(matches!(
         SignatureEnvelope::new(algorithm.clone(), CryptoEpoch(1), "k", vec![1; min_len - 1],),
+        Err(SkrifheimError::InvalidSignatureLength)
+    ));
+    assert!(matches!(
+        SignatureEnvelope::new(algorithm.clone(), CryptoEpoch(1), "k", vec![1; min_len + 1],),
         Err(SkrifheimError::InvalidSignatureLength)
     ));
     assert!(SignatureEnvelope::new(algorithm, CryptoEpoch(1), "k", vec![1; min_len],).is_ok());
@@ -283,6 +296,7 @@ fn key_hierarchy_accepts_valid_edges() -> Result<()> {
         Some(compartment.key_id()),
         KeyScope::Segment {
             tenant_id,
+            compartment_id,
             segment_id,
         },
         CryptoEpoch(1),
@@ -292,6 +306,7 @@ fn key_hierarchy_accepts_valid_edges() -> Result<()> {
         Some(compartment.key_id()),
         KeyScope::Data {
             tenant_id,
+            compartment_id,
             segment_id,
         },
         CryptoEpoch(1),
@@ -425,12 +440,43 @@ fn key_hierarchy_rejects_data_under_non_compartment_parent() -> Result<()> {
         Some(tenant.key_id()),
         KeyScope::Data {
             tenant_id,
+            compartment_id: id(CompartmentKeyId::from_u128(13))?,
             segment_id: id(SegmentKeyId::from_u128(14))?,
         },
         CryptoEpoch(1),
     );
     assert_eq!(
         data.validate_parent(Some(&tenant)),
+        Err(SkrifheimError::InvalidKeyHierarchy)
+    );
+    Ok(())
+}
+
+#[test]
+fn key_hierarchy_rejects_cross_compartment_segment_metadata() -> Result<()> {
+    let tenant_id = id(TenantId::from_u128(12))?;
+    let parent_compartment = KeyMetadata::new(
+        id(KeyId::from_u128(5))?,
+        Some(id(KeyId::from_u128(4))?),
+        KeyScope::Compartment {
+            tenant_id,
+            compartment_id: id(CompartmentKeyId::from_u128(13))?,
+        },
+        CryptoEpoch(1),
+    );
+    let segment = KeyMetadata::new(
+        id(KeyId::from_u128(6))?,
+        Some(parent_compartment.key_id()),
+        KeyScope::Segment {
+            tenant_id,
+            compartment_id: id(CompartmentKeyId::from_u128(99))?,
+            segment_id: id(SegmentKeyId::from_u128(14))?,
+        },
+        CryptoEpoch(1),
+    );
+
+    assert_eq!(
+        segment.validate_parent(Some(&parent_compartment)),
         Err(SkrifheimError::InvalidKeyHierarchy)
     );
     Ok(())

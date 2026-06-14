@@ -180,6 +180,8 @@ pub fn canonical_policy_token(mut value: String) -> Result<String> {
 
 #[must_use]
 pub fn contains_policy_token_ct(tokens: &PolicyTokenSet, needle: &str) -> bool {
+    // Needle canonicalization is not constant-time; only the fixed-slot
+    // comparison below is constant-shape.
     let needle = match canonical_policy_token(String::from(needle)) {
         Ok(needle) => PolicyTokenSlot::from_canonical(&needle),
         Err(_) => INVALID_POLICY_TOKEN_NEEDLE,

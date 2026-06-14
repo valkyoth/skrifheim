@@ -28,7 +28,7 @@ Status: baseline control map
 | Query inference | Public query plans expose aggregate proof/decision state, not per-label decisions | Scaffolded | `skrifheim-query` |
 | Query request memory | Query requests use constructor-enforced label limits and explicit fixed-label memory budget | Scaffolded | `skrifheim-query` |
 | Crypto agility | Algorithm and signature envelopes | Scaffolded | `skrifheim-crypto` |
-| Key hierarchy | Root trust, deployment, region, tenant, compartment, segment, and data key parent metadata with tenant deployment/region binding | Scaffolded | `skrifheim-crypto` |
+| Key hierarchy | Root trust, deployment, region, tenant, compartment, segment, and data key parent metadata with tenant deployment/region and segment/data compartment binding | Scaffolded | `skrifheim-crypto` |
 | Key lifecycle | Creation, activation, rotation preflight, compromise, quarantine, unsafe-parent rejection, destruction, and destruction-gated crypto-erasure metadata | Scaffolded | `skrifheim-crypto` |
 | Encryption control plane | Key hierarchy, lifecycle, domains, memory secrecy, encrypted projections, and compromise handling | Planned | `docs/encryption-architecture.md` |
 | Legal/compliance planning | Instance/node, data, and operation passports with signed law-pack metadata and legal operation/transfer decisions | Planned | `docs/hyve-cluster-and-compliance-roadmap.md` |
@@ -37,6 +37,7 @@ Status: baseline control map
 | Tamper evidence | Segment metadata and validation, including explicit checksum presence representation | Scaffolded | `skrifheim-storage` |
 | Segment size bounds | Segment headers reject empty and oversized bodies before future segment readers allocate | Scaffolded | `skrifheim-storage` |
 | World identity collision resistance | Deterministic world IDs are non-secret scaffold identifiers; storage must enforce uniqueness on `(tenant_id, kind, depth, parent, name)` and collision-resistant derivation is required before storage-key authority | Planned | `docs/VERSION_PLAN.md` |
+| Tenant world quotas | Tenant-level world count and aggregate tracked fact-reference budgets are required before storage-backed world creation is exposed | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | AI authority | AI artifacts are derived, not truth | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | CMS isolation | Public/private world split | Planned | `docs/cms-1-0-target.md` |
 | Rootless container | Podman smoke path | Scaffolded | `scripts/podman_smoke.sh` |

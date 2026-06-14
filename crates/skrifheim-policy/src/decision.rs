@@ -207,19 +207,14 @@ fn evaluate_required_tokens(
     }
 
     let mut allowed = 1_u8;
-    let mut index = 0;
-    while index < POLICY_TOKEN_SET_MAX_ITEMS {
-        let token = match required.slot(index) {
-            Some(token) => token,
-            None => return 0,
-        };
+    for token in required.slots() {
+        let token = *token;
         let present = token.present_mask();
         let mut token_allowed = 1_u8;
         token_allowed &= contains_policy_token_slot_ct(subject, token) as u8;
         token_allowed &= contains_policy_token_slot_ct(device, token) as u8;
         token_allowed &= contains_policy_token_slot_ct(workload, token) as u8;
         allowed &= (present ^ 1) | token_allowed;
-        index += 1;
     }
     allowed
 }

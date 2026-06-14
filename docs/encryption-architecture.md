@@ -144,6 +144,9 @@ Planned controls:
   dependency admission,
 - raw key material types must implement reviewed cleanup on drop through the
   project-approved `sanitization` path before they are admitted,
+- `zeroize` is not admitted for this project; if `sanitization` cannot satisfy
+  a future key-material requirement, the unsafe-boundary exception process must
+  be completed before key bytes land,
 - raw key material types must not derive `Debug` or `Clone` without an explicit
   security review and release-gate test,
 - optional locked memory for key material where the OS supports it,

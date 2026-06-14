@@ -22,6 +22,9 @@
   sensitive labels, policy tokens, and signature payloads; rejecting unsafe key
   parents; bounding and sorting world fact tracking; and documenting the
   reviewed low/informational notes.
+- Resolved the fifth `0.8.0` pentest pass by enforcing exact fixed-size
+  hybrid/named signatures, binding segment/data keys to compartment keys, and
+  documenting token canonicalization timing and tenant-level world quotas.
 - Bumped workspace and internal crate dependency versions to `0.8.0`.
 - Added `0.8.0` release metadata and gate script.
 

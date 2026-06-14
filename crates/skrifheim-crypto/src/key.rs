@@ -58,10 +58,12 @@ pub enum KeyScope {
     },
     Segment {
         tenant_id: TenantId,
+        compartment_id: CompartmentKeyId,
         segment_id: SegmentKeyId,
     },
     Data {
         tenant_id: TenantId,
+        compartment_id: CompartmentKeyId,
         segment_id: SegmentKeyId,
     },
 }
@@ -387,12 +389,21 @@ fn is_valid_parent(child: KeyScope, parent: KeyScope) -> bool {
             },
         ) => tenant_id == parent_tenant,
         (
-            KeyScope::Segment { tenant_id, .. } | KeyScope::Data { tenant_id, .. },
-            KeyScope::Compartment {
-                tenant_id: parent_tenant,
+            KeyScope::Segment {
+                tenant_id,
+                compartment_id,
+                ..
+            }
+            | KeyScope::Data {
+                tenant_id,
+                compartment_id,
                 ..
             },
-        ) => tenant_id == parent_tenant,
+            KeyScope::Compartment {
+                tenant_id: parent_tenant,
+                compartment_id: parent_compartment,
+            },
+        ) => tenant_id == parent_tenant && compartment_id == parent_compartment,
         _ => false,
     }
 }

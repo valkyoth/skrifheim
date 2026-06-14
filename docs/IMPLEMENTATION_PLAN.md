@@ -89,6 +89,11 @@ collision-resistant hash with documented dependency/security review. Storage
 must also reject creation when a `WorldId` already exists for a different
 `(tenant_id, kind, depth, parent, name)` tuple.
 
+Storage and orchestration must enforce tenant-level aggregate world budgets,
+including maximum world count and total tracked fact references across all
+world overlays. Per-world list bounds are not a substitute for tenant quota
+enforcement.
+
 ## Phase 3: Storage Kernel
 
 Implement:

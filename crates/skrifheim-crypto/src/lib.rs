@@ -243,17 +243,17 @@ fn validate_signature_envelope_parts(algorithm: &AlgorithmId, signature: &[u8]) 
             classical,
             post_quantum,
         } => {
-            let min_len = component_min_signature_len(classical)?
+            let expected_len = component_min_signature_len(classical)?
                 .checked_add(component_min_signature_len(post_quantum)?)
                 .ok_or(SkrifheimError::InvalidSignatureLength)?;
-            if signature.len() < min_len || signature.len() > MAX_VARIABLE_SIGNATURE_BYTES {
+            if signature.len() != expected_len {
                 return Err(SkrifheimError::InvalidSignatureLength);
             }
             None
         }
         AlgorithmId::Named(name) => {
-            let min_len = named_min_signature_len(name)?;
-            if signature.len() < min_len || signature.len() > MAX_VARIABLE_SIGNATURE_BYTES {
+            let expected_len = named_signature_len(name)?;
+            if signature.len() != expected_len {
                 return Err(SkrifheimError::InvalidSignatureLength);
             }
             None
@@ -282,7 +282,7 @@ fn component_min_signature_len(name: &str) -> Result<usize> {
     }
 }
 
-fn named_min_signature_len(name: &str) -> Result<usize> {
+fn named_signature_len(name: &str) -> Result<usize> {
     match name {
         #[cfg(test)]
         "SKRIFHEIM-TEST-SIG" => Ok(ED25519_SIG_BYTES),

@@ -108,6 +108,7 @@ fn key_rotation_preflight_rejects_wrong_scope_or_epoch() -> Result<()> {
         None,
         KeyScope::Segment {
             tenant_id,
+            compartment_id: id(CompartmentKeyId::from_u128(13))?,
             segment_id: id(SegmentKeyId::from_u128(14))?,
         },
         CryptoEpoch(6),
