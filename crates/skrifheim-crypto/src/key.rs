@@ -313,6 +313,7 @@ fn is_valid_lifecycle_transition(current: KeyLifecycleState, next: KeyLifecycleS
     matches!(
         (current, next),
         (KeyLifecycleState::Created, KeyLifecycleState::Active)
+            | (KeyLifecycleState::Created, KeyLifecycleState::Compromised)
             | (KeyLifecycleState::Created, KeyLifecycleState::Quarantined)
             | (KeyLifecycleState::Created, KeyLifecycleState::Destroyed)
             | (KeyLifecycleState::Active, KeyLifecycleState::Rotating)
@@ -325,12 +326,18 @@ fn is_valid_lifecycle_transition(current: KeyLifecycleState, next: KeyLifecycleS
             | (KeyLifecycleState::Rotating, KeyLifecycleState::Compromised)
             | (KeyLifecycleState::Rotating, KeyLifecycleState::Quarantined)
             | (KeyLifecycleState::Rotating, KeyLifecycleState::Destroyed)
+            | (KeyLifecycleState::Retired, KeyLifecycleState::Compromised)
+            | (KeyLifecycleState::Retired, KeyLifecycleState::Quarantined)
             | (KeyLifecycleState::Retired, KeyLifecycleState::Destroyed)
             | (
                 KeyLifecycleState::Compromised,
                 KeyLifecycleState::Quarantined
             )
             | (KeyLifecycleState::Compromised, KeyLifecycleState::Destroyed)
+            | (
+                KeyLifecycleState::Quarantined,
+                KeyLifecycleState::Compromised
+            )
             | (KeyLifecycleState::Quarantined, KeyLifecycleState::Destroyed)
             | (
                 KeyLifecycleState::Destroyed,

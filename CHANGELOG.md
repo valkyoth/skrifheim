@@ -15,6 +15,9 @@
 - Resolved the second `0.8.0` pentest pass by redacting sensitive Debug output,
   requiring key destruction before crypto-erasure, and tracking raw key material
   memory hygiene requirements.
+- Resolved the third `0.8.0` pentest pass by expanding compromise declaration
+  paths, redacting signature Debug output, removing the fixed world-ID fallback,
+  bounding segment body length, and documenting storage/key lifecycle binding.
 - Bumped workspace and internal crate dependency versions to `0.8.0`.
 - Added `0.8.0` release metadata and gate script.
 

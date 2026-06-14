@@ -15,7 +15,7 @@ Status: baseline control map
 | World promotion safety | Promotion and rollback preflight expose deterministic conflict categories before merge/promotion logic exists | Scaffolded | `skrifheim-world` |
 | Classification | Labels and clearance checks | Scaffolded | `skrifheim-policy` |
 | External error shape | `SkrifheimError::public_message()` provides generic messages for trust-boundary responses; `Display` is internal diagnostic output only | Scaffolded | `skrifheim-core` |
-| Diagnostic redaction | Sensitive fact payloads, labels, and policy tokens use redacted `Debug`; direct sensitive `Debug` derives are release-gate blocked | Scaffolded | `scripts/validate-security-policy.sh` |
+| Diagnostic redaction | Sensitive fact payloads, labels, policy tokens, and signature payloads use redacted `Debug`; direct sensitive `Debug` derives are release-gate blocked | Scaffolded | `scripts/validate-security-policy.sh` |
 | Signature-set bounds | Maximum signature-envelope count and bounded signature key identifiers before durable ingest accepts untrusted commits | Scaffolded | `skrifheim-crypto` |
 | Signature algorithm admission | Named and hybrid signature algorithm identifiers require a closed approved list | Scaffolded | `skrifheim-crypto` |
 | Fact-builder complexity | O(n log n) deduplication, fail-fast builder bounds, and bounded text/byte fact payloads | Scaffolded | `skrifheim-fact` |
@@ -34,6 +34,7 @@ Status: baseline control map
 | Sovereign placement | Placement and failover decisions constrained by jurisdiction, compliance, data category, and legal basis | Planned | `docs/hyve-cluster-and-compliance-roadmap.md` |
 | Cluster control plane | Future Hyve cells, control plane, policy-scoped tunnels, witness nodes, and compliance autopilot | Planned | `docs/hyve-cluster-and-compliance-roadmap.md` |
 | Tamper evidence | Segment metadata and validation, including explicit checksum presence representation | Scaffolded | `skrifheim-storage` |
+| Segment size bounds | Segment headers reject empty and oversized bodies before future segment readers allocate | Scaffolded | `skrifheim-storage` |
 | World identity collision resistance | Deterministic world IDs are non-secret scaffold identifiers; storage must enforce uniqueness on `(tenant_id, kind, depth, parent, name)` and collision-resistant derivation is required before storage-key authority | Planned | `docs/VERSION_PLAN.md` |
 | AI authority | AI artifacts are derived, not truth | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | CMS isolation | Public/private world split | Planned | `docs/cms-1-0-target.md` |

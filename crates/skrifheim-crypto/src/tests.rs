@@ -39,6 +39,27 @@ fn signature_set_count_is_bounded() -> Result<()> {
 }
 
 #[test]
+fn debug_redacts_signature_bytes_and_set_contents() -> Result<()> {
+    let envelope = SignatureEnvelope::new(
+        AlgorithmId::Ed25519,
+        CryptoEpoch(1),
+        "debug-key",
+        vec![255; ED25519_SIG_BYTES],
+    )?;
+    let envelope_debug = alloc::format!("{envelope:?}");
+    assert!(envelope_debug.contains("signature_bytes"));
+    assert!(envelope_debug.contains("64"));
+    assert!(!envelope_debug.contains("[255"));
+
+    let set = SignatureSet::new(vec![envelope])?;
+    let set_debug = alloc::format!("{set:?}");
+    assert!(set_debug.contains("count"));
+    assert!(!set_debug.contains("debug-key"));
+    assert!(!set_debug.contains("[255"));
+    Ok(())
+}
+
+#[test]
 fn empty_signature_bytes_are_rejected() {
     assert_eq!(
         SignatureEnvelope::new(AlgorithmId::Ed25519, CryptoEpoch(1), "k", Vec::new()),

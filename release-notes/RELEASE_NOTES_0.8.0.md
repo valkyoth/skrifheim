@@ -1,6 +1,6 @@
 # skrifheim 0.8.0 Release Notes
 
-Status: second pentest pass resolved, pending retest.
+Status: third pentest pass resolved, pending retest.
 
 ## Scope
 
@@ -35,6 +35,16 @@ quarantine states, destruction, and crypto-erasure records.
   metadata into `CryptoErased`.
 - Documented future raw key material memory-hygiene requirements through the
   project-approved `sanitization` dependency path.
+- Added compromise declaration paths from created, retired, and quarantined key
+  states for incident triage.
+- Added redacted `Debug` implementations for `SignatureEnvelope` and
+  `SignatureSet` and release-gate coverage for those crypto types.
+- Removed the fixed `WorldId(1)` fallback from deterministic world identity
+  derivation; invariant violation now returns `InvalidWorldIdentity`.
+- Added `SEGMENT_BODY_MAX_BYTES` and validation coverage to bound segment body
+  lengths before future segment readers allocate.
+- Documented that storage segment acceptance must bind `encryption_key_id` to
+  safe key lifecycle states once storage and crypto metadata are wired together.
 - Bumped workspace and internal crate dependency versions to `0.8.0`.
 - Added `scripts/release_0_8_gate.sh`.
 - Re-checked the stable Rust channel on 2026-06-14. Rust stable remains
@@ -63,5 +73,6 @@ admission rule for memory cleanup; `zeroize` is not admitted for this project.
 
 ## Pentest Status
 
-The first and second pentest passes have been resolved. Root `PENTEST.md` is the temporary
-findings handoff file and must be removed after findings are resolved.
+The first, second, and third pentest passes have been resolved. Root
+`PENTEST.md` is the temporary findings handoff file and must be removed after
+findings are resolved.

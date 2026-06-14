@@ -40,6 +40,57 @@ fn key_lifecycle_rejects_invalid_transitions() -> Result<()> {
 }
 
 #[test]
+fn compromise_can_be_declared_from_non_active_material_states() -> Result<()> {
+    let created = KeyMetadata::new(
+        id(KeyId::from_u128(61))?,
+        None,
+        KeyScope::RootTrust,
+        CryptoEpoch(1),
+    );
+    assert_eq!(
+        created
+            .transition(KeyLifecycleState::Compromised, CryptoEpoch(2))?
+            .lifecycle(),
+        KeyLifecycleState::Compromised
+    );
+
+    let retired = KeyMetadata::with_lifecycle(
+        id(KeyId::from_u128(62))?,
+        None,
+        KeyScope::RootTrust,
+        CryptoEpoch(4),
+        KeyLifecycleState::Retired,
+    );
+    assert_eq!(
+        retired
+            .transition(KeyLifecycleState::Compromised, CryptoEpoch(5))?
+            .lifecycle(),
+        KeyLifecycleState::Compromised
+    );
+    assert_eq!(
+        retired
+            .transition(KeyLifecycleState::Quarantined, CryptoEpoch(5))?
+            .lifecycle(),
+        KeyLifecycleState::Quarantined
+    );
+
+    let quarantined = KeyMetadata::with_lifecycle(
+        id(KeyId::from_u128(63))?,
+        None,
+        KeyScope::RootTrust,
+        CryptoEpoch(6),
+        KeyLifecycleState::Quarantined,
+    );
+    assert_eq!(
+        quarantined
+            .transition(KeyLifecycleState::Compromised, CryptoEpoch(7))?
+            .lifecycle(),
+        KeyLifecycleState::Compromised
+    );
+    Ok(())
+}
+
+#[test]
 fn key_rotation_preflight_rejects_wrong_scope_or_epoch() -> Result<()> {
     let tenant_id = id(TenantId::from_u128(12))?;
     let current = KeyMetadata::with_lifecycle(

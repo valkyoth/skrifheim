@@ -8,6 +8,7 @@ use skrifheim_core::{PolicyId, Result, SkrifheimError, TenantId, TxId};
 
 pub const SEGMENT_MAGIC: [u8; 8] = *b"SKRIFSEG";
 pub const SEGMENT_VERSION_MAX: u16 = 1;
+pub const SEGMENT_BODY_MAX_BYTES: u64 = 1024 * 1024 * 1024;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SegmentKind {
@@ -63,6 +64,11 @@ impl SegmentHeader {
         if self.body_len == 0 {
             return Err(SkrifheimError::InvalidStorageHeader(String::from(
                 "segment body must not be empty",
+            )));
+        }
+        if self.body_len > SEGMENT_BODY_MAX_BYTES {
+            return Err(SkrifheimError::InvalidStorageHeader(String::from(
+                "segment body exceeds maximum size",
             )));
         }
         if self.body_crc64 == BodyChecksum::Missing {
@@ -156,6 +162,17 @@ mod tests {
         missing_key.encryption_key_id = 0;
         assert!(matches!(
             missing_key.validate(),
+            Err(SkrifheimError::InvalidStorageHeader(_))
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn header_rejects_oversized_body() -> Result<()> {
+        let mut header = header()?;
+        header.body_len = SEGMENT_BODY_MAX_BYTES + 1;
+        assert!(matches!(
+            header.validate(),
             Err(SkrifheimError::InvalidStorageHeader(_))
         ));
         Ok(())

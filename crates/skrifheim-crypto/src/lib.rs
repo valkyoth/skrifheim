@@ -4,6 +4,7 @@
 extern crate alloc;
 
 use alloc::{string::String, vec::Vec};
+use core::fmt;
 use skrifheim_core::{Result, SkrifheimError};
 
 mod key;
@@ -80,12 +81,23 @@ impl AlgorithmId {
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct CryptoEpoch(pub u64);
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct SignatureEnvelope {
     algorithm: AlgorithmId,
     epoch: CryptoEpoch,
     key_id: String,
     signature: Vec<u8>,
+}
+
+impl fmt::Debug for SignatureEnvelope {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("SignatureEnvelope")
+            .field("algorithm", &self.algorithm)
+            .field("epoch", &self.epoch)
+            .field("key_id", &self.key_id)
+            .field("signature_bytes", &self.signature.len())
+            .finish()
+    }
 }
 
 impl SignatureEnvelope {
@@ -138,9 +150,17 @@ impl SignatureEnvelope {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct SignatureSet {
     signatures: Vec<SignatureEnvelope>,
+}
+
+impl fmt::Debug for SignatureSet {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("SignatureSet")
+            .field("count", &self.signatures.len())
+            .finish()
+    }
 }
 
 impl SignatureSet {

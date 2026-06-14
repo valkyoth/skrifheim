@@ -44,6 +44,12 @@ Every encrypted object must record:
 - compartment or classification boundary,
 - rotation and destruction status.
 
+Storage must not treat a non-zero encryption key ID as sufficient. Once segment
+I/O is wired to key metadata, segment read/write acceptance must validate the
+referenced key lifecycle and reject compromised, quarantined, destroyed, or
+crypto-erased keys. Old segment reads may allow explicitly rotating keys only
+under a read-only migration path.
+
 ## Key Lifecycle
 
 The control plane must model:

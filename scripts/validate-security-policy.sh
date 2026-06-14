@@ -40,3 +40,5 @@ check_no_sensitive_debug_derive crates/skrifheim-core/src/policy_token.rs Policy
 check_no_sensitive_debug_derive crates/skrifheim-core/src/policy_token.rs PolicyTokenSlot
 check_no_sensitive_debug_derive crates/skrifheim-fact/src/lib.rs Fact
 check_no_sensitive_debug_derive crates/skrifheim-fact/src/builder.rs FactBuilder
+check_no_sensitive_debug_derive crates/skrifheim-crypto/src/lib.rs SignatureEnvelope
+check_no_sensitive_debug_derive crates/skrifheim-crypto/src/lib.rs SignatureSet
