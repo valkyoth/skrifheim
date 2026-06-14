@@ -18,6 +18,10 @@
 - Resolved the third `0.8.0` pentest pass by expanding compromise declaration
   paths, redacting signature Debug output, removing the fixed world-ID fallback,
   bounding segment body length, and documenting storage/key lifecycle binding.
+- Resolved the fourth `0.8.0` pentest pass by removing derived equality from
+  sensitive labels, policy tokens, and signature payloads; rejecting unsafe key
+  parents; bounding and sorting world fact tracking; and documenting the
+  reviewed low/informational notes.
 - Bumped workspace and internal crate dependency versions to `0.8.0`.
 - Added `0.8.0` release metadata and gate script.
 

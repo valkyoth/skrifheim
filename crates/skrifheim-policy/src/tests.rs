@@ -108,14 +108,14 @@ fn denial_reasons_do_not_disclose_compartment_names() -> Result<()> {
 
 #[test]
 fn subject_context_rejects_unicode_homograph_tokens() {
-    assert_eq!(
+    assert!(matches!(
         SubjectContext::new(
             Classification::Secret,
             vec![String::from("ЕU-COMMAND")],
             Vec::new(),
         ),
         Err(SkrifheimError::InvalidSecurityToken)
-    );
+    ));
 }
 
 #[test]

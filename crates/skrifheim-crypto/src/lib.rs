@@ -81,7 +81,7 @@ impl AlgorithmId {
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct CryptoEpoch(pub u64);
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone)]
 pub struct SignatureEnvelope {
     algorithm: AlgorithmId,
     epoch: CryptoEpoch,
@@ -148,9 +148,21 @@ impl SignatureEnvelope {
     pub fn signature(&self) -> &[u8] {
         &self.signature
     }
+
+    /// Compares signature-envelope structure with ordinary equality.
+    ///
+    /// This is not constant-time and must not be used for cryptographic
+    /// verification or authentication decisions.
+    #[must_use]
+    pub fn structurally_equal(&self, other: &Self) -> bool {
+        self.algorithm == other.algorithm
+            && self.epoch == other.epoch
+            && self.key_id == other.key_id
+            && self.signature == other.signature
+    }
 }
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone)]
 pub struct SignatureSet {
     signatures: Vec<SignatureEnvelope>,
 }
@@ -176,6 +188,20 @@ impl SignatureSet {
     #[must_use]
     pub fn envelopes(&self) -> &[SignatureEnvelope] {
         &self.signatures
+    }
+
+    /// Compares signature-set structure with ordinary equality.
+    ///
+    /// This is not constant-time and must not be used for cryptographic
+    /// verification or authentication decisions.
+    #[must_use]
+    pub fn structurally_equal(&self, other: &Self) -> bool {
+        self.signatures.len() == other.signatures.len()
+            && self
+                .signatures
+                .iter()
+                .zip(other.signatures.iter())
+                .all(|(left, right)| left.structurally_equal(right))
     }
 
     pub fn require_non_empty(&self) -> Result<()> {

@@ -9,7 +9,7 @@ pub const POLICY_TOKEN_SET_MAX_ITEMS: usize = 64;
 const NOOP_POLICY_TOKEN: PolicyTokenSlot = PolicyTokenSlot::empty();
 const INVALID_POLICY_TOKEN_NEEDLE: PolicyTokenSlot = PolicyTokenSlot::invalid_needle();
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone)]
 pub struct PolicyTokenSet {
     slots: [PolicyTokenSlot; POLICY_TOKEN_SET_MAX_ITEMS],
     len: usize,
@@ -60,6 +60,20 @@ impl PolicyTokenSet {
         contains_policy_token_ct(self, needle)
     }
 
+    /// Compares canonical token-set structure with ordinary equality.
+    ///
+    /// This is not constant-time. Access-control and policy decisions must use
+    /// `contains_policy_token_ct` or `contains_policy_token_slot_ct` instead.
+    #[must_use]
+    pub fn structurally_equal(&self, other: &Self) -> bool {
+        self.len == other.len
+            && self
+                .slots
+                .iter()
+                .zip(other.slots.iter())
+                .all(|(left, right)| left.structurally_equal(*right))
+    }
+
     #[must_use]
     pub const fn slot(&self, index: usize) -> Option<PolicyTokenSlot> {
         if index < POLICY_TOKEN_SET_MAX_ITEMS {
@@ -85,7 +99,7 @@ impl fmt::Debug for PolicyTokenSet {
     }
 }
 
-#[derive(Clone, Copy, Eq, PartialEq)]
+#[derive(Clone, Copy)]
 pub struct PolicyTokenSlot {
     bytes: [u8; POLICY_TOKEN_MAX_BYTES],
     len: usize,
@@ -112,6 +126,8 @@ impl PolicyTokenSlot {
     }
 
     fn from_canonical(value: &str) -> Self {
+        // Private constructor: callers must pass `canonical_policy_token`
+        // output, which enforces the fixed slot size before copying.
         let mut bytes = [0; POLICY_TOKEN_MAX_BYTES];
         for (index, byte) in value.bytes().enumerate() {
             bytes[index] = byte;
@@ -126,6 +142,15 @@ impl PolicyTokenSlot {
     #[must_use]
     pub const fn present_mask(self) -> u8 {
         self.present
+    }
+
+    /// Compares token-slot structure with ordinary equality.
+    ///
+    /// This is not constant-time and must not be used for access-control
+    /// decisions.
+    #[must_use]
+    pub fn structurally_equal(self, other: Self) -> bool {
+        self.len == other.len && self.present == other.present && self.bytes == other.bytes
     }
 }
 

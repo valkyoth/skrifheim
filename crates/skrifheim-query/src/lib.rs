@@ -22,7 +22,7 @@ pub enum QueryIntent {
     BuildContextPack,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct QueryRequest {
     world: WorldId,
     intent: QueryIntent,
@@ -218,14 +218,14 @@ mod tests {
         for _ in 0..=QUERY_REQUEST_LABEL_MAX_ITEMS {
             requested_labels.push(SecurityLabel::public());
         }
-        assert_eq!(
+        assert!(matches!(
             QueryRequest::new(
                 id(WorldId::from_u128(1))?,
                 QueryIntent::ReadFacts,
                 requested_labels,
             ),
             Err(SkrifheimError::InvalidQueryRequest)
-        );
+        ));
         Ok(())
     }
 

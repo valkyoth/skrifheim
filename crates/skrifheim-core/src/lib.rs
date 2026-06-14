@@ -129,7 +129,7 @@ impl Classification {
     }
 }
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone)]
 pub struct SecurityLabel {
     classification: Classification,
     compartments: PolicyTokenSet,
@@ -171,6 +171,14 @@ impl SecurityLabel {
     #[must_use]
     pub const fn releasable_to(&self) -> &PolicyTokenSet {
         &self.releasable_to
+    }
+
+    /// Non-constant-time structural comparison; not for policy decisions.
+    #[must_use]
+    pub fn structurally_equal(&self, other: &Self) -> bool {
+        self.classification == other.classification
+            && self.compartments.structurally_equal(&other.compartments)
+            && self.releasable_to.structurally_equal(&other.releasable_to)
     }
 }
 
@@ -388,22 +396,22 @@ mod tests {
         for _ in 0..=POLICY_TOKEN_SET_MAX_ITEMS {
             compartments.push(String::from("C"));
         }
-        assert_eq!(
+        assert!(matches!(
             SecurityLabel::new(Classification::Secret, compartments, Vec::new()),
             Err(SkrifheimError::InvalidSecurityToken)
-        );
+        ));
     }
 
     #[test]
     fn security_label_rejects_unicode_homograph_tokens() {
-        assert_eq!(
+        assert!(matches!(
             SecurityLabel::new(
                 Classification::Secret,
                 vec![String::from("ЕU-COMMAND")],
                 Vec::new(),
             ),
             Err(SkrifheimError::InvalidSecurityToken)
-        );
+        ));
     }
 
     #[test]
@@ -452,7 +460,7 @@ mod tests {
         let tokens = PolicyTokenSet::new(vec![String::from("TOKEN-0")])?;
 
         assert!(tokens.slot(0).is_some());
-        assert_eq!(tokens.slot(POLICY_TOKEN_SET_MAX_ITEMS), None);
+        assert!(tokens.slot(POLICY_TOKEN_SET_MAX_ITEMS).is_none());
         Ok(())
     }
 

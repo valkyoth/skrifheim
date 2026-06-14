@@ -71,6 +71,16 @@ Dangerous key operations require audit records and future threshold approval.
 Crypto-erasure must pass through an explicit destruction checkpoint before key
 metadata enters the crypto-erased state.
 
+Key hierarchy validation must reject children of compromised, quarantined,
+destroyed, or crypto-erased parent keys. Future storage-backed ancestor walks
+must propagate those states through the subtree before segment access is
+allowed.
+
+The lifecycle audit layer must preserve full transition history. Repeated
+active/rotating movement is not a privilege escalation by itself, but audit
+records must make repeated cycles visible so compromise timelines cannot be
+obscured by state churn.
+
 ## Encryption Domains
 
 Encryption domains are separate blast-radius boundaries.

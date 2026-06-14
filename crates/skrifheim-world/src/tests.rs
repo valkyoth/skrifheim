@@ -62,19 +62,42 @@ fn deterministic_identity_changes_with_kind() -> Result<()> {
 #[test]
 fn duplicate_fact_adds_are_idempotent() -> Result<()> {
     let mut world = World::root(tenant(1)?, "production", WorldKind::Production)?;
-    world.add_fact(id(FactId::from_u128(7))?);
-    world.add_fact(id(FactId::from_u128(7))?);
+    world.add_fact(id(FactId::from_u128(7))?)?;
+    world.add_fact(id(FactId::from_u128(7))?)?;
     assert_eq!(world.added_facts(), &[id(FactId::from_u128(7))?]);
+    Ok(())
+}
+
+#[test]
+fn fact_tracking_is_sorted_and_bounded() -> Result<()> {
+    let mut facts = Vec::new();
+    insert_fact_id_with_limit(&mut facts, id(FactId::from_u128(30))?, 3)?;
+    insert_fact_id_with_limit(&mut facts, id(FactId::from_u128(10))?, 3)?;
+    insert_fact_id_with_limit(&mut facts, id(FactId::from_u128(20))?, 3)?;
+    insert_fact_id_with_limit(&mut facts, id(FactId::from_u128(20))?, 3)?;
+
+    assert_eq!(
+        facts,
+        vec![
+            id(FactId::from_u128(10))?,
+            id(FactId::from_u128(20))?,
+            id(FactId::from_u128(30))?,
+        ]
+    );
+    assert_eq!(
+        insert_fact_id_with_limit(&mut facts, id(FactId::from_u128(40))?, 3),
+        Err(SkrifheimError::TooManyFactLinks)
+    );
     Ok(())
 }
 
 #[test]
 fn branch_fact_sets_are_isolated_from_parent() -> Result<()> {
     let mut production = World::root(tenant(1)?, "production", WorldKind::Production)?;
-    production.add_fact(id(FactId::from_u128(7))?);
+    production.add_fact(id(FactId::from_u128(7))?)?;
     let mut draft = production.fork("draft", WorldKind::Simulation)?;
-    draft.add_fact(id(FactId::from_u128(8))?);
-    draft.hide_fact(id(FactId::from_u128(7))?);
+    draft.add_fact(id(FactId::from_u128(8))?)?;
+    draft.hide_fact(id(FactId::from_u128(7))?)?;
     assert_eq!(production.added_facts(), &[id(FactId::from_u128(7))?]);
     assert_eq!(production.hidden_facts(), &[]);
     assert_eq!(draft.added_facts(), &[id(FactId::from_u128(8))?]);
@@ -85,7 +108,7 @@ fn branch_fact_sets_are_isolated_from_parent() -> Result<()> {
 #[test]
 fn diff_requires_direct_child_relationship() -> Result<()> {
     let mut production = World::root(tenant(1)?, "production", WorldKind::Production)?;
-    production.add_fact(id(FactId::from_u128(7))?);
+    production.add_fact(id(FactId::from_u128(7))?)?;
     let unrelated = World::root(tenant(1)?, "unrelated", WorldKind::Simulation)?;
     assert_eq!(
         WorldDiff::between(&production, &unrelated),
@@ -108,11 +131,11 @@ fn diff_requires_same_tenant() -> Result<()> {
 #[test]
 fn diff_returns_delta_against_parent() -> Result<()> {
     let mut production = World::root(tenant(1)?, "production", WorldKind::Production)?;
-    production.add_fact(id(FactId::from_u128(7))?);
+    production.add_fact(id(FactId::from_u128(7))?)?;
     let mut child = production.fork("child", WorldKind::Simulation)?;
-    child.add_fact(id(FactId::from_u128(7))?);
-    child.add_fact(id(FactId::from_u128(8))?);
-    child.hide_fact(id(FactId::from_u128(7))?);
+    child.add_fact(id(FactId::from_u128(7))?)?;
+    child.add_fact(id(FactId::from_u128(8))?)?;
+    child.hide_fact(id(FactId::from_u128(7))?)?;
     let diff = WorldDiff::between(&production, &child)?;
     assert_eq!(diff.added, vec![id(FactId::from_u128(8))?]);
     assert_eq!(diff.hidden, vec![id(FactId::from_u128(7))?]);
@@ -122,10 +145,10 @@ fn diff_returns_delta_against_parent() -> Result<()> {
 #[test]
 fn promotion_preflight_allows_clean_child() -> Result<()> {
     let mut production = World::root(tenant(1)?, "production", WorldKind::Production)?;
-    production.add_fact(id(FactId::from_u128(7))?);
+    production.add_fact(id(FactId::from_u128(7))?)?;
     let mut child = production.fork("review", WorldKind::Staging)?;
-    child.add_fact(id(FactId::from_u128(8))?);
-    child.hide_fact(id(FactId::from_u128(7))?);
+    child.add_fact(id(FactId::from_u128(8))?)?;
+    child.hide_fact(id(FactId::from_u128(7))?)?;
 
     let preflight = production.promotion_preflight(&child)?;
     assert!(preflight.can_promote());
@@ -150,8 +173,8 @@ fn promotion_preflight_rejects_non_child_relationship() -> Result<()> {
 fn promotion_preflight_detects_fact_added_and_hidden() -> Result<()> {
     let production = World::root(tenant(1)?, "production", WorldKind::Production)?;
     let mut child = production.fork("review", WorldKind::Staging)?;
-    child.add_fact(id(FactId::from_u128(8))?);
-    child.hide_fact(id(FactId::from_u128(8))?);
+    child.add_fact(id(FactId::from_u128(8))?)?;
+    child.hide_fact(id(FactId::from_u128(8))?)?;
 
     let preflight = production.promotion_preflight(&child)?;
     assert!(!preflight.can_promote());
@@ -168,9 +191,9 @@ fn promotion_preflight_detects_fact_added_and_hidden() -> Result<()> {
 #[test]
 fn promotion_preflight_detects_reintroduced_hidden_fact() -> Result<()> {
     let mut production = World::root(tenant(1)?, "production", WorldKind::Production)?;
-    production.hide_fact(id(FactId::from_u128(7))?);
+    production.hide_fact(id(FactId::from_u128(7))?)?;
     let mut child = production.fork("review", WorldKind::Staging)?;
-    child.add_fact(id(FactId::from_u128(7))?);
+    child.add_fact(id(FactId::from_u128(7))?)?;
 
     let preflight = production.promotion_preflight(&child)?;
     assert!(!preflight.can_promote());
@@ -187,10 +210,10 @@ fn promotion_preflight_detects_reintroduced_hidden_fact() -> Result<()> {
 #[test]
 fn rollback_preflight_reports_inverse_delta() -> Result<()> {
     let mut production = World::root(tenant(1)?, "production", WorldKind::Production)?;
-    production.add_fact(id(FactId::from_u128(7))?);
+    production.add_fact(id(FactId::from_u128(7))?)?;
     let mut child = production.fork("review", WorldKind::Staging)?;
-    child.add_fact(id(FactId::from_u128(8))?);
-    child.hide_fact(id(FactId::from_u128(7))?);
+    child.add_fact(id(FactId::from_u128(8))?)?;
+    child.hide_fact(id(FactId::from_u128(7))?)?;
 
     let preflight = production.rollback_preflight(&child)?;
     assert!(preflight.can_rollback());

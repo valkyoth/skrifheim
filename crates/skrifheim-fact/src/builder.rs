@@ -8,7 +8,7 @@ use skrifheim_crypto::SignatureSet;
 
 use crate::{Confidence, FACT_LINK_LIST_MAX_ITEMS, Fact, validate_object_size};
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone)]
 pub struct FactBuilder {
     id: Option<FactId>,
     world_id: Option<WorldId>,

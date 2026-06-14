@@ -19,10 +19,10 @@ fn ed25519_envelope(index: usize) -> Result<SignatureEnvelope> {
 
 #[test]
 fn empty_signature_set_is_rejected() {
-    assert_eq!(
+    assert!(matches!(
         SignatureSet::new(Vec::new()),
         Err(SkrifheimError::EmptySignatureSet)
-    );
+    ));
 }
 
 #[test]
@@ -31,10 +31,10 @@ fn signature_set_count_is_bounded() -> Result<()> {
     for index in 0..=MAX_SIGNATURES_PER_SET {
         signatures.push(ed25519_envelope(index)?);
     }
-    assert_eq!(
+    assert!(matches!(
         SignatureSet::new(signatures),
         Err(SkrifheimError::TooManySignatures)
-    );
+    ));
     Ok(())
 }
 
@@ -61,21 +61,21 @@ fn debug_redacts_signature_bytes_and_set_contents() -> Result<()> {
 
 #[test]
 fn empty_signature_bytes_are_rejected() {
-    assert_eq!(
+    assert!(matches!(
         SignatureEnvelope::new(AlgorithmId::Ed25519, CryptoEpoch(1), "k", Vec::new()),
         Err(SkrifheimError::EmptySignatureSet)
-    );
+    ));
 }
 
 #[test]
 fn signature_key_ids_are_bounded() {
-    assert_eq!(
+    assert!(matches!(
         SignatureEnvelope::new(AlgorithmId::Ed25519, CryptoEpoch(1), "", vec![1; 64]),
         Err(SkrifheimError::InvalidSignatureEnvelope(
             "key id length out of range"
         ))
-    );
-    assert_eq!(
+    ));
+    assert!(matches!(
         SignatureEnvelope::new(
             AlgorithmId::Ed25519,
             CryptoEpoch(1),
@@ -86,8 +86,8 @@ fn signature_key_ids_are_bounded() {
         Err(SkrifheimError::InvalidSignatureEnvelope(
             "key id length out of range"
         ))
-    );
-    assert_eq!(
+    ));
+    assert!(matches!(
         SignatureEnvelope::new(
             AlgorithmId::Ed25519,
             CryptoEpoch(1),
@@ -97,21 +97,21 @@ fn signature_key_ids_are_bounded() {
         Err(SkrifheimError::InvalidSignatureEnvelope(
             "key id contains invalid characters"
         ))
-    );
+    ));
 }
 
 #[test]
 fn ed25519_signature_length_is_enforced() {
-    assert_eq!(
+    assert!(matches!(
         SignatureEnvelope::new(AlgorithmId::Ed25519, CryptoEpoch(1), "k", vec![1; 63]),
         Err(SkrifheimError::InvalidSignatureLength)
-    );
+    ));
     assert!(SignatureEnvelope::new(AlgorithmId::Ed25519, CryptoEpoch(1), "k", vec![1; 64]).is_ok());
 }
 
 #[test]
 fn variable_signature_length_is_bounded() {
-    assert_eq!(
+    assert!(matches!(
         SignatureEnvelope::new(
             AlgorithmId::Named(String::from("SKRIFHEIM-TEST-SIG")),
             CryptoEpoch(1),
@@ -119,8 +119,8 @@ fn variable_signature_length_is_bounded() {
             vec![1; ED25519_SIG_BYTES - 1],
         ),
         Err(SkrifheimError::InvalidSignatureLength)
-    );
-    assert_eq!(
+    ));
+    assert!(matches!(
         SignatureEnvelope::new(
             AlgorithmId::Named(String::from("SKRIFHEIM-TEST-SIG")),
             CryptoEpoch(1),
@@ -128,7 +128,7 @@ fn variable_signature_length_is_bounded() {
             vec![1; MAX_VARIABLE_SIGNATURE_BYTES + 1],
         ),
         Err(SkrifheimError::InvalidSignatureLength)
-    );
+    ));
     assert!(
         SignatureEnvelope::new(
             AlgorithmId::Named(String::from("SKRIFHEIM-TEST-SIG")),
@@ -148,26 +148,26 @@ fn hybrid_signature_length_requires_component_minimums() {
     };
     let min_len = ED25519_SIG_BYTES + ML_DSA_65_SIG_BYTES;
 
-    assert_eq!(
+    assert!(matches!(
         SignatureEnvelope::new(algorithm.clone(), CryptoEpoch(1), "k", vec![1; min_len - 1],),
         Err(SkrifheimError::InvalidSignatureLength)
-    );
+    ));
     assert!(SignatureEnvelope::new(algorithm, CryptoEpoch(1), "k", vec![1; min_len],).is_ok());
 }
 
 #[test]
 fn blake3_is_rejected_in_signature_contexts() {
-    assert_eq!(
+    assert!(matches!(
         SignatureEnvelope::new(AlgorithmId::Blake3, CryptoEpoch(1), "k", vec![1; 32]),
         Err(SkrifheimError::InvalidSignatureEnvelope(
             "algorithm is not valid for signatures"
         ))
-    );
+    ));
 }
 
 #[test]
 fn empty_named_algorithm_is_rejected_in_signature_contexts() {
-    assert_eq!(
+    assert!(matches!(
         SignatureEnvelope::new(
             AlgorithmId::Named(String::new()),
             CryptoEpoch(1),
@@ -177,12 +177,12 @@ fn empty_named_algorithm_is_rejected_in_signature_contexts() {
         Err(SkrifheimError::InvalidSignatureEnvelope(
             "algorithm name is empty or too long"
         ))
-    );
+    ));
 }
 
 #[test]
 fn unapproved_named_algorithm_is_rejected_in_signature_contexts() {
-    assert_eq!(
+    assert!(matches!(
         SignatureEnvelope::new(
             AlgorithmId::Named(String::from("DEBUG-SKIP")),
             CryptoEpoch(1),
@@ -192,12 +192,12 @@ fn unapproved_named_algorithm_is_rejected_in_signature_contexts() {
         Err(SkrifheimError::InvalidSignatureEnvelope(
             "algorithm name is not approved for signatures"
         ))
-    );
+    ));
 }
 
 #[test]
 fn hybrid_algorithm_names_are_validated() {
-    assert_eq!(
+    assert!(matches!(
         SignatureEnvelope::new(
             AlgorithmId::HybridClassicalPq {
                 classical: String::from(""),
@@ -210,12 +210,12 @@ fn hybrid_algorithm_names_are_validated() {
         Err(SkrifheimError::InvalidSignatureEnvelope(
             "algorithm name is empty or too long"
         ))
-    );
+    ));
 }
 
 #[test]
 fn hybrid_algorithm_components_must_be_approved() {
-    assert_eq!(
+    assert!(matches!(
         SignatureEnvelope::new(
             AlgorithmId::HybridClassicalPq {
                 classical: String::from("ED25519"),
@@ -228,7 +228,7 @@ fn hybrid_algorithm_components_must_be_approved() {
         Err(SkrifheimError::InvalidSignatureEnvelope(
             "algorithm name is not approved for signatures"
         ))
-    );
+    ));
 }
 
 #[test]
@@ -346,6 +346,31 @@ fn key_hierarchy_rejects_invalid_parent_edges() -> Result<()> {
     );
     assert_eq!(
         tenant.validate_parent(Some(&root)),
+        Err(SkrifheimError::InvalidKeyHierarchy)
+    );
+    Ok(())
+}
+
+#[test]
+fn key_hierarchy_rejects_unsafe_parent_lifecycle() -> Result<()> {
+    let root = KeyMetadata::with_lifecycle(
+        id(KeyId::from_u128(1))?,
+        None,
+        KeyScope::RootTrust,
+        CryptoEpoch(1),
+        KeyLifecycleState::Compromised,
+    );
+    let deployment = KeyMetadata::new(
+        id(KeyId::from_u128(2))?,
+        Some(root.key_id()),
+        KeyScope::Deployment {
+            deployment_id: id(DeploymentKeyId::from_u128(10))?,
+        },
+        CryptoEpoch(1),
+    );
+
+    assert_eq!(
+        deployment.validate_parent(Some(&root)),
         Err(SkrifheimError::InvalidKeyHierarchy)
     );
     Ok(())

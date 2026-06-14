@@ -3,7 +3,7 @@ use skrifheim_core::{
     Classification, DeviceId, PolicyTokenSet, Result, WorkloadId, canonical_policy_set,
 };
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct SubjectContext {
     clearance: Classification,
     compartments: PolicyTokenSet,
@@ -39,7 +39,7 @@ impl SubjectContext {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct DeviceContext {
     device_id: DeviceId,
     clearance: Classification,
@@ -83,7 +83,7 @@ impl DeviceContext {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct WorkloadContext {
     workload_id: WorkloadId,
     clearance: Classification,
@@ -127,7 +127,7 @@ impl WorkloadContext {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct AuthorityContext {
     subject: SubjectContext,
     device: DeviceContext,

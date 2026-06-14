@@ -1,6 +1,6 @@
 # skrifheim 0.8.0 Release Notes
 
-Status: third pentest pass resolved, pending retest.
+Status: fourth pentest pass resolved, pending retest.
 
 ## Scope
 
@@ -45,6 +45,22 @@ quarantine states, destruction, and crypto-erasure records.
   lengths before future segment readers allocate.
 - Documented that storage segment acceptance must bind `encryption_key_id` to
   safe key lifecycle states once storage and crypto metadata are wired together.
+- Removed derived `PartialEq`/`Eq` from security labels, policy-token sets,
+  policy-token slots, signature envelopes, and signature sets.
+- Added explicit `structurally_equal` helpers for non-authoritative structural
+  comparison and documented that they are not for policy or crypto decisions.
+- Extended the release-gate security script to reject direct sensitive
+  `PartialEq`/`Eq` derives.
+- Made key hierarchy validation reject compromised, quarantined, destroyed, or
+  crypto-erased parent keys.
+- Added `WORLD_FACT_LIST_MAX_ITEMS`, sorted binary-search insertion, and tests
+  for bounded world fact tracking.
+- Reviewed the six low/informational notes: world ID hashing remains planned
+  for replacement before storage-key authority, query-label memory remains
+  explicitly budgeted and needs outer request limits later, arithmetic checks
+  remain acceptable, private token-slot copying is documented at its invariant,
+  lifecycle audit history must preserve repeated state movement, and supply
+  chain remains dependency-free.
 - Bumped workspace and internal crate dependency versions to `0.8.0`.
 - Added `scripts/release_0_8_gate.sh`.
 - Re-checked the stable Rust channel on 2026-06-14. Rust stable remains
@@ -73,6 +89,6 @@ admission rule for memory cleanup; `zeroize` is not admitted for this project.
 
 ## Pentest Status
 
-The first, second, and third pentest passes have been resolved. Root
+The first, second, third, and fourth pentest passes have been resolved. Root
 `PENTEST.md` is the temporary findings handoff file and must be removed after
 findings are resolved.

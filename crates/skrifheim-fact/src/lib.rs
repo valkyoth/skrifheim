@@ -47,7 +47,7 @@ impl Confidence {
     }
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone)]
 pub struct Fact {
     id: FactId,
     world_id: WorldId,

@@ -241,6 +241,9 @@ impl KeyMetadata {
                 if self.parent != Some(parent.key_id) || self.key_id == parent.key_id {
                     return Err(SkrifheimError::InvalidKeyHierarchy);
                 }
+                if is_unsafe_parent_lifecycle(parent.lifecycle) {
+                    return Err(SkrifheimError::InvalidKeyHierarchy);
+                }
                 if is_valid_parent(scope, parent.scope) {
                     Ok(())
                 } else {
@@ -307,6 +310,16 @@ impl KeyMetadata {
             }),
         })
     }
+}
+
+fn is_unsafe_parent_lifecycle(lifecycle: KeyLifecycleState) -> bool {
+    matches!(
+        lifecycle,
+        KeyLifecycleState::Compromised
+            | KeyLifecycleState::Quarantined
+            | KeyLifecycleState::Destroyed
+            | KeyLifecycleState::CryptoErased
+    )
 }
 
 fn is_valid_lifecycle_transition(current: KeyLifecycleState, next: KeyLifecycleState) -> bool {

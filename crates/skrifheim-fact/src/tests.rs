@@ -105,16 +105,16 @@ fn debug_redacts_fact_payload_and_label_tokens() -> Result<()> {
 
 #[test]
 fn builder_requires_all_required_fields() {
-    assert_eq!(
+    assert!(matches!(
         Fact::builder().build(),
         Err(SkrifheimError::MissingFactField("id"))
-    );
+    ));
 }
 
 #[test]
 fn builder_requires_evidence() -> Result<()> {
     let result = base_builder()?.evidence(Vec::new())?.build();
-    assert_eq!(result, Err(SkrifheimError::EmptyEvidence));
+    assert!(matches!(result, Err(SkrifheimError::EmptyEvidence)));
     Ok(())
 }
 
@@ -137,7 +137,7 @@ fn confidence_rejects_out_of_range_values() {
 fn fact_rejects_self_referential_causality() -> Result<()> {
     let fact = fact()?;
     let result = base_builder()?.add_caused_by(fact.id())?.build();
-    assert_eq!(result, Err(SkrifheimError::SelfReferentialFact));
+    assert!(matches!(result, Err(SkrifheimError::SelfReferentialFact)));
     Ok(())
 }
 
@@ -176,7 +176,7 @@ fn validation_rejects_oversized_fact_link_lists() -> Result<()> {
         links.push(id(FactId::from_u128((index + 20) as u128))?);
     }
     let result = base_builder()?.caused_by(links);
-    assert_eq!(result, Err(SkrifheimError::TooManyFactLinks));
+    assert!(matches!(result, Err(SkrifheimError::TooManyFactLinks)));
     Ok(())
 }
 
@@ -187,7 +187,7 @@ fn validation_rejects_oversized_evidence_lists() -> Result<()> {
         evidence.push(id(SourceId::from_u128((index + 20) as u128))?);
     }
     let result = base_builder()?.evidence(evidence);
-    assert_eq!(result, Err(SkrifheimError::TooManyFactLinks));
+    assert!(matches!(result, Err(SkrifheimError::TooManyFactLinks)));
     Ok(())
 }
 
@@ -197,10 +197,10 @@ fn builder_rejects_incremental_evidence_before_unbounded_growth() -> Result<()> 
     for index in 0..FACT_LINK_LIST_MAX_ITEMS {
         builder = builder.add_evidence(id(SourceId::from_u128((index + 20) as u128))?)?;
     }
-    assert_eq!(
+    assert!(matches!(
         builder.add_evidence(id(SourceId::from_u128(5000))?),
         Err(SkrifheimError::TooManyFactLinks)
-    );
+    ));
     Ok(())
 }
 
@@ -209,13 +209,13 @@ fn validation_rejects_oversized_text_objects() -> Result<()> {
     let oversized = String::from_utf8(vec![b'a'; FACT_OBJECT_MAX_BYTES + 1])
         .map_err(|_| SkrifheimError::ValueTooLarge)?;
     let result = base_builder()?.object(Value::Text(oversized));
-    assert_eq!(result, Err(SkrifheimError::ValueTooLarge));
+    assert!(matches!(result, Err(SkrifheimError::ValueTooLarge)));
     Ok(())
 }
 
 #[test]
 fn validation_rejects_oversized_byte_objects() -> Result<()> {
     let result = base_builder()?.object(Value::Bytes(vec![1; FACT_OBJECT_MAX_BYTES + 1]));
-    assert_eq!(result, Err(SkrifheimError::ValueTooLarge));
+    assert!(matches!(result, Err(SkrifheimError::ValueTooLarge)));
     Ok(())
 }

@@ -16,6 +16,7 @@ pub use diff::{
 mod tests;
 
 pub const WORLD_NAME_MAX_BYTES: usize = 256;
+pub const WORLD_FACT_LIST_MAX_ITEMS: usize = 1_000_000;
 
 const WORLD_ID_OFFSET: u128 = 0x6c62_272e_07bb_0142_62b8_2175_6295_c58d;
 const WORLD_ID_PRIME: u128 = 0x0000_0000_0100_0000_0000_0000_0000_013b;
@@ -198,16 +199,12 @@ impl World {
         &self.hidden_facts
     }
 
-    pub fn add_fact(&mut self, fact_id: FactId) {
-        if !self.added_facts.contains(&fact_id) {
-            self.added_facts.push(fact_id);
-        }
+    pub fn add_fact(&mut self, fact_id: FactId) -> Result<()> {
+        insert_fact_id(&mut self.added_facts, fact_id)
     }
 
-    pub fn hide_fact(&mut self, fact_id: FactId) {
-        if !self.hidden_facts.contains(&fact_id) {
-            self.hidden_facts.push(fact_id);
-        }
+    pub fn hide_fact(&mut self, fact_id: FactId) -> Result<()> {
+        insert_fact_id(&mut self.hidden_facts, fact_id)
     }
 
     pub fn diff_to_child(&self, child: &Self) -> Result<WorldDiff> {
@@ -220,6 +217,27 @@ impl World {
 
     pub fn rollback_preflight(&self, child: &Self) -> Result<RollbackPreflight> {
         RollbackPreflight::from_child(self, child)
+    }
+}
+
+fn insert_fact_id(values: &mut Vec<FactId>, fact_id: FactId) -> Result<()> {
+    insert_fact_id_with_limit(values, fact_id, WORLD_FACT_LIST_MAX_ITEMS)
+}
+
+fn insert_fact_id_with_limit(
+    values: &mut Vec<FactId>,
+    fact_id: FactId,
+    max_items: usize,
+) -> Result<()> {
+    match values.binary_search(&fact_id) {
+        Ok(_) => Ok(()),
+        Err(index) => {
+            if values.len() >= max_items {
+                return Err(SkrifheimError::TooManyFactLinks);
+            }
+            values.insert(index, fact_id);
+            Ok(())
+        }
     }
 }
 
