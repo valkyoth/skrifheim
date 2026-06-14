@@ -201,6 +201,11 @@ impl Default for AccessDeniedReason {
     }
 }
 
+/// Internal error type for skrifheim crates.
+///
+/// `Display` is diagnostic and may include implementation details for internal
+/// logs. Any message that crosses a trust, tenant, classification, process, or
+/// network boundary must use [`SkrifheimError::public_message`] instead.
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub enum SkrifheimError {
     InvalidTimeRange,
@@ -408,6 +413,15 @@ mod tests {
         let tokens = PolicyTokenSet::new(tokens)?;
         assert!(contains_policy_token_ct(&tokens, "TOKEN-63"));
         assert!(!contains_policy_token_ct(&tokens, "TOKEN-64"));
+        Ok(())
+    }
+
+    #[test]
+    fn policy_token_slot_access_is_bounded() -> Result<()> {
+        let tokens = PolicyTokenSet::new(vec![String::from("TOKEN-0")])?;
+
+        assert!(tokens.slot(0).is_some());
+        assert_eq!(tokens.slot(POLICY_TOKEN_SET_MAX_ITEMS), None);
         Ok(())
     }
 

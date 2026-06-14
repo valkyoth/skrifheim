@@ -107,6 +107,17 @@ Unsafe Rust is not allowed in core crates.
 
 If a future feature truly cannot be implemented without unsafe code, the unsafe must first be admitted in [Unsafe Policy](unsafe-policy.md), then isolated in a dedicated boundary crate with a name that makes the risk obvious. The safe `skrifheim` core should consume only a narrow reviewed wrapper. The default project posture remains no unsafe.
 
+## External Error Boundary Rule
+
+`SkrifheimError` implements `Display` for internal diagnostics and trusted
+operator logs only. Code that returns an error message across a tenant,
+classification, process, HTTP/API, plugin, or network boundary must use
+`SkrifheimError::public_message()` or a stricter wrapper that cannot expose the
+diagnostic reason string.
+
+Release reviews must treat `format!("{error}")`, `error.to_string()`, and
+generic error serialization on boundary paths as information-disclosure risks.
+
 ## Validator
 
 `scripts/validate-engineering-policy.sh` enforces the current baseline:

@@ -126,6 +126,12 @@ constant-time evidence, policy-token storage must use fixed-slot authorization
 sets, and label evaluation must avoid exposing compartment or releasability set
 size through variable loop shape.
 
+Future causal-DAG, query, and policy traversals must avoid recursive call paths
+that clone or stack-nest `AuthorityContext`, `SecurityLabel`, or policy-token
+sets. These structures intentionally carry fixed-size token slots for
+constant-shape evaluation; traversal code should use iterative work queues or
+explicit heap ownership when evaluating many graph hops.
+
 ## Phase 5: Cryptographic Control Plane
 
 Build crypto-agile metadata before hard-coding any final algorithm:

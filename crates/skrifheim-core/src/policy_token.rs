@@ -61,8 +61,12 @@ impl PolicyTokenSet {
     }
 
     #[must_use]
-    pub const fn slot(&self, index: usize) -> PolicyTokenSlot {
-        self.slots[index]
+    pub const fn slot(&self, index: usize) -> Option<PolicyTokenSlot> {
+        if index < POLICY_TOKEN_SET_MAX_ITEMS {
+            Some(self.slots[index])
+        } else {
+            None
+        }
     }
 
     #[must_use]

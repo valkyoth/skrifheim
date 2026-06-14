@@ -1,6 +1,6 @@
 # skrifheim 0.8.0 Release Notes
 
-Status: implementation stop, pending pentest.
+Status: first pentest pass resolved, pending retest.
 
 ## Scope
 
@@ -18,6 +18,15 @@ quarantine states, destruction, and crypto-erasure records.
 - Added `KeyErasureMetadata` and `KeyErasureReason` for crypto-erasure records.
 - Added compromise, quarantine, destruction, and erasure transition tests.
 - Added invalid lifecycle transition and invalid rotation preflight tests.
+- Made `PolicyTokenSet::slot` return `Option<PolicyTokenSlot>` so public slot
+  access cannot panic on out-of-range indexes.
+- Gated the `SKRIFHEIM-TEST-SIG` fixture algorithm out of non-test builds.
+- Added minimum signature length enforcement for approved hybrid signature
+  component pairs.
+- Documented that `SkrifheimError::Display` is diagnostic only and boundary
+  responses must use `public_message()`.
+- Recorded the future traversal rule that large fixed-slot policy structures
+  should not be cloned through recursive graph walks.
 - Bumped workspace and internal crate dependency versions to `0.8.0`.
 - Added `scripts/release_0_8_gate.sh`.
 - Re-checked the stable Rust channel on 2026-06-14. Rust stable remains
@@ -46,5 +55,5 @@ admission rule for memory cleanup; `zeroize` is not admitted for this project.
 
 ## Pentest Status
 
-Pentest is required before tagging. Root `PENTEST.md` is the temporary findings
-handoff file and must be removed after findings are resolved.
+The first pentest pass has been resolved. Root `PENTEST.md` is the temporary
+findings handoff file and must be removed after findings are resolved.

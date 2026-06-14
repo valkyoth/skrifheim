@@ -209,7 +209,10 @@ fn evaluate_required_tokens(
     let mut allowed = 1_u8;
     let mut index = 0;
     while index < POLICY_TOKEN_SET_MAX_ITEMS {
-        let token = required.slot(index);
+        let token = match required.slot(index) {
+            Some(token) => token,
+            None => return 0,
+        };
         let present = token.present_mask();
         let mut token_allowed = 1_u8;
         token_allowed &= contains_policy_token_slot_ct(subject, token) as u8;

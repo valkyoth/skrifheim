@@ -22,7 +22,10 @@ pub const SLH_DSA_SHA2_S128S_SIG_BYTES: usize = 7856;
 pub const MAX_VARIABLE_SIGNATURE_BYTES: usize = 16 * 1024;
 pub const MAX_SIGNATURES_PER_SET: usize = 16;
 pub const KEY_ID_MAX_BYTES: usize = 128;
+#[cfg(test)]
 pub const APPROVED_NAMED_SIGNATURE_ALGORITHMS: &[&str] = &["SKRIFHEIM-TEST-SIG"];
+#[cfg(not(test))]
+pub const APPROVED_NAMED_SIGNATURE_ALGORITHMS: &[&str] = &[];
 pub const APPROVED_HYBRID_SIGNATURE_COMPONENTS: &[&str] = &["ED25519", "ML-DSA-65"];
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -190,8 +193,21 @@ fn validate_signature_envelope_parts(algorithm: &AlgorithmId, signature: &[u8]) 
         AlgorithmId::Ed25519 => Some(ED25519_SIG_BYTES),
         AlgorithmId::MlDsa65 => Some(ML_DSA_65_SIG_BYTES),
         AlgorithmId::SlhDsaSha2S128s => Some(SLH_DSA_SHA2_S128S_SIG_BYTES),
-        AlgorithmId::HybridClassicalPq { .. } | AlgorithmId::Named(_) => {
-            if signature.len() > MAX_VARIABLE_SIGNATURE_BYTES {
+        AlgorithmId::HybridClassicalPq {
+            classical,
+            post_quantum,
+        } => {
+            let min_len = component_min_signature_len(classical)?
+                .checked_add(component_min_signature_len(post_quantum)?)
+                .ok_or(SkrifheimError::InvalidSignatureLength)?;
+            if signature.len() < min_len || signature.len() > MAX_VARIABLE_SIGNATURE_BYTES {
+                return Err(SkrifheimError::InvalidSignatureLength);
+            }
+            None
+        }
+        AlgorithmId::Named(name) => {
+            let min_len = named_min_signature_len(name)?;
+            if signature.len() < min_len || signature.len() > MAX_VARIABLE_SIGNATURE_BYTES {
                 return Err(SkrifheimError::InvalidSignatureLength);
             }
             None
@@ -208,6 +224,26 @@ fn validate_signature_envelope_parts(algorithm: &AlgorithmId, signature: &[u8]) 
         return Err(SkrifheimError::InvalidSignatureLength);
     }
     Ok(())
+}
+
+fn component_min_signature_len(name: &str) -> Result<usize> {
+    match name {
+        "ED25519" => Ok(ED25519_SIG_BYTES),
+        "ML-DSA-65" => Ok(ML_DSA_65_SIG_BYTES),
+        _ => Err(SkrifheimError::InvalidSignatureEnvelope(
+            "algorithm name is not approved for signatures",
+        )),
+    }
+}
+
+fn named_min_signature_len(name: &str) -> Result<usize> {
+    match name {
+        #[cfg(test)]
+        "SKRIFHEIM-TEST-SIG" => Ok(ED25519_SIG_BYTES),
+        _ => Err(SkrifheimError::InvalidSignatureEnvelope(
+            "algorithm name is not approved for signatures",
+        )),
+    }
 }
 
 fn require_approved_algorithm_name(name: &str, approved: &[&str]) -> Result<()> {
