@@ -71,6 +71,27 @@ fn base_builder() -> Result<FactBuilder> {
         .signatures(signature_set()?))
 }
 
+fn base_builder_without_evidence() -> Result<FactBuilder> {
+    Ok(Fact::builder()
+        .id(id(FactId::from_u128(1))?)
+        .world_id(id(WorldId::from_u128(2))?)
+        .subject(id(EntityId::from_u128(3))?)
+        .predicate(id(PredicateId::from_u128(4))?)
+        .object(Value::Boolean(true))?
+        .valid_time(TimeRange::new(Timestamp(5), None)?)
+        .committed_at(id(TxId::from_u128(6))?)
+        .asserted_by(id(ActorId::from_u128(7))?)
+        .confidence(Confidence::max())
+        .add_caused_by(id(FactId::from_u128(9))?)?
+        .policy_id(id(PolicyId::from_u128(10))?)
+        .label(SecurityLabel::new(
+            Classification::Restricted,
+            vec![String::from("EU-COMMAND")],
+            vec![String::from("EU")],
+        )?)
+        .signatures(signature_set()?))
+}
+
 #[test]
 fn valid_fact_passes_validation() -> Result<()> {
     assert_eq!(fact()?.validate(), Ok(()));
@@ -113,7 +134,7 @@ fn builder_requires_all_required_fields() {
 
 #[test]
 fn builder_requires_evidence() -> Result<()> {
-    let result = base_builder()?.evidence(Vec::new())?.build();
+    let result = base_builder_without_evidence()?.build();
     assert!(matches!(result, Err(SkrifheimError::EmptyEvidence)));
     Ok(())
 }
@@ -170,6 +191,32 @@ fn builder_deduplicates_bulk_fact_links() -> Result<()> {
 }
 
 #[test]
+fn bulk_link_setters_merge_with_existing_links() -> Result<()> {
+    let source_a = id(SourceId::from_u128(8))?;
+    let source_b = id(SourceId::from_u128(11))?;
+    let cause_a = id(FactId::from_u128(9))?;
+    let cause_b = id(FactId::from_u128(12))?;
+    let supersedes = id(FactId::from_u128(13))?;
+    let invalidates = id(FactId::from_u128(14))?;
+    let fact = base_builder()?
+        .add_evidence(source_b)?
+        .evidence(vec![source_a])?
+        .add_caused_by(cause_b)?
+        .caused_by(vec![cause_a])?
+        .supersedes(vec![supersedes])?
+        .supersedes(vec![supersedes])?
+        .invalidates(vec![invalidates])?
+        .invalidates(vec![invalidates])?
+        .build()?;
+
+    assert_eq!(fact.evidence(), &[source_a, source_b]);
+    assert_eq!(fact.caused_by(), &[cause_a, cause_b]);
+    assert_eq!(fact.supersedes(), &[supersedes]);
+    assert_eq!(fact.invalidates(), &[invalidates]);
+    Ok(())
+}
+
+#[test]
 fn validation_rejects_oversized_fact_link_lists() -> Result<()> {
     let mut links = Vec::new();
     for index in 0..=FACT_LINK_LIST_MAX_ITEMS {
@@ -193,7 +240,7 @@ fn validation_rejects_oversized_evidence_lists() -> Result<()> {
 
 #[test]
 fn builder_rejects_incremental_evidence_before_unbounded_growth() -> Result<()> {
-    let mut builder = base_builder()?.evidence(Vec::new())?;
+    let mut builder = base_builder_without_evidence()?;
     for index in 0..FACT_LINK_LIST_MAX_ITEMS {
         builder = builder.add_evidence(id(SourceId::from_u128((index + 20) as u128))?)?;
     }

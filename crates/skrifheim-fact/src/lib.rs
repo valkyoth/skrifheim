@@ -96,6 +96,11 @@ impl Fact {
         FactBuilder::new()
     }
 
+    /// Authoritative validation gate for every fact construction path.
+    ///
+    /// `FactBuilder` enforces these invariants today, but future storage or
+    /// segment deserialization paths that bypass the builder must still call
+    /// this before treating a fact as committed.
     pub fn validate(&self) -> Result<()> {
         validate_object_size(&self.object)?;
         if self.evidence.is_empty() {

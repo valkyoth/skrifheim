@@ -143,7 +143,7 @@ impl FactBuilder {
         if evidence.len() > FACT_LINK_LIST_MAX_ITEMS {
             return Err(SkrifheimError::TooManyFactLinks);
         }
-        self.evidence = dedup(evidence);
+        self.evidence = merge_dedup(self.evidence, evidence)?;
         Ok(self)
     }
 
@@ -165,7 +165,7 @@ impl FactBuilder {
         if caused_by.len() > FACT_LINK_LIST_MAX_ITEMS {
             return Err(SkrifheimError::TooManyFactLinks);
         }
-        self.caused_by = dedup(caused_by);
+        self.caused_by = merge_dedup(self.caused_by, caused_by)?;
         Ok(self)
     }
 
@@ -173,7 +173,7 @@ impl FactBuilder {
         if supersedes.len() > FACT_LINK_LIST_MAX_ITEMS {
             return Err(SkrifheimError::TooManyFactLinks);
         }
-        self.supersedes = dedup(supersedes);
+        self.supersedes = merge_dedup(self.supersedes, supersedes)?;
         Ok(self)
     }
 
@@ -181,7 +181,7 @@ impl FactBuilder {
         if invalidates.len() > FACT_LINK_LIST_MAX_ITEMS {
             return Err(SkrifheimError::TooManyFactLinks);
         }
-        self.invalidates = dedup(invalidates);
+        self.invalidates = merge_dedup(self.invalidates, invalidates)?;
         Ok(self)
     }
 
@@ -241,4 +241,13 @@ fn dedup<T: Copy + Ord>(mut values: Vec<T>) -> Vec<T> {
     values.sort();
     values.dedup();
     values
+}
+
+fn merge_dedup<T: Copy + Ord>(mut existing: Vec<T>, incoming: Vec<T>) -> Result<Vec<T>> {
+    existing.extend(incoming);
+    let values = dedup(existing);
+    if values.len() > FACT_LINK_LIST_MAX_ITEMS {
+        return Err(SkrifheimError::TooManyFactLinks);
+    }
+    Ok(values)
 }

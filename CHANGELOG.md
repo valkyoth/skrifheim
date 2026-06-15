@@ -17,6 +17,9 @@
   header's raw encryption key integer with a typed non-zero `KeyId`.
 - Resolved the third `0.9.0` pentest pass by replacing an unreachable
   policy-token bounds branch with explicit invariant debug assertions.
+- Resolved the fourth `0.9.0` pentest pass by making fact-builder bulk
+  provenance setters merge with existing links and documenting `Fact::validate`
+  as the authoritative construction gate.
 - Bumped workspace and internal crate dependency versions to `0.9.0`.
 - Added `0.9.0` release metadata and gate script.
 - Re-checked the stable Rust channel on 2026-06-15. Rust stable remains

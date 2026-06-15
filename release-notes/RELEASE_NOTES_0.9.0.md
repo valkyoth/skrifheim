@@ -1,6 +1,6 @@
 # skrifheim 0.9.0 Release Notes
 
-Status: third pentest pass resolved, pending retest.
+Status: fourth pentest pass resolved, pending retest.
 
 ## Scope
 
@@ -30,6 +30,10 @@ respect.
   the typed non-zero `KeyId` metadata identifier from `skrifheim-crypto`.
 - Replaced the unreachable fail-closed policy-token oversize branch with
   explicit debug assertions documenting the `PolicyTokenSet` length invariant.
+- Made fact-builder bulk provenance and causal-link setters merge with existing
+  incremental additions instead of silently replacing them.
+- Documented `Fact::validate()` as the authoritative gate for every construction
+  path, including future storage deserialization.
 - Bumped workspace and internal crate dependency versions to `0.9.0`.
 - Added `scripts/release_0_9_gate.sh`.
 - Re-checked the stable Rust channel on 2026-06-15. Rust stable remains
@@ -50,6 +54,6 @@ cryptographic key derivation, or runtime access enforcement.
 
 ## Pentest Status
 
-The first, second, and third `0.9.0` pentest passes have been resolved. Root
-`PENTEST.md` is the temporary findings handoff file and must be removed after
-findings are resolved.
+The first, second, third, and fourth `0.9.0` pentest passes have been resolved.
+Root `PENTEST.md` is the temporary findings handoff file and must be removed
+after findings are resolved.
