@@ -12,7 +12,7 @@ Status: baseline control map
 | Unsafe code | Forbidden in scaffold | Active | `scripts/validate-security-policy.sh` |
 | Modularity | Focused crates and file-size gate | Active | `docs/modularity-policy.md` |
 | Canonical truth | Facts are versioned and evidence-bound | Scaffolded | `skrifheim-fact` |
-| World promotion safety | Promotion and rollback preflight expose deterministic conflict categories before merge/promotion logic exists | Scaffolded | `skrifheim-world` |
+| World promotion safety | Promotion and rollback preflight expose deterministic conflict categories before merge/promotion logic exists, using sorted-slice scans to avoid transient set allocation | Scaffolded | `skrifheim-world` |
 | Classification | Labels and clearance checks | Scaffolded | `skrifheim-policy` |
 | External error shape | `SkrifheimError::public_message()` provides generic messages for trust-boundary responses; `Display` is internal diagnostic output only | Scaffolded | `skrifheim-core` |
 | Diagnostic redaction | Sensitive fact payloads, labels, policy tokens, and signature payloads use redacted `Debug`; direct sensitive `Debug` derives are release-gate blocked | Scaffolded | `scripts/validate-security-policy.sh` |

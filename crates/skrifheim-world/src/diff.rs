@@ -1,4 +1,4 @@
-use alloc::{collections::BTreeSet, vec::Vec};
+use alloc::vec::Vec;
 use skrifheim_core::{FactId, Result, SkrifheimError, WorldId};
 
 use crate::World;
@@ -96,36 +96,64 @@ impl RollbackPreflight {
 }
 
 fn collect_conflicts(parent: &World, candidate: &World) -> Vec<WorldConflict> {
-    let added = fact_set(candidate.added_facts());
-    let hidden = fact_set(candidate.hidden_facts());
-    let parent_hidden = fact_set(parent.hidden_facts());
     let mut conflicts = Vec::new();
 
-    for fact_id in added.intersection(&hidden) {
-        conflicts.push(WorldConflict {
-            kind: WorldConflictKind::AddedAndHiddenSameFact,
-            fact_id: *fact_id,
-        });
-    }
-
-    for fact_id in added.intersection(&parent_hidden) {
-        conflicts.push(WorldConflict {
-            kind: WorldConflictKind::ReintroducesParentHiddenFact,
-            fact_id: *fact_id,
-        });
-    }
+    collect_intersections(
+        candidate.added_facts(),
+        candidate.hidden_facts(),
+        WorldConflictKind::AddedAndHiddenSameFact,
+        &mut conflicts,
+    );
+    collect_intersections(
+        candidate.added_facts(),
+        parent.hidden_facts(),
+        WorldConflictKind::ReintroducesParentHiddenFact,
+        &mut conflicts,
+    );
 
     conflicts
 }
 
-fn set_difference(values: &[FactId], existing: &[FactId]) -> Vec<FactId> {
-    let existing = fact_set(existing);
-    fact_set(values)
-        .into_iter()
-        .filter(|fact_id| !existing.contains(fact_id))
-        .collect()
+fn collect_intersections(
+    left: &[FactId],
+    right: &[FactId],
+    kind: WorldConflictKind,
+    conflicts: &mut Vec<WorldConflict>,
+) {
+    let mut left_index = 0;
+    let mut right_index = 0;
+    while left_index < left.len() && right_index < right.len() {
+        let left_fact = left[left_index];
+        let right_fact = right[right_index];
+        if left_fact < right_fact {
+            left_index += 1;
+            continue;
+        }
+        if right_fact < left_fact {
+            right_index += 1;
+            continue;
+        }
+        conflicts.push(WorldConflict {
+            kind,
+            fact_id: left_fact,
+        });
+        left_index += 1;
+        right_index += 1;
+    }
 }
 
-fn fact_set(values: &[FactId]) -> BTreeSet<FactId> {
-    values.iter().copied().collect()
+fn set_difference(values: &[FactId], existing: &[FactId]) -> Vec<FactId> {
+    let mut result = Vec::new();
+    let mut existing_index = 0;
+
+    for value in values {
+        while existing_index < existing.len() && existing[existing_index] < *value {
+            existing_index += 1;
+        }
+        if existing_index == existing.len() || existing[existing_index] != *value {
+            result.push(*value);
+        }
+    }
+
+    result
 }

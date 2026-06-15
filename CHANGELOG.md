@@ -11,6 +11,8 @@
   blast-radius boundaries cannot be silently combined.
 - Added tests for cross-region, cross-compartment, cross-world, cross-segment,
   and special-purpose domain incompatibility.
+- Resolved the first `0.9.0` pentest pass by replacing world diff/preflight
+  set allocation with sorted-slice scans and documenting the cost posture.
 - Bumped workspace and internal crate dependency versions to `0.9.0`.
 - Added `0.9.0` release metadata and gate script.
 - Re-checked the stable Rust channel on 2026-06-15. Rust stable remains

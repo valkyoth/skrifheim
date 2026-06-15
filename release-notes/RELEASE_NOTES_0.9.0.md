@@ -1,6 +1,6 @@
 # skrifheim 0.9.0 Release Notes
 
-Status: implementation stop complete, pending pentest.
+Status: first pentest pass resolved, pending retest.
 
 ## Scope
 
@@ -21,6 +21,11 @@ respect.
   modeled boundary matches.
 - Added tests that reject cross-region, cross-compartment, cross-world,
   cross-segment, and cross-purpose domain mixing.
+- Replaced world diff and promotion/rollback preflight transient `BTreeSet`
+  allocation with linear sorted-slice scans.
+- Reconfirmed that deterministic world ID collision resistance remains tracked
+  as a pre-storage requirement before world IDs become authoritative storage
+  keys.
 - Bumped workspace and internal crate dependency versions to `0.9.0`.
 - Added `scripts/release_0_9_gate.sh`.
 - Re-checked the stable Rust channel on 2026-06-15. Rust stable remains
@@ -41,6 +46,5 @@ cryptographic key derivation, or runtime access enforcement.
 
 ## Pentest Status
 
-No `0.9.0` pentest findings have been applied yet. Root `PENTEST.md` is the
-temporary findings handoff file and must be removed after findings are
-resolved.
+The first `0.9.0` pentest pass has been resolved. Root `PENTEST.md` is the
+temporary findings handoff file and must be removed after findings are resolved.
