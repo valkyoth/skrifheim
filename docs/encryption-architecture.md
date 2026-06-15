@@ -50,6 +50,10 @@ referenced key lifecycle and reject compromised, quarantined, destroyed, or
 crypto-erased keys. Old segment reads may allow explicitly rotating keys only
 under a read-only migration path.
 
+Segment headers use the typed non-zero `KeyId` metadata identifier rather than a
+raw integer. That prevents zero-key sentinels and accidental mixing with
+transaction, policy, tenant, or segment-scope identifiers at compile time.
+
 ## Key Lifecycle
 
 The control plane must model:

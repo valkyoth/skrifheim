@@ -1,6 +1,6 @@
 # skrifheim 0.9.0 Release Notes
 
-Status: first pentest pass resolved, pending retest.
+Status: second pentest pass resolved, pending retest.
 
 ## Scope
 
@@ -26,6 +26,8 @@ respect.
 - Reconfirmed that deterministic world ID collision resistance remains tracked
   as a pre-storage requirement before world IDs become authoritative storage
   keys.
+- Replaced the storage segment header's raw `u128` encryption key field with
+  the typed non-zero `KeyId` metadata identifier from `skrifheim-crypto`.
 - Bumped workspace and internal crate dependency versions to `0.9.0`.
 - Added `scripts/release_0_9_gate.sh`.
 - Re-checked the stable Rust channel on 2026-06-15. Rust stable remains
@@ -46,5 +48,6 @@ cryptographic key derivation, or runtime access enforcement.
 
 ## Pentest Status
 
-The first `0.9.0` pentest pass has been resolved. Root `PENTEST.md` is the
-temporary findings handoff file and must be removed after findings are resolved.
+The first and second `0.9.0` pentest passes have been resolved. Root
+`PENTEST.md` is the temporary findings handoff file and must be removed after
+findings are resolved.

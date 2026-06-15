@@ -5,6 +5,7 @@ extern crate alloc;
 
 use alloc::string::String;
 use skrifheim_core::{PolicyId, Result, SkrifheimError, TenantId, TxId};
+use skrifheim_crypto::KeyId;
 
 pub const SEGMENT_MAGIC: [u8; 8] = *b"SKRIFSEG";
 pub const SEGMENT_VERSION_MAX: u16 = 1;
@@ -33,7 +34,7 @@ pub struct SegmentHeader {
     pub min_tx: TxId,
     pub max_tx: TxId,
     pub policy_id: PolicyId,
-    pub encryption_key_id: u128,
+    pub encryption_key_id: KeyId,
     pub body_len: u64,
     pub body_crc64: BodyChecksum,
     pub content_hash: Option<[u8; 32]>,
@@ -86,11 +87,6 @@ impl SegmentHeader {
                 "content hash missing",
             )));
         }
-        if self.encryption_key_id == 0 {
-            return Err(SkrifheimError::InvalidStorageHeader(String::from(
-                "encryption key ID must be non-zero",
-            )));
-        }
         Ok(())
     }
 }
@@ -112,7 +108,7 @@ mod tests {
             min_tx: id(TxId::from_u128(1))?,
             max_tx: id(TxId::from_u128(2))?,
             policy_id: id(PolicyId::from_u128(3))?,
-            encryption_key_id: 4,
+            encryption_key_id: id(KeyId::from_u128(4))?,
             body_len: 5,
             body_crc64: BodyChecksum::Present(6),
             content_hash: Some([7; 32]),
@@ -163,12 +159,13 @@ mod tests {
             Err(SkrifheimError::InvalidStorageHeader(_))
         ));
 
-        let mut missing_key = header()?;
-        missing_key.encryption_key_id = 0;
-        assert!(matches!(
-            missing_key.validate(),
-            Err(SkrifheimError::InvalidStorageHeader(_))
-        ));
+        Ok(())
+    }
+
+    #[test]
+    fn header_encryption_key_id_is_typed_nonzero() -> Result<()> {
+        assert_eq!(KeyId::from_u128(0), None);
+        assert_eq!(header()?.encryption_key_id.get(), 4);
         Ok(())
     }
 
