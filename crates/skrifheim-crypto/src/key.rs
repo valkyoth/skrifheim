@@ -261,7 +261,7 @@ impl KeyMetadata {
         next_epoch: CryptoEpoch,
     ) -> Result<Self> {
         if !is_valid_lifecycle_transition(self.lifecycle, next_lifecycle)
-            || next_epoch.0 < self.epoch.0
+            || next_epoch.get() < self.epoch.get()
         {
             return Err(SkrifheimError::InvalidKeyLifecycle);
         }
@@ -279,7 +279,7 @@ impl KeyMetadata {
         if self.key_id == candidate.key_id
             || self.parent != candidate.parent
             || self.scope != candidate.scope
-            || self.epoch.0 >= candidate.epoch.0
+            || self.epoch.get() >= candidate.epoch.get()
             || self.lifecycle != KeyLifecycleState::Active
             || candidate.lifecycle != KeyLifecycleState::Created
         {

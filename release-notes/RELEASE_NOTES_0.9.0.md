@@ -1,6 +1,6 @@
 # skrifheim 0.9.0 Release Notes
 
-Status: fourth pentest pass resolved, pending retest.
+Status: fifth pentest pass resolved, pending retest.
 
 ## Scope
 
@@ -34,6 +34,12 @@ respect.
   incremental additions instead of silently replacing them.
 - Documented `Fact::validate()` as the authoritative gate for every construction
   path, including future storage deserialization.
+- Rejected duplicate signature signer entries in `SignatureSet` so future
+  threshold-style checks cannot count the same `(algorithm, key_id)` twice.
+- Enforced `MAX_VARIABLE_SIGNATURE_BYTES` as a hard signature payload ceiling
+  before algorithm-specific length checks.
+- Made `CryptoEpoch` opaque behind constructor/accessor methods so future epoch
+  issuance invariants can be added without exposing raw tuple construction.
 - Bumped workspace and internal crate dependency versions to `0.9.0`.
 - Added `scripts/release_0_9_gate.sh`.
 - Re-checked the stable Rust channel on 2026-06-15. Rust stable remains
@@ -54,6 +60,6 @@ cryptographic key derivation, or runtime access enforcement.
 
 ## Pentest Status
 
-The first, second, third, and fourth `0.9.0` pentest passes have been resolved.
+The first, second, third, fourth, and fifth `0.9.0` pentest passes have been resolved.
 Root `PENTEST.md` is the temporary findings handoff file and must be removed
 after findings are resolved.

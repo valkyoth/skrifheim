@@ -81,7 +81,19 @@ impl AlgorithmId {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct CryptoEpoch(pub u64);
+pub struct CryptoEpoch(u64);
+
+impl CryptoEpoch {
+    #[must_use]
+    pub const fn new(value: u64) -> Self {
+        Self(value)
+    }
+
+    #[must_use]
+    pub const fn get(self) -> u64 {
+        self.0
+    }
+}
 
 #[derive(Clone)]
 pub struct SignatureEnvelope {
@@ -228,6 +240,7 @@ impl SignatureSet {
                 ));
             }
         }
+        require_unique_signature_signers(&self.signatures)?;
         Ok(())
     }
 }
@@ -236,6 +249,9 @@ fn validate_signature_envelope_parts(algorithm: &AlgorithmId, signature: &[u8]) 
     algorithm.validate_signature_context()?;
     if signature.is_empty() {
         return Err(SkrifheimError::EmptySignatureSet);
+    }
+    if signature.len() > MAX_VARIABLE_SIGNATURE_BYTES {
+        return Err(SkrifheimError::InvalidSignatureLength);
     }
     let expected = match algorithm {
         AlgorithmId::Ed25519 => Some(ED25519_SIG_BYTES),
@@ -270,6 +286,23 @@ fn validate_signature_envelope_parts(algorithm: &AlgorithmId, signature: &[u8]) 
         && expected != signature.len()
     {
         return Err(SkrifheimError::InvalidSignatureLength);
+    }
+    Ok(())
+}
+
+fn require_unique_signature_signers(signatures: &[SignatureEnvelope]) -> Result<()> {
+    let mut index = 0;
+    while index < signatures.len() {
+        let mut other = index + 1;
+        while other < signatures.len() {
+            if signatures[index].algorithm == signatures[other].algorithm
+                && signatures[index].key_id == signatures[other].key_id
+            {
+                return Err(SkrifheimError::DuplicateSignatureSigner);
+            }
+            other += 1;
+        }
+        index += 1;
     }
     Ok(())
 }

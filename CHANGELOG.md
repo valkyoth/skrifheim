@@ -20,6 +20,9 @@
 - Resolved the fourth `0.9.0` pentest pass by making fact-builder bulk
   provenance setters merge with existing links and documenting `Fact::validate`
   as the authoritative construction gate.
+- Resolved the fifth `0.9.0` pentest pass by rejecting duplicate signature
+  signer entries, enforcing the variable signature byte ceiling, and making
+  crypto epochs opaque behind constructor/accessor methods.
 - Bumped workspace and internal crate dependency versions to `0.9.0`.
 - Added `0.9.0` release metadata and gate script.
 - Re-checked the stable Rust channel on 2026-06-15. Rust stable remains

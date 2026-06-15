@@ -14,7 +14,7 @@ fn id<T>(id: Option<T>) -> Result<T> {
 fn signature_set() -> Result<SignatureSet> {
     SignatureSet::new(vec![SignatureEnvelope::new(
         AlgorithmId::Ed25519,
-        CryptoEpoch(1),
+        CryptoEpoch::new(1),
         "test-key",
         vec![1; 64],
     )?])

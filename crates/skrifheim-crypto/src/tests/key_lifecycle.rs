@@ -6,17 +6,17 @@ fn key_lifecycle_accepts_valid_activation_and_rotation() -> Result<()> {
         tenant_id: id(TenantId::from_u128(12))?,
         compartment_id: id(CompartmentKeyId::from_u128(13))?,
     };
-    let current = KeyMetadata::new(id(KeyId::from_u128(50))?, None, scope, CryptoEpoch(1))
-        .transition(KeyLifecycleState::Active, CryptoEpoch(1))?;
-    let rotating = current.transition(KeyLifecycleState::Rotating, CryptoEpoch(2))?;
+    let current = KeyMetadata::new(id(KeyId::from_u128(50))?, None, scope, CryptoEpoch::new(1))
+        .transition(KeyLifecycleState::Active, CryptoEpoch::new(1))?;
+    let rotating = current.transition(KeyLifecycleState::Rotating, CryptoEpoch::new(2))?;
     assert_eq!(rotating.lifecycle(), KeyLifecycleState::Rotating);
 
-    let candidate = KeyMetadata::new(id(KeyId::from_u128(51))?, None, scope, CryptoEpoch(3));
+    let candidate = KeyMetadata::new(id(KeyId::from_u128(51))?, None, scope, CryptoEpoch::new(3));
     let preflight = current.rotation_preflight(&candidate)?;
     assert_eq!(preflight.current_key(), current.key_id());
     assert_eq!(preflight.candidate_key(), candidate.key_id());
-    assert_eq!(preflight.from_epoch(), CryptoEpoch(1));
-    assert_eq!(preflight.to_epoch(), CryptoEpoch(3));
+    assert_eq!(preflight.from_epoch(), CryptoEpoch::new(1));
+    assert_eq!(preflight.to_epoch(), CryptoEpoch::new(3));
     Ok(())
 }
 
@@ -26,14 +26,14 @@ fn key_lifecycle_rejects_invalid_transitions() -> Result<()> {
         id(KeyId::from_u128(60))?,
         None,
         KeyScope::RootTrust,
-        CryptoEpoch(2),
+        CryptoEpoch::new(2),
     );
     assert_eq!(
-        key.transition(KeyLifecycleState::Retired, CryptoEpoch(2)),
+        key.transition(KeyLifecycleState::Retired, CryptoEpoch::new(2)),
         Err(SkrifheimError::InvalidKeyLifecycle)
     );
     assert_eq!(
-        key.transition(KeyLifecycleState::Active, CryptoEpoch(1)),
+        key.transition(KeyLifecycleState::Active, CryptoEpoch::new(1)),
         Err(SkrifheimError::InvalidKeyLifecycle)
     );
     Ok(())
@@ -45,11 +45,11 @@ fn compromise_can_be_declared_from_non_active_material_states() -> Result<()> {
         id(KeyId::from_u128(61))?,
         None,
         KeyScope::RootTrust,
-        CryptoEpoch(1),
+        CryptoEpoch::new(1),
     );
     assert_eq!(
         created
-            .transition(KeyLifecycleState::Compromised, CryptoEpoch(2))?
+            .transition(KeyLifecycleState::Compromised, CryptoEpoch::new(2))?
             .lifecycle(),
         KeyLifecycleState::Compromised
     );
@@ -58,18 +58,18 @@ fn compromise_can_be_declared_from_non_active_material_states() -> Result<()> {
         id(KeyId::from_u128(62))?,
         None,
         KeyScope::RootTrust,
-        CryptoEpoch(4),
+        CryptoEpoch::new(4),
         KeyLifecycleState::Retired,
     );
     assert_eq!(
         retired
-            .transition(KeyLifecycleState::Compromised, CryptoEpoch(5))?
+            .transition(KeyLifecycleState::Compromised, CryptoEpoch::new(5))?
             .lifecycle(),
         KeyLifecycleState::Compromised
     );
     assert_eq!(
         retired
-            .transition(KeyLifecycleState::Quarantined, CryptoEpoch(5))?
+            .transition(KeyLifecycleState::Quarantined, CryptoEpoch::new(5))?
             .lifecycle(),
         KeyLifecycleState::Quarantined
     );
@@ -78,12 +78,12 @@ fn compromise_can_be_declared_from_non_active_material_states() -> Result<()> {
         id(KeyId::from_u128(63))?,
         None,
         KeyScope::RootTrust,
-        CryptoEpoch(6),
+        CryptoEpoch::new(6),
         KeyLifecycleState::Quarantined,
     );
     assert_eq!(
         quarantined
-            .transition(KeyLifecycleState::Compromised, CryptoEpoch(7))?
+            .transition(KeyLifecycleState::Compromised, CryptoEpoch::new(7))?
             .lifecycle(),
         KeyLifecycleState::Compromised
     );
@@ -100,7 +100,7 @@ fn key_rotation_preflight_rejects_wrong_scope_or_epoch() -> Result<()> {
             tenant_id,
             compartment_id: id(CompartmentKeyId::from_u128(13))?,
         },
-        CryptoEpoch(5),
+        CryptoEpoch::new(5),
         KeyLifecycleState::Active,
     );
     let wrong_scope = KeyMetadata::new(
@@ -111,13 +111,13 @@ fn key_rotation_preflight_rejects_wrong_scope_or_epoch() -> Result<()> {
             compartment_id: id(CompartmentKeyId::from_u128(13))?,
             segment_id: id(SegmentKeyId::from_u128(14))?,
         },
-        CryptoEpoch(6),
+        CryptoEpoch::new(6),
     );
     let stale_epoch = KeyMetadata::new(
         id(KeyId::from_u128(72))?,
         None,
         current.scope(),
-        CryptoEpoch(5),
+        CryptoEpoch::new(5),
     );
 
     assert_eq!(
@@ -137,18 +137,18 @@ fn compromised_key_can_be_quarantined_destroyed_and_erased() -> Result<()> {
         id(KeyId::from_u128(80))?,
         None,
         KeyScope::RootTrust,
-        CryptoEpoch(1),
+        CryptoEpoch::new(1),
     )
-    .transition(KeyLifecycleState::Active, CryptoEpoch(1))?
-    .transition(KeyLifecycleState::Compromised, CryptoEpoch(2))?
-    .transition(KeyLifecycleState::Quarantined, CryptoEpoch(2))?
-    .transition(KeyLifecycleState::Destroyed, CryptoEpoch(3))?
+    .transition(KeyLifecycleState::Active, CryptoEpoch::new(1))?
+    .transition(KeyLifecycleState::Compromised, CryptoEpoch::new(2))?
+    .transition(KeyLifecycleState::Quarantined, CryptoEpoch::new(2))?
+    .transition(KeyLifecycleState::Destroyed, CryptoEpoch::new(3))?
     .crypto_erase(KeyErasureReason::Compromise)?;
 
     assert_eq!(key.lifecycle(), KeyLifecycleState::CryptoErased);
     let erasure = key.erasure().ok_or(SkrifheimError::InvalidKeyLifecycle)?;
     assert_eq!(erasure.key_id(), key.key_id());
-    assert_eq!(erasure.epoch(), CryptoEpoch(3));
+    assert_eq!(erasure.epoch(), CryptoEpoch::new(3));
     assert_eq!(erasure.reason(), KeyErasureReason::Compromise);
     Ok(())
 }
@@ -159,7 +159,7 @@ fn active_key_cannot_be_crypto_erased_directly() -> Result<()> {
         id(KeyId::from_u128(90))?,
         None,
         KeyScope::RootTrust,
-        CryptoEpoch(1),
+        CryptoEpoch::new(1),
         KeyLifecycleState::Active,
     );
     assert_eq!(
@@ -175,14 +175,14 @@ fn compromised_or_quarantined_key_must_be_destroyed_before_crypto_erasure() -> R
         id(KeyId::from_u128(91))?,
         None,
         KeyScope::RootTrust,
-        CryptoEpoch(1),
+        CryptoEpoch::new(1),
         KeyLifecycleState::Compromised,
     );
     let quarantined = KeyMetadata::with_lifecycle(
         id(KeyId::from_u128(92))?,
         None,
         KeyScope::RootTrust,
-        CryptoEpoch(1),
+        CryptoEpoch::new(1),
         KeyLifecycleState::Quarantined,
     );
 
