@@ -1,6 +1,6 @@
 # skrifheim 0.9.0 Release Notes
 
-Status: fifth pentest pass resolved, pending retest.
+Status: release gate passed and pentest green.
 
 ## Scope
 
