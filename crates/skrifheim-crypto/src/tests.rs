@@ -2,6 +2,7 @@ use super::*;
 use alloc::vec;
 use skrifheim_core::{Result, TenantId};
 
+mod domain;
 mod key_lifecycle;
 
 fn id<T>(id: Option<T>) -> Result<T> {

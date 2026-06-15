@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+## 0.9.0
+
+- Added encryption-domain metadata for tenant, region, classification,
+  compartment, world, WAL, segment, projection, backup, export capsule, AI
+  artifact, WASM/plugin secret, and audit-log boundaries.
+- Added exact encryption-domain merge compatibility checks so incompatible
+  blast-radius boundaries cannot be silently combined.
+- Added tests for cross-region, cross-compartment, cross-world, cross-segment,
+  and special-purpose domain incompatibility.
+- Bumped workspace and internal crate dependency versions to `0.9.0`.
+- Added `0.9.0` release metadata and gate script.
+- Re-checked the stable Rust channel on 2026-06-15. Rust stable remains
+  `1.96.0`; `rustup` has an available tooling update from `1.28.2` to
+  `1.29.0`.
+
 ## 0.8.0
 
 - Added key lifecycle states for creation, activation, rotation, retirement, compromise, quarantine, destruction, and crypto-erasure.

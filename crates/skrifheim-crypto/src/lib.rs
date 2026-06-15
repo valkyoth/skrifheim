@@ -7,11 +7,13 @@ use alloc::{string::String, vec::Vec};
 use core::fmt;
 use skrifheim_core::{Result, SkrifheimError};
 
+mod domain;
 mod key;
 
 #[cfg(test)]
 mod tests;
 
+pub use domain::{EncryptionDomain, EncryptionDomainPurpose};
 pub use key::{
     CompartmentKeyId, DeploymentKeyId, KeyErasureMetadata, KeyErasureReason, KeyId,
     KeyLifecycleState, KeyMetadata, KeyRotationPreflight, KeyScope, RegionKeyId, SegmentKeyId,

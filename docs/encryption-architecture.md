@@ -101,6 +101,12 @@ Required domains:
 - WASM/plugin secret,
 - audit log.
 
+The current scaffold models these as metadata-only blast-radius boundaries in
+`skrifheim-crypto`. Domain merge compatibility is intentionally exact:
+purpose, tenant, region, classification, compartment, world or branch, and
+segment identity must match before two encrypted surfaces can be treated as the
+same domain. Durable encryption and key derivation are still planned work.
+
 ## Query-Result Classification
 
 Encryption at rest does not prevent derived-result leaks.
