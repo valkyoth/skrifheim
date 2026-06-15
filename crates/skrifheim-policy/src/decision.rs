@@ -198,13 +198,10 @@ fn evaluate_required_tokens(
     device: &PolicyTokenSet,
     workload: &PolicyTokenSet,
 ) -> u8 {
-    if required.len() > POLICY_TOKEN_SET_MAX_ITEMS
-        || subject.len() > POLICY_TOKEN_SET_MAX_ITEMS
-        || device.len() > POLICY_TOKEN_SET_MAX_ITEMS
-        || workload.len() > POLICY_TOKEN_SET_MAX_ITEMS
-    {
-        return 0;
-    }
+    debug_assert!(required.len() <= POLICY_TOKEN_SET_MAX_ITEMS);
+    debug_assert!(subject.len() <= POLICY_TOKEN_SET_MAX_ITEMS);
+    debug_assert!(device.len() <= POLICY_TOKEN_SET_MAX_ITEMS);
+    debug_assert!(workload.len() <= POLICY_TOKEN_SET_MAX_ITEMS);
 
     let mut allowed = 1_u8;
     for token in required.slots() {

@@ -15,6 +15,8 @@
   set allocation with sorted-slice scans and documenting the cost posture.
 - Resolved the second `0.9.0` pentest pass by replacing the storage segment
   header's raw encryption key integer with a typed non-zero `KeyId`.
+- Resolved the third `0.9.0` pentest pass by replacing an unreachable
+  policy-token bounds branch with explicit invariant debug assertions.
 - Bumped workspace and internal crate dependency versions to `0.9.0`.
 - Added `0.9.0` release metadata and gate script.
 - Re-checked the stable Rust channel on 2026-06-15. Rust stable remains
