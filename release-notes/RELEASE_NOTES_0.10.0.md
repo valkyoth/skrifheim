@@ -34,6 +34,8 @@ AI processing, and compliance layers must honor.
   state is not duplicated inside the request model.
 - Normalized query request result-input vector capacity after validation so
   spare caller capacity is not retained.
+- Closed planner decision and policy proof construction so non-allow proofs
+  cannot be externally forged with sensitive result metadata.
 - Kept `evaluate_read_set()` and `output_classification()` compatibility
   accessors for existing label-only planning.
 - Updated query planning to accept richer result inputs while keeping the

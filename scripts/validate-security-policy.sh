@@ -64,6 +64,30 @@ for trait_name in PartialEq Eq; do
     check_no_sensitive_impl crates/skrifheim-policy/src/result.rs ResultClassification "$trait_name"
 done
 
+if grep -E "^[[:space:]]*pub[[:space:]]+enum[[:space:]]+PlannerDecision([^[:alnum:]_]|$)" crates/skrifheim-policy/src/decision.rs >/dev/null; then
+    echo "PlannerDecision must not be a publicly constructible enum" >&2
+    exit 1
+fi
+
+if awk '
+    /^[[:space:]]*impl[[:space:]]+PolicyProof[[:space:]]*\{/ {
+        in_policy_proof = 1
+        next
+    }
+    in_policy_proof && /^[[:space:]]*\}/ {
+        in_policy_proof = 0
+    }
+    in_policy_proof && /^[[:space:]]*pub[[:space:]]+fn[[:space:]]+new[[:space:]]*\(/ {
+        found = 1
+    }
+    END {
+        exit found ? 0 : 1
+    }
+' crates/skrifheim-policy/src/decision.rs; then
+    echo "PolicyProof::new must stay crate-private" >&2
+    exit 1
+fi
+
 check_no_sensitive_derive crates/skrifheim-core/src/lib.rs Value Debug
 check_no_sensitive_derive crates/skrifheim-fact/src/lib.rs Fact Debug
 check_no_sensitive_derive crates/skrifheim-fact/src/builder.rs FactBuilder Debug

@@ -28,6 +28,7 @@ Status: baseline control map
 | Query inference | Public query plans expose aggregate proof/decision state, not per-label decisions | Scaffolded | `skrifheim-query` |
 | Query request memory | Query requests fail closed for empty result input sets, use constructor-enforced input limits, store one exact-capacity result-input vector, and keep an explicit fixed result-input memory budget | Scaffolded | `skrifheim-query` |
 | Query-result classification | Allowed query plans propagate output classification, sovereignty, PII-derived output, AI-processing eligibility, and confidence-threshold policy metadata; non-allow plans expose only public sentinel metadata | Scaffolded | `skrifheim-policy`, `skrifheim-query` |
+| Query proof construction | Planner decisions and policy proofs are constructed inside `skrifheim-policy`; public callers inspect aggregate state but cannot forge non-allow proofs with sensitive result metadata | Scaffolded | `scripts/validate-security-policy.sh` |
 | Crypto agility | Algorithm and signature envelopes | Scaffolded | `skrifheim-crypto` |
 | Key hierarchy | Root trust, deployment, region, tenant, compartment, segment, and data key parent metadata with tenant deployment/region and segment/data compartment binding | Scaffolded | `skrifheim-crypto` |
 | Key lifecycle | Creation, activation, rotation preflight, compromise, quarantine, unsafe-parent rejection, destruction, and destruction-gated crypto-erasure metadata | Scaffolded | `skrifheim-crypto` |

@@ -9,45 +9,62 @@ use crate::{
 };
 
 #[derive(Clone, Debug)]
-pub enum PlannerDecision {
-    Allow {
-        proof: PolicyProof,
-    },
-    Redact {
-        reason: AccessDeniedReason,
-        proof: PolicyProof,
-    },
-    Reject {
-        reason: AccessDeniedReason,
-        proof: PolicyProof,
-    },
+pub struct PlannerDecision {
+    kind: DecisionKind,
+    reason: Option<AccessDeniedReason>,
+    proof: PolicyProof,
 }
 
 impl PlannerDecision {
+    fn allow(input_label_count: usize, result_classification: ResultClassification) -> Self {
+        Self {
+            kind: DecisionKind::Allow,
+            reason: None,
+            proof: PolicyProof::new(
+                DecisionKind::Allow,
+                input_label_count,
+                result_classification,
+            ),
+        }
+    }
+
+    fn redact(input_label_count: usize) -> Self {
+        Self {
+            kind: DecisionKind::Redact,
+            reason: Some(AccessDeniedReason::new()),
+            proof: PolicyProof::new(
+                DecisionKind::Redact,
+                input_label_count,
+                ResultClassification::public(),
+            ),
+        }
+    }
+
+    fn reject(input_label_count: usize) -> Self {
+        Self {
+            kind: DecisionKind::Reject,
+            reason: Some(AccessDeniedReason::new()),
+            proof: PolicyProof::new(
+                DecisionKind::Reject,
+                input_label_count,
+                ResultClassification::public(),
+            ),
+        }
+    }
+
     #[must_use]
     pub const fn kind(&self) -> DecisionKind {
-        match self {
-            Self::Allow { .. } => DecisionKind::Allow,
-            Self::Redact { .. } => DecisionKind::Redact,
-            Self::Reject { .. } => DecisionKind::Reject,
-        }
+        self.kind
     }
 
     #[must_use]
     pub const fn proof(&self) -> &PolicyProof {
-        match self {
-            Self::Allow { proof } | Self::Redact { proof, .. } | Self::Reject { proof, .. } => {
-                proof
-            }
-        }
+        &self.proof
     }
 
     #[must_use]
     pub const fn denial_reason(&self) -> Option<&AccessDeniedReason> {
-        match self {
-            Self::Allow { .. } => None,
-            Self::Redact { reason, .. } | Self::Reject { reason, .. } => Some(reason),
-        }
+        self.reason.as_ref()
     }
 }
 
@@ -67,7 +84,7 @@ pub struct PolicyProof {
 
 impl PolicyProof {
     #[must_use]
-    pub fn new(
+    pub(crate) fn new(
         decision: DecisionKind,
         input_label_count: usize,
         result_classification: ResultClassification,
@@ -122,35 +139,18 @@ pub fn evaluate_read_set(
     }
 
     if rejected == 1 {
-        return PlannerDecision::Reject {
-            reason: AccessDeniedReason::new(),
-            proof: PolicyProof::new(
-                DecisionKind::Reject,
-                labels.len(),
-                ResultClassification::public(),
-            ),
-        };
+        return PlannerDecision::reject(labels.len());
     }
 
     if redacted == 1 {
-        return PlannerDecision::Redact {
-            reason: AccessDeniedReason::new(),
-            proof: PolicyProof::new(
-                DecisionKind::Redact,
-                labels.len(),
-                ResultClassification::public(),
-            ),
-        };
+        return PlannerDecision::redact(labels.len());
     }
 
     let output_classification = calculate_output_classification(labels);
-    PlannerDecision::Allow {
-        proof: PolicyProof::new(
-            DecisionKind::Allow,
-            labels.len(),
-            ResultClassification::classification_only(output_classification),
-        ),
-    }
+    PlannerDecision::allow(
+        labels.len(),
+        ResultClassification::classification_only(output_classification),
+    )
 }
 
 pub fn evaluate_read_result_set(
@@ -172,34 +172,17 @@ pub fn evaluate_read_result_set(
     }
 
     if rejected == 1 {
-        return Ok(PlannerDecision::Reject {
-            reason: AccessDeniedReason::new(),
-            proof: PolicyProof::new(
-                DecisionKind::Reject,
-                inputs.len(),
-                ResultClassification::public(),
-            ),
-        });
+        return Ok(PlannerDecision::reject(inputs.len()));
     }
 
     if redacted == 1 {
-        return Ok(PlannerDecision::Redact {
-            reason: AccessDeniedReason::new(),
-            proof: PolicyProof::new(
-                DecisionKind::Redact,
-                inputs.len(),
-                ResultClassification::public(),
-            ),
-        });
+        return Ok(PlannerDecision::redact(inputs.len()));
     }
 
-    Ok(PlannerDecision::Allow {
-        proof: PolicyProof::new(
-            DecisionKind::Allow,
-            inputs.len(),
-            derive_result_classification(inputs)?,
-        ),
-    })
+    Ok(PlannerDecision::allow(
+        inputs.len(),
+        derive_result_classification(inputs)?,
+    ))
 }
 
 #[must_use]
@@ -286,12 +269,10 @@ fn evaluate_required_tokens(
 }
 
 pub fn require_allowed(decision: PlannerDecision) -> Result<()> {
-    match decision {
-        PlannerDecision::Allow { .. } => Ok(()),
-        PlannerDecision::Redact { reason, .. } | PlannerDecision::Reject { reason, .. } => {
-            Err(SkrifheimError::PolicyDenied(reason))
-        }
+    if decision.kind() == DecisionKind::Allow {
+        return Ok(());
     }
+    Err(SkrifheimError::PolicyDenied(AccessDeniedReason::new()))
 }
 
 #[cfg(test)]
