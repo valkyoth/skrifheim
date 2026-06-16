@@ -30,6 +30,8 @@
   redacted diagnostic output.
 - Removed the public raw result-input accessor from query requests; callers get
   aggregate counts while planning keeps label/result metadata internal.
+- Removed public raw label and sovereignty accessors from query-result inputs;
+  policy evaluation keeps crate-local access for planning.
 - Replaced derived debug output on subject, device, workload, and aggregate
   authority contexts with redacted diagnostics.
 - Made the label-only aggregate read helper fail closed for empty or oversized

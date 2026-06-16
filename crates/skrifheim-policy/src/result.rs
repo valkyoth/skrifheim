@@ -103,13 +103,8 @@ impl QueryResultInput {
     }
 
     #[must_use]
-    pub const fn label(&self) -> &SecurityLabel {
+    pub(crate) const fn label(&self) -> &SecurityLabel {
         &self.label
-    }
-
-    #[must_use]
-    pub const fn sovereignty(&self) -> &PolicyTokenSet {
-        &self.sovereignty
     }
 
     #[must_use]
@@ -201,7 +196,7 @@ impl ResultClassification {
         if input.label.classification() > self.output_classification {
             self.output_classification = input.label.classification();
         }
-        self.sovereignty = self.sovereignty.union(input.sovereignty())?;
+        self.sovereignty = self.sovereignty.union(&input.sovereignty)?;
         self.pii = self.pii.join(input.pii());
         self.ai_processing = self.ai_processing.join(input.ai_processing());
         self.confidence_threshold =

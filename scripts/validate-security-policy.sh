@@ -106,6 +106,25 @@ if grep -E "^[[:space:]]*pub[[:space:]]+fn[[:space:]]+result_inputs[[:space:]]*\
     exit 1
 fi
 
+if awk '
+    /^[[:space:]]*impl[[:space:]]+QueryResultInput[[:space:]]*\{/ {
+        in_query_result_input = 1
+        next
+    }
+    in_query_result_input && /^[[:space:]]*\}/ {
+        in_query_result_input = 0
+    }
+    in_query_result_input && /^[[:space:]]*pub[[:space:]]+(const[[:space:]]+)?fn[[:space:]]+(label|sovereignty)[[:space:]]*\(/ {
+        found = 1
+    }
+    END {
+        exit found ? 0 : 1
+    }
+' crates/skrifheim-policy/src/result.rs; then
+    echo "QueryResultInput must not expose raw label or sovereignty accessors publicly" >&2
+    exit 1
+fi
+
 check_no_sensitive_derive crates/skrifheim-core/src/lib.rs Value Debug
 check_no_sensitive_derive crates/skrifheim-fact/src/lib.rs Fact Debug
 check_no_sensitive_derive crates/skrifheim-fact/src/builder.rs FactBuilder Debug

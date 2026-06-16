@@ -391,10 +391,8 @@ mod tests {
 
         assert_eq!(request.requested_label_count(), 2);
         assert_eq!(request.result_input_count(), 2);
-        assert_eq!(
-            request.result_inputs[1].label().classification(),
-            Classification::Secret
-        );
+        let plan = request.plan(&authority(Classification::TopSecret)?)?;
+        assert_eq!(plan.output_classification(), Classification::Secret);
         Ok(())
     }
 
