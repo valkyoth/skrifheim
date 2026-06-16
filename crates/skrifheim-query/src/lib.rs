@@ -113,7 +113,7 @@ impl fmt::Debug for QueryRequest {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("QueryRequest")
             .field("world", &"<redacted>")
-            .field("intent", &self.intent)
+            .field("intent", &"<redacted>")
             .field("result_input_count", &"<redacted>")
             .field("result_inputs", &"<redacted>")
             .finish()
@@ -180,7 +180,7 @@ impl fmt::Debug for QueryPlan {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("QueryPlan")
             .field("world", &"<redacted>")
-            .field("intent", &self.intent)
+            .field("intent", &"<redacted>")
             .field("decision", &self.proof.decision())
             .field("proof", &"<redacted>")
             .finish()
@@ -445,6 +445,7 @@ mod tests {
         assert!(!request_debug.contains("ContainsPii"));
         assert!(!request_debug.contains("NotEligible"));
         assert!(!request_debug.contains("900"));
+        assert!(!request_debug.contains("BuildContextPack"));
         assert!(!request_debug.contains("result_input_count: 1"));
 
         let plan = request.plan(&authority(Classification::TopSecret)?)?;
@@ -454,6 +455,7 @@ mod tests {
         assert!(!plan_debug.contains("ContainsPii"));
         assert!(!plan_debug.contains("NotEligible"));
         assert!(!plan_debug.contains("900"));
+        assert!(!plan_debug.contains("BuildContextPack"));
         Ok(())
     }
 }

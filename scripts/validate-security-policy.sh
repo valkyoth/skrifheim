@@ -142,6 +142,11 @@ check_no_public_impl_method \
     "label|sovereignty|pii|ai_processing|confidence_threshold" \
     "QueryResultInput must not expose raw metadata accessors publicly"
 
+if grep -E "\\.field\\(\"intent\",[[:space:]]*&self\\.intent\\)" crates/skrifheim-query/src/lib.rs >/dev/null; then
+    echo "QueryRequest and QueryPlan Debug must redact query intent" >&2
+    exit 1
+fi
+
 check_no_sensitive_derive crates/skrifheim-core/src/lib.rs Value Debug
 check_no_sensitive_derive crates/skrifheim-fact/src/lib.rs Fact Debug
 check_no_sensitive_derive crates/skrifheim-fact/src/builder.rs FactBuilder Debug
