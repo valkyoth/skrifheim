@@ -29,6 +29,9 @@
   spare caller capacity is not retained.
 - Closed planner decision and policy proof construction so non-allow proofs
   cannot be externally forged with sensitive result metadata.
+- Enforced non-allow policy-proof masking inside the proof constructor so
+  internal callers cannot attach sensitive result metadata to rejections or
+  redactions.
 - Replaced derived debug output on query result inputs, result classifications,
   planner decisions, policy proofs, query requests, and query plans with
   redacted diagnostic output.

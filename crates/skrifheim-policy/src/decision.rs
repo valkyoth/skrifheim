@@ -101,6 +101,10 @@ impl PolicyProof {
         input_label_count: usize,
         result_classification: ResultClassification,
     ) -> Self {
+        let result_classification = match decision {
+            DecisionKind::Allow => result_classification,
+            DecisionKind::Redact | DecisionKind::Reject => ResultClassification::public(),
+        };
         Self {
             decision,
             input_label_count,
@@ -358,6 +362,39 @@ mod tests {
         assert!(!proof_debug.contains("NotEligible"));
         assert!(!proof_debug.contains("900"));
         assert!(!proof_debug.contains("input_label_count: 1"));
+        Ok(())
+    }
+
+    #[test]
+    fn non_allow_policy_proof_masks_supplied_result_metadata() -> Result<()> {
+        let label = SecurityLabel::new(
+            Classification::Secret,
+            Vec::new(),
+            alloc::vec![alloc::string::String::from("SE")],
+        )?;
+        let input = QueryResultInput::new(
+            label,
+            alloc::vec![alloc::string::String::from("SE")],
+            crate::PiiMarker::ContainsPii,
+            crate::AiProcessingEligibility::NotEligible,
+            Some(crate::ConfidenceThreshold::new(900)?),
+        )?;
+        let classification = derive_result_classification(&[input])?;
+
+        for decision in [DecisionKind::Redact, DecisionKind::Reject] {
+            let proof = PolicyProof::new(decision, 1, classification.clone());
+            let result = proof.result_classification();
+
+            assert_eq!(proof.decision(), decision);
+            assert_eq!(result.output_classification(), Classification::Public);
+            assert_eq!(result.sovereignty().len(), 0);
+            assert_eq!(result.pii(), crate::PiiMarker::NoPii);
+            assert_eq!(
+                result.ai_processing(),
+                crate::AiProcessingEligibility::Eligible
+            );
+            assert_eq!(result.confidence_threshold(), None);
+        }
         Ok(())
     }
 }
