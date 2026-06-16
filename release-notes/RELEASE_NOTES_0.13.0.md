@@ -1,7 +1,7 @@
 # skrifheim 0.13.0 Release Notes
 
-Status: implementation stop, first pentest pass resolved locally, second
-pentest pass returned no new findings.
+Status: release-prep complete; local release gate, submitted pentest handoffs,
+and GitHub verification passed; pending signed tag creation.
 
 ## Scope
 
@@ -48,6 +48,8 @@ signature metadata, and break-glass event shape.
   low-severity `MissingAuditActor` diagnostic specificity item stays tracked as
   a future service-boundary lint or review gate once API/server boundary code
   exists.
+- Prepared `0.13.0` for signed tag creation after pentest and GitHub
+  verification passed.
 - Bumped workspace and internal crate dependency versions to `0.13.0`.
 - Added `scripts/release_0_13_gate.sh`.
 
@@ -68,5 +70,6 @@ transport, and policy layers must use.
 ## Pentest Status
 
 The first `0.13.0` pentest pass has been resolved locally. The second pass
-returned no new findings. Root `PENTEST.md` remains the temporary findings
-handoff file and must be removed after findings are resolved.
+returned no new findings, and the submitted pentest handoff is green. Root
+`PENTEST.md` remains the temporary findings handoff file and must be removed
+after findings are resolved.

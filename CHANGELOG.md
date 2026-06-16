@@ -19,6 +19,8 @@
 - Recorded the second `0.13.0` pentest pass with no new findings; the remaining
   low-severity `MissingAuditActor` diagnostic specificity item stays covered by
   the engineering-policy trust-boundary error rule.
+- Prepared `0.13.0` for signed tag creation after pentest and GitHub
+  verification passed.
 - Bumped workspace and internal crate dependency versions to `0.13.0`.
 - Added `0.13.0` release metadata and gate script.
 
