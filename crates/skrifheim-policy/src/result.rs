@@ -200,7 +200,7 @@ impl ResultClassification {
 pub(crate) fn derive_result_classification(
     inputs: &[QueryResultInput],
 ) -> Result<ResultClassification> {
-    if inputs.is_empty() {
+    if inputs.is_empty() || inputs.len() > RESULT_CLASSIFICATION_INPUT_MAX_ITEMS {
         return Err(SkrifheimError::InvalidQueryRequest);
     }
     let mut result = ResultClassification::public();
@@ -226,6 +226,7 @@ const fn join_thresholds(
 mod tests {
     use super::*;
     use alloc::{string::String, vec, vec::Vec};
+    use skrifheim_core::POLICY_TOKEN_SET_MAX_ITEMS;
 
     fn input(
         classification: Classification,
@@ -295,7 +296,7 @@ mod tests {
     }
 
     #[test]
-    fn result_classification_rejects_sovereignty_overflow() -> Result<()> {
+    fn result_classification_rejects_too_many_inputs() -> Result<()> {
         let mut inputs = Vec::new();
         for index in 0..=RESULT_CLASSIFICATION_INPUT_MAX_ITEMS {
             inputs.push(input(
@@ -306,6 +307,38 @@ mod tests {
                 None,
             )?);
         }
+
+        assert!(matches!(
+            derive_result_classification(&inputs),
+            Err(SkrifheimError::InvalidQueryRequest)
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn result_classification_rejects_sovereignty_overflow() -> Result<()> {
+        let mut first = Vec::new();
+        let mut second = Vec::new();
+        for index in 0..POLICY_TOKEN_SET_MAX_ITEMS {
+            first.push(alloc::format!("FIRST-{index}"));
+            second.push(alloc::format!("SECOND-{index}"));
+        }
+        let inputs = vec![
+            input(
+                Classification::Public,
+                first,
+                PiiMarker::NoPii,
+                AiProcessingEligibility::Eligible,
+                None,
+            )?,
+            input(
+                Classification::Public,
+                second,
+                PiiMarker::NoPii,
+                AiProcessingEligibility::Eligible,
+                None,
+            )?,
+        ];
 
         assert!(matches!(
             derive_result_classification(&inputs),

@@ -12,6 +12,8 @@
   sentinel.
 - Added explicit policy-layer result input count bounds and tests for combined
   sovereignty overflow.
+- Hardened internal result-classification derivation with its own fail-closed
+  input count guard.
 - Added redaction-safe policy-token union support for sovereignty propagation.
 - Removed public equality from planner proof/result surfaces and extended the
   security gate to keep sensitive result metadata out of equality comparisons.
