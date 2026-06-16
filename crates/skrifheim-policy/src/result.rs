@@ -1,4 +1,5 @@
 use alloc::{string::String, vec::Vec};
+use core::fmt;
 use skrifheim_core::{
     Classification, PolicyTokenSet, Result, SecurityLabel, SkrifheimError, canonical_policy_set,
 };
@@ -61,7 +62,7 @@ impl ConfidenceThreshold {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct QueryResultInput {
     label: SecurityLabel,
     sovereignty: PolicyTokenSet,
@@ -127,7 +128,19 @@ impl QueryResultInput {
     }
 }
 
-#[derive(Clone, Debug)]
+impl fmt::Debug for QueryResultInput {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("QueryResultInput")
+            .field("label", &"<redacted>")
+            .field("sovereignty", &"<redacted>")
+            .field("pii", &"<redacted>")
+            .field("ai_processing", &"<redacted>")
+            .field("confidence_threshold", &"<redacted>")
+            .finish()
+    }
+}
+
+#[derive(Clone)]
 pub struct ResultClassification {
     output_classification: Classification,
     sovereignty: PolicyTokenSet,
@@ -194,6 +207,18 @@ impl ResultClassification {
         self.confidence_threshold =
             join_thresholds(self.confidence_threshold, input.confidence_threshold());
         Ok(())
+    }
+}
+
+impl fmt::Debug for ResultClassification {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ResultClassification")
+            .field("output_classification", &"<redacted>")
+            .field("sovereignty", &"<redacted>")
+            .field("pii", &"<redacted>")
+            .field("ai_processing", &"<redacted>")
+            .field("confidence_threshold", &"<redacted>")
+            .finish()
     }
 }
 
@@ -344,6 +369,32 @@ mod tests {
             derive_result_classification(&inputs),
             Err(SkrifheimError::InvalidSecurityToken)
         ));
+        Ok(())
+    }
+
+    #[test]
+    fn debug_redacts_query_result_input_and_classification_metadata() -> Result<()> {
+        let input = input(
+            Classification::Secret,
+            vec![String::from("se")],
+            PiiMarker::ContainsPii,
+            AiProcessingEligibility::NotEligible,
+            Some(900),
+        )?;
+        let input_debug = alloc::format!("{input:?}");
+        assert!(!input_debug.contains("Secret"));
+        assert!(!input_debug.contains("SE"));
+        assert!(!input_debug.contains("ContainsPii"));
+        assert!(!input_debug.contains("NotEligible"));
+        assert!(!input_debug.contains("900"));
+
+        let result = derive_result_classification(&[input])?;
+        let result_debug = alloc::format!("{result:?}");
+        assert!(!result_debug.contains("Secret"));
+        assert!(!result_debug.contains("SE"));
+        assert!(!result_debug.contains("ContainsPii"));
+        assert!(!result_debug.contains("NotEligible"));
+        assert!(!result_debug.contains("900"));
         Ok(())
     }
 }

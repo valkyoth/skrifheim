@@ -25,6 +25,9 @@
   spare caller capacity is not retained.
 - Closed planner decision and policy proof construction so non-allow proofs
   cannot be externally forged with sensitive result metadata.
+- Replaced derived debug output on query result inputs, result classifications,
+  planner decisions, policy proofs, query requests, and query plans with
+  redacted diagnostic output.
 - Bumped workspace and internal crate dependency versions to `0.10.0`.
 - Added `0.10.0` release metadata and gate script.
 - Re-checked the local Rust toolchain on 2026-06-16. Rust and Cargo report

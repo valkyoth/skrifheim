@@ -1,3 +1,5 @@
+use core::fmt;
+
 use skrifheim_core::{
     AccessDeniedReason, Classification, POLICY_TOKEN_SET_MAX_ITEMS, PolicyTokenSet, Result,
     SecurityLabel, SkrifheimError, contains_policy_token_slot_ct,
@@ -8,7 +10,7 @@ use crate::{
     AuthorityContext, QueryResultInput, RESULT_CLASSIFICATION_INPUT_MAX_ITEMS, ResultClassification,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct PlannerDecision {
     kind: DecisionKind,
     reason: Option<AccessDeniedReason>,
@@ -68,6 +70,16 @@ impl PlannerDecision {
     }
 }
 
+impl fmt::Debug for PlannerDecision {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("PlannerDecision")
+            .field("kind", &self.kind)
+            .field("denial_reason", &self.reason.as_ref().map(|_| "<redacted>"))
+            .field("proof", &"<redacted>")
+            .finish()
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum DecisionKind {
     Allow,
@@ -75,7 +87,7 @@ pub enum DecisionKind {
     Reject,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct PolicyProof {
     decision: DecisionKind,
     input_label_count: usize,
@@ -114,6 +126,16 @@ impl PolicyProof {
     #[must_use]
     pub const fn result_classification(&self) -> &ResultClassification {
         &self.result_classification
+    }
+}
+
+impl fmt::Debug for PolicyProof {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("PolicyProof")
+            .field("decision", &self.decision)
+            .field("input_label_count", &self.input_label_count)
+            .field("result_classification", &"<redacted>")
+            .finish()
     }
 }
 
@@ -298,6 +320,39 @@ mod tests {
             ),
             1
         );
+        Ok(())
+    }
+
+    #[test]
+    fn debug_redacts_decision_proof_result_metadata() -> Result<()> {
+        let label = SecurityLabel::new(
+            Classification::Secret,
+            Vec::new(),
+            alloc::vec![alloc::string::String::from("SE")],
+        )?;
+        let input = QueryResultInput::new(
+            label,
+            alloc::vec![alloc::string::String::from("SE")],
+            crate::PiiMarker::ContainsPii,
+            crate::AiProcessingEligibility::NotEligible,
+            Some(crate::ConfidenceThreshold::new(900)?),
+        )?;
+        let classification = derive_result_classification(&[input])?;
+        let decision = PlannerDecision::allow(1, classification);
+
+        let decision_debug = format!("{decision:?}");
+        assert!(!decision_debug.contains("Secret"));
+        assert!(!decision_debug.contains("SE"));
+        assert!(!decision_debug.contains("ContainsPii"));
+        assert!(!decision_debug.contains("NotEligible"));
+        assert!(!decision_debug.contains("900"));
+
+        let proof_debug = format!("{:?}", decision.proof());
+        assert!(!proof_debug.contains("Secret"));
+        assert!(!proof_debug.contains("SE"));
+        assert!(!proof_debug.contains("ContainsPii"));
+        assert!(!proof_debug.contains("NotEligible"));
+        assert!(!proof_debug.contains("900"));
         Ok(())
     }
 }

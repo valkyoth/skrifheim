@@ -4,6 +4,7 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
+use core::fmt;
 use skrifheim_core::{Result, SecurityLabel, SkrifheimError, WorldId};
 use skrifheim_policy::{
     AuthorityContext, PolicyProof, QueryResultInput,
@@ -24,14 +25,14 @@ pub enum QueryIntent {
     BuildContextPack,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct QueryRequest {
     world: WorldId,
     intent: QueryIntent,
     result_inputs: Vec<QueryResultInput>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct QueryPlan {
     world: WorldId,
     intent: QueryIntent,
@@ -108,6 +109,17 @@ impl QueryRequest {
     }
 }
 
+impl fmt::Debug for QueryRequest {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("QueryRequest")
+            .field("world", &"<redacted>")
+            .field("intent", &self.intent)
+            .field("result_input_count", &self.result_inputs.len())
+            .field("result_inputs", &"<redacted>")
+            .finish()
+    }
+}
+
 fn exact_capacity_result_inputs(inputs: Vec<QueryResultInput>) -> Vec<QueryResultInput> {
     let mut exact = Vec::with_capacity(inputs.len());
     for input in inputs {
@@ -161,6 +173,17 @@ impl QueryPlan {
     #[must_use]
     pub fn is_executable(&self) -> bool {
         !self.has_rejection() && !self.has_redaction()
+    }
+}
+
+impl fmt::Debug for QueryPlan {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("QueryPlan")
+            .field("world", &"<redacted>")
+            .field("intent", &self.intent)
+            .field("decision", &self.proof.decision())
+            .field("proof", &"<redacted>")
+            .finish()
     }
 }
 
@@ -403,5 +426,35 @@ mod tests {
             QUERY_REQUEST_INPUT_MEMORY_BUDGET_BYTES,
             QUERY_REQUEST_LABEL_MAX_ITEMS * RESULT_CLASSIFICATION_INPUT_FIXED_STORAGE_BYTES
         );
+    }
+
+    #[test]
+    fn debug_redacts_query_request_and_plan_metadata() -> skrifheim_core::Result<()> {
+        let request = QueryRequest::with_result_inputs(
+            id(WorldId::from_u128(1))?,
+            QueryIntent::BuildContextPack,
+            vec![QueryResultInput::new(
+                SecurityLabel::new(Classification::Secret, Vec::new(), Vec::new())?,
+                vec![String::from("se")],
+                PiiMarker::ContainsPii,
+                AiProcessingEligibility::NotEligible,
+                Some(ConfidenceThreshold::new(900)?),
+            )?],
+        )?;
+        let request_debug = alloc::format!("{request:?}");
+        assert!(!request_debug.contains("Secret"));
+        assert!(!request_debug.contains("SE"));
+        assert!(!request_debug.contains("ContainsPii"));
+        assert!(!request_debug.contains("NotEligible"));
+        assert!(!request_debug.contains("900"));
+
+        let plan = request.plan(&authority(Classification::TopSecret)?)?;
+        let plan_debug = alloc::format!("{plan:?}");
+        assert!(!plan_debug.contains("Secret"));
+        assert!(!plan_debug.contains("SE"));
+        assert!(!plan_debug.contains("ContainsPii"));
+        assert!(!plan_debug.contains("NotEligible"));
+        assert!(!plan_debug.contains("900"));
+        Ok(())
     }
 }

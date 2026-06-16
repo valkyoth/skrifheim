@@ -36,6 +36,9 @@ AI processing, and compliance layers must honor.
   spare caller capacity is not retained.
 - Closed planner decision and policy proof construction so non-allow proofs
   cannot be externally forged with sensitive result metadata.
+- Replaced derived debug output on query result inputs, result classifications,
+  planner decisions, policy proofs, query requests, and query plans with
+  redacted diagnostic output.
 - Kept `evaluate_read_set()` and `output_classification()` compatibility
   accessors for existing label-only planning.
 - Updated query planning to accept richer result inputs while keeping the
