@@ -32,6 +32,8 @@ AI processing, and compliance layers must honor.
   requests, including manual `PartialEq`/`Eq` implementations.
 - Hardened manual equality blockers to catch path-qualified trait
   implementations such as `core::cmp::PartialEq`.
+- Hardened sensitive derive blockers to catch multi-line and path-qualified
+  derive attributes.
 - Hardened release-gate impl-method scans with brace-depth tracking so later
   methods in sensitive impl blocks cannot bypass API exposure checks.
 - Updated query request memory accounting to budget full result inputs instead

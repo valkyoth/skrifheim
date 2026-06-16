@@ -16,8 +16,30 @@ check_no_sensitive_derive() {
     type_name="$2"
     derive_name="$3"
     if awk -v type_name="$type_name" -v derive_name="$derive_name" '
-        $0 ~ "#\\[derive\\(.*" derive_name ".*\\)\\]" {
-            pending = 1
+        function derive_contains_name(text) {
+            return text ~ "(^|[^[:alnum:]_])(::)?([[:alnum:]_]+::)*" derive_name "([^[:alnum:]_]|$)"
+        }
+        $0 ~ "#\\[derive\\(" {
+            in_derive = 1
+            derive_text = $0
+            if ($0 ~ "\\)\\]") {
+                if (derive_contains_name(derive_text)) {
+                    pending = 1
+                }
+                in_derive = 0
+                derive_text = ""
+            }
+            next
+        }
+        in_derive {
+            derive_text = derive_text " " $0
+            if ($0 ~ "\\)\\]") {
+                if (derive_contains_name(derive_text)) {
+                    pending = 1
+                }
+                in_derive = 0
+                derive_text = ""
+            }
             next
         }
         pending && $0 ~ "^[[:space:]]*pub[[:space:]]+(struct|enum)[[:space:]]+" type_name "([^[:alnum:]_]|$)" {
