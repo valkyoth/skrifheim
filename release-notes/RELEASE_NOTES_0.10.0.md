@@ -43,6 +43,8 @@ AI processing, and compliance layers must honor.
   aggregate counts while planning keeps label/result metadata internal.
 - Replaced derived debug output on subject, device, workload, and aggregate
   authority contexts with redacted diagnostics.
+- Made the label-only aggregate read helper fail closed for empty or oversized
+  label sets, matching the 0.10.0 result-input path.
 - Kept `evaluate_read_set()` and `output_classification()` compatibility
   accessors for existing label-only planning.
 - Updated query planning to accept richer result inputs while keeping the

@@ -32,6 +32,8 @@
   aggregate counts while planning keeps label/result metadata internal.
 - Replaced derived debug output on subject, device, workload, and aggregate
   authority contexts with redacted diagnostics.
+- Made the label-only aggregate read helper fail closed for empty or oversized
+  label sets, matching the 0.10.0 result-input path.
 - Bumped workspace and internal crate dependency versions to `0.10.0`.
 - Added `0.10.0` release metadata and gate script.
 - Re-checked the local Rust toolchain on 2026-06-16. Rust and Cargo report

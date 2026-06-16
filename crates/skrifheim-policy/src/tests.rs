@@ -235,6 +235,51 @@ fn aggregate_read_proof_counts_all_labels() -> Result<()> {
 }
 
 #[test]
+fn aggregate_read_rejects_empty_label_sets() -> Result<()> {
+    let authority = authority(
+        Classification::TopSecret,
+        Classification::TopSecret,
+        Classification::TopSecret,
+        Vec::new(),
+        Vec::new(),
+    )?;
+    let decision = evaluate_read_set(&authority, &[]);
+    assert_eq!(decision.kind(), DecisionKind::Reject);
+    assert_eq!(decision.proof().input_label_count(), 0);
+    assert_eq!(
+        decision.proof().output_classification(),
+        Classification::Public
+    );
+    Ok(())
+}
+
+#[test]
+fn aggregate_read_rejects_oversized_label_sets() -> Result<()> {
+    let authority = authority(
+        Classification::TopSecret,
+        Classification::TopSecret,
+        Classification::TopSecret,
+        Vec::new(),
+        Vec::new(),
+    )?;
+    let mut labels = Vec::new();
+    for _ in 0..=RESULT_CLASSIFICATION_INPUT_MAX_ITEMS {
+        labels.push(SecurityLabel::public());
+    }
+    let decision = evaluate_read_set(&authority, &labels);
+    assert_eq!(decision.kind(), DecisionKind::Reject);
+    assert_eq!(
+        decision.proof().input_label_count(),
+        RESULT_CLASSIFICATION_INPUT_MAX_ITEMS + 1
+    );
+    assert_eq!(
+        decision.proof().output_classification(),
+        Classification::Public
+    );
+    Ok(())
+}
+
+#[test]
 fn result_set_rejects_too_many_inputs() -> Result<()> {
     let authority = authority(
         Classification::TopSecret,
