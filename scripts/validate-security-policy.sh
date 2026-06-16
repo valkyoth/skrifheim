@@ -45,6 +45,42 @@ check_no_sensitive_impl() {
     fi
 }
 
+check_no_public_impl_method() {
+    file="$1"
+    type_name="$2"
+    method_regex="$3"
+    message="$4"
+    if awk -v type_name="$type_name" -v method_regex="$method_regex" '
+        function brace_delta(line, tmp, opens, closes) {
+            tmp = line
+            opens = gsub(/\{/, "", tmp)
+            tmp = line
+            closes = gsub(/\}/, "", tmp)
+            return opens - closes
+        }
+        $0 ~ "^[[:space:]]*impl[[:space:]]+" type_name "[[:space:]]*\\{" {
+            in_impl = 1
+            depth = brace_delta($0)
+            next
+        }
+        in_impl && $0 ~ "^[[:space:]]*pub[[:space:]]+(const[[:space:]]+)?fn[[:space:]]+(" method_regex ")[[:space:]]*\\(" {
+            found = 1
+        }
+        in_impl {
+            depth += brace_delta($0)
+            if (depth <= 0) {
+                in_impl = 0
+            }
+        }
+        END {
+            exit found ? 0 : 1
+        }
+    ' "$file"; then
+        echo "$message" >&2
+        exit 1
+    fi
+}
+
 for derive_name in Debug PartialEq Eq; do
     check_no_sensitive_derive crates/skrifheim-core/src/lib.rs SecurityLabel "$derive_name"
     check_no_sensitive_derive crates/skrifheim-core/src/policy_token.rs PolicyTokenSet "$derive_name"
@@ -89,48 +125,22 @@ if grep -E "^[[:space:]]*pub[[:space:]]+enum[[:space:]]+PlannerDecision([^[:alnu
     exit 1
 fi
 
-if awk '
-    /^[[:space:]]*impl[[:space:]]+PolicyProof[[:space:]]*\{/ {
-        in_policy_proof = 1
-        next
-    }
-    in_policy_proof && /^[[:space:]]*\}/ {
-        in_policy_proof = 0
-    }
-    in_policy_proof && /^[[:space:]]*pub[[:space:]]+fn[[:space:]]+new[[:space:]]*\(/ {
-        found = 1
-    }
-    END {
-        exit found ? 0 : 1
-    }
-' crates/skrifheim-policy/src/decision.rs; then
-    echo "PolicyProof::new must stay crate-private" >&2
-    exit 1
-fi
+check_no_public_impl_method \
+    crates/skrifheim-policy/src/decision.rs \
+    PolicyProof \
+    "new" \
+    "PolicyProof::new must stay crate-private"
 
 if grep -E "^[[:space:]]*pub[[:space:]]+fn[[:space:]]+result_inputs[[:space:]]*\\(" crates/skrifheim-query/src/lib.rs >/dev/null; then
     echo "QueryRequest must not expose raw result inputs through a public accessor" >&2
     exit 1
 fi
 
-if awk '
-    /^[[:space:]]*impl[[:space:]]+QueryResultInput[[:space:]]*\{/ {
-        in_query_result_input = 1
-        next
-    }
-    in_query_result_input && /^[[:space:]]*\}/ {
-        in_query_result_input = 0
-    }
-    in_query_result_input && /^[[:space:]]*pub[[:space:]]+(const[[:space:]]+)?fn[[:space:]]+(label|sovereignty|pii|ai_processing|confidence_threshold)[[:space:]]*\(/ {
-        found = 1
-    }
-    END {
-        exit found ? 0 : 1
-    }
-' crates/skrifheim-policy/src/result.rs; then
-    echo "QueryResultInput must not expose raw metadata accessors publicly" >&2
-    exit 1
-fi
+check_no_public_impl_method \
+    crates/skrifheim-policy/src/result.rs \
+    QueryResultInput \
+    "label|sovereignty|pii|ai_processing|confidence_threshold" \
+    "QueryResultInput must not expose raw metadata accessors publicly"
 
 check_no_sensitive_derive crates/skrifheim-core/src/lib.rs Value Debug
 check_no_sensitive_derive crates/skrifheim-fact/src/lib.rs Fact Debug
