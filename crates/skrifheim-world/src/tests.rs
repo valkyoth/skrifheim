@@ -257,6 +257,14 @@ fn root_rejects_invalid_world_names() -> Result<()> {
         World::root(tenant(1)?, "production\nbad", WorldKind::Production),
         Err(SkrifheimError::InvalidWorldName)
     );
+    assert_eq!(
+        World::root(tenant(1)?, "production bad", WorldKind::Production),
+        Err(SkrifheimError::InvalidWorldName)
+    );
+    assert_eq!(
+        World::root(tenant(1)?, "../production", WorldKind::Production),
+        Err(SkrifheimError::InvalidWorldName)
+    );
     Ok(())
 }
 

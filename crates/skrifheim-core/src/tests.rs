@@ -164,6 +164,7 @@ fn debug_redacts_security_labels_policy_tokens_and_values() -> Result<()> {
         vec![String::from("EU")],
     )?;
     let token_set_debug = alloc::format!("{:?}", label.compartments());
+    let slot_debug = alloc::format!("{:?}", label.compartments().slot(0));
     let label_debug = alloc::format!("{label:?}");
     let text_debug = alloc::format!("{:?}", Value::Text(String::from("classified payload")));
     let bytes_debug = alloc::format!("{:?}", Value::Bytes(vec![1, 2, 3]));
@@ -171,6 +172,7 @@ fn debug_redacts_security_labels_policy_tokens_and_values() -> Result<()> {
     assert!(!token_set_debug.contains("EU-COMMAND"));
     assert!(!token_set_debug.contains("\"EU\""));
     assert!(!token_set_debug.contains("len: 1"));
+    assert!(!slot_debug.contains("len: 10"));
     assert!(!label_debug.contains("EU-COMMAND"));
     assert!(!label_debug.contains("\"EU\""));
     assert!(!label_debug.contains("TopSecret"));

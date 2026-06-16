@@ -27,8 +27,21 @@ pub enum BodyChecksum {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SegmentHeader {
-    pub magic: [u8; 8],
-    pub version: u16,
+    magic: [u8; 8],
+    version: u16,
+    segment_kind: SegmentKind,
+    tenant_id: TenantId,
+    min_tx: TxId,
+    max_tx: TxId,
+    policy_id: PolicyId,
+    encryption_key_id: KeyId,
+    body_len: u64,
+    body_crc64: BodyChecksum,
+    content_hash: Option<[u8; 32]>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SegmentHeaderInput {
     pub segment_kind: SegmentKind,
     pub tenant_id: TenantId,
     pub min_tx: TxId,
@@ -37,10 +50,83 @@ pub struct SegmentHeader {
     pub encryption_key_id: KeyId,
     pub body_len: u64,
     pub body_crc64: BodyChecksum,
-    pub content_hash: Option<[u8; 32]>,
+    pub content_hash: [u8; 32],
 }
 
 impl SegmentHeader {
+    pub fn new(input: SegmentHeaderInput) -> Result<Self> {
+        let header = Self {
+            magic: SEGMENT_MAGIC,
+            version: SEGMENT_VERSION_MAX,
+            segment_kind: input.segment_kind,
+            tenant_id: input.tenant_id,
+            min_tx: input.min_tx,
+            max_tx: input.max_tx,
+            policy_id: input.policy_id,
+            encryption_key_id: input.encryption_key_id,
+            body_len: input.body_len,
+            body_crc64: input.body_crc64,
+            content_hash: Some(input.content_hash),
+        };
+        header.validate()?;
+        Ok(header)
+    }
+
+    #[must_use]
+    pub const fn magic(&self) -> [u8; 8] {
+        self.magic
+    }
+
+    #[must_use]
+    pub const fn version(&self) -> u16 {
+        self.version
+    }
+
+    #[must_use]
+    pub const fn segment_kind(&self) -> SegmentKind {
+        self.segment_kind
+    }
+
+    #[must_use]
+    pub const fn tenant_id(&self) -> TenantId {
+        self.tenant_id
+    }
+
+    #[must_use]
+    pub const fn min_tx(&self) -> TxId {
+        self.min_tx
+    }
+
+    #[must_use]
+    pub const fn max_tx(&self) -> TxId {
+        self.max_tx
+    }
+
+    #[must_use]
+    pub const fn policy_id(&self) -> PolicyId {
+        self.policy_id
+    }
+
+    #[must_use]
+    pub const fn encryption_key_id(&self) -> KeyId {
+        self.encryption_key_id
+    }
+
+    #[must_use]
+    pub const fn body_len(&self) -> u64 {
+        self.body_len
+    }
+
+    #[must_use]
+    pub const fn body_crc64(&self) -> BodyChecksum {
+        self.body_crc64
+    }
+
+    #[must_use]
+    pub const fn content_hash(&self) -> Option<[u8; 32]> {
+        self.content_hash
+    }
+
     /// Validates only the segment header's structural metadata.
     ///
     /// This does not recompute or compare the body CRC/hash against segment body
@@ -100,9 +186,11 @@ mod tests {
     }
 
     fn header() -> Result<SegmentHeader> {
-        Ok(SegmentHeader {
-            magic: SEGMENT_MAGIC,
-            version: 1,
+        SegmentHeader::new(header_input()?)
+    }
+
+    fn header_input() -> Result<SegmentHeaderInput> {
+        Ok(SegmentHeaderInput {
             segment_kind: SegmentKind::Fact,
             tenant_id: id(TenantId::from_u128(1))?,
             min_tx: id(TxId::from_u128(1))?,
@@ -111,7 +199,7 @@ mod tests {
             encryption_key_id: id(KeyId::from_u128(4))?,
             body_len: 5,
             body_crc64: BodyChecksum::Present(6),
-            content_hash: Some([7; 32]),
+            content_hash: [7; 32],
         })
     }
 
@@ -122,22 +210,30 @@ mod tests {
     }
 
     #[test]
-    fn header_rejects_bad_magic() -> Result<()> {
-        let mut header = header()?;
-        header.magic = *b"WRONGSEG";
-        assert!(matches!(
-            header.validate(),
-            Err(SkrifheimError::InvalidStorageHeader(_))
-        ));
+    fn constructor_sets_header_identity_fields() -> Result<()> {
+        let header = header()?;
+
+        assert_eq!(header.magic(), SEGMENT_MAGIC);
+        assert_eq!(header.version(), SEGMENT_VERSION_MAX);
+        assert_eq!(header.segment_kind(), SegmentKind::Fact);
+        assert_eq!(header.tenant_id().get(), 1);
+        assert_eq!(header.min_tx().get(), 1);
+        assert_eq!(header.max_tx().get(), 2);
+        assert_eq!(header.policy_id().get(), 3);
+        assert_eq!(header.body_len(), 5);
+        assert_eq!(header.body_crc64(), BodyChecksum::Present(6));
+        assert_eq!(header.content_hash(), Some([7; 32]));
         Ok(())
     }
 
     #[test]
-    fn header_rejects_unknown_version() -> Result<()> {
-        let mut header = header()?;
-        header.version = SEGMENT_VERSION_MAX + 1;
+    fn header_rejects_inverted_transaction_range() -> Result<()> {
+        let mut input = header_input()?;
+        input.min_tx = id(TxId::from_u128(3))?;
+        input.max_tx = id(TxId::from_u128(2))?;
+
         assert!(matches!(
-            header.validate(),
+            SegmentHeader::new(input),
             Err(SkrifheimError::InvalidStorageHeader(_))
         ));
         Ok(())
@@ -145,17 +241,11 @@ mod tests {
 
     #[test]
     fn header_rejects_missing_integrity_fields() -> Result<()> {
-        let mut missing_crc = header()?;
-        missing_crc.body_crc64 = BodyChecksum::Missing;
-        assert!(matches!(
-            missing_crc.validate(),
-            Err(SkrifheimError::InvalidStorageHeader(_))
-        ));
+        let mut input = header_input()?;
+        input.body_crc64 = BodyChecksum::Missing;
 
-        let mut missing_hash = header()?;
-        missing_hash.content_hash = None;
         assert!(matches!(
-            missing_hash.validate(),
+            SegmentHeader::new(input),
             Err(SkrifheimError::InvalidStorageHeader(_))
         ));
 
@@ -165,16 +255,17 @@ mod tests {
     #[test]
     fn header_encryption_key_id_is_typed_nonzero() -> Result<()> {
         assert_eq!(KeyId::from_u128(0), None);
-        assert_eq!(header()?.encryption_key_id.get(), 4);
+        assert_eq!(header()?.encryption_key_id().get(), 4);
         Ok(())
     }
 
     #[test]
     fn header_rejects_oversized_body() -> Result<()> {
-        let mut header = header()?;
-        header.body_len = SEGMENT_BODY_MAX_BYTES + 1;
+        let mut input = header_input()?;
+        input.body_len = SEGMENT_BODY_MAX_BYTES + 1;
+
         assert!(matches!(
-            header.validate(),
+            SegmentHeader::new(input),
             Err(SkrifheimError::InvalidStorageHeader(_))
         ));
         Ok(())
@@ -182,16 +273,18 @@ mod tests {
 
     #[test]
     fn header_accepts_explicit_zero_content_hash() -> Result<()> {
-        let mut header = header()?;
-        header.content_hash = Some([0; 32]);
+        let mut input = header_input()?;
+        input.content_hash = [0; 32];
+        let header = SegmentHeader::new(input)?;
         assert_eq!(header.validate(), Ok(()));
         Ok(())
     }
 
     #[test]
     fn header_accepts_explicit_zero_body_crc() -> Result<()> {
-        let mut header = header()?;
-        header.body_crc64 = BodyChecksum::Present(0);
+        let mut input = header_input()?;
+        input.body_crc64 = BodyChecksum::Present(0);
+        let header = SegmentHeader::new(input)?;
         assert_eq!(header.validate(), Ok(()));
         Ok(())
     }

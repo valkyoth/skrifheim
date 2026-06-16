@@ -195,7 +195,7 @@ impl fmt::Debug for PolicyTokenSlot {
             return f.write_str("PolicyTokenSlot(<empty>)");
         }
         f.debug_struct("PolicyTokenSlot")
-            .field("len", &self.len)
+            .field("len", &"<redacted>")
             .field("token", &"<redacted>")
             .finish()
     }

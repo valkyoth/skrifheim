@@ -45,10 +45,7 @@ impl fmt::Debug for FactBuilder {
             .field("supersedes_count", &self.supersedes.len())
             .field("invalidates_count", &self.invalidates.len())
             .field("policy_id", &self.policy_id)
-            .field(
-                "classification",
-                &self.label.as_ref().map(SecurityLabel::classification),
-            )
+            .field("classification", &self.label.as_ref().map(|_| "<redacted>"))
             .field(
                 "signature_count",
                 &self

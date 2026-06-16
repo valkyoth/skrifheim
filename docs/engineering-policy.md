@@ -91,6 +91,29 @@ Current external dependency exceptions:
   Removal condition: remove or replace if the crate adds mandatory transitive
   dependencies, changes license posture, loses no-std support, or if a narrower
   admitted local unsafe boundary is approved.
+- Crate: `blake3` `1.8.5`
+  Used by: `skrifheim-world`
+  Scope: deterministic tenant-scoped world identity derivation.
+  Reason: world identity must use collision-resistant domain-separated
+  derivation before it can safely scope fact sets, world diffs, projection
+  metadata, or future storage keys.
+  Why not local: implementing a cryptographic hash locally would be higher
+  risk than admitting a reviewed hash crate. The previous local polynomial hash
+  was suitable only as scaffold metadata and was not collision-resistant.
+  Unsafe review: `skrifheim` uses the safe API with `default-features = false`.
+  Unsafe, SIMD, and C backend details remain inside the dependency; no unsafe
+  Rust is added to `skrifheim` core crates.
+  Transitive dependency review: selected no-default feature graph is limited to
+  `arrayref`, `arrayvec`, `cfg-if`, `constant_time_eq`, `cpufeatures`, and
+  `cc` as the build dependency used by `blake3`; no `std`, `serde`, `zeroize`,
+  mmap, rayon, or digest features are enabled by `skrifheim`.
+  License: `CC0-1.0 OR Apache-2.0 OR Apache-2.0 WITH LLVM-exception`; accepted
+  through the Apache-2.0 option and checked by `cargo deny`.
+  Review deadline: revisit before world IDs become durable storage keys or
+  before `v0.20.0`, whichever comes first.
+  Removal condition: replace if the crate loses no-std support, requires an
+  incompatible license, pulls mandatory broad transitive dependencies, or an
+  admitted project-owned cryptographic hash boundary supersedes it.
 
 ## Specific Crate Rules
 

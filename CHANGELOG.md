@@ -13,6 +13,11 @@
 - Added memory-secrecy documentation and security-control tracking.
 - Added release-gate checks that prevent `SecretBytes` from deriving `Debug`,
   `Clone`, `PartialEq`, or `Eq`, and block raw secret byte accessors.
+- Resolved the first `0.12.0` pentest pass by redacting builder/token debug
+  metadata, enforcing secret capacity validation consistently, narrowing world
+  names, making segment headers constructor-validated, documenting borrowed
+  secret-slice behavior, and replacing scaffold world-id hashing with admitted
+  BLAKE3 derivation.
 - Bumped workspace and internal crate dependency versions to `0.12.0`.
 - Added `0.12.0` release metadata and gate script.
 

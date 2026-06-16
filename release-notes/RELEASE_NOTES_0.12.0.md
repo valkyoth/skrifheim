@@ -32,6 +32,19 @@ plane APIs.
   derives on `SecretBytes`.
 - Added release-gate checks that block raw secret byte accessors on
   `SecretBytes`.
+- Redacted `FactBuilder` classification diagnostics.
+- Redacted exact `PolicyTokenSlot` token lengths.
+- Made `SecretBytes::from_slice` validate allocation capacity consistently with
+  `from_vec`.
+- Documented that `SecretBytes::from_slice` copies from and does not clear the
+  borrowed source slice.
+- Replaced scaffold world-id polynomial hashing with admitted BLAKE3
+  domain-separated derivation.
+- Removed spaces and slash characters from valid world names.
+- Made `SegmentHeader` fields private and added a validating constructor with
+  read-only accessors.
+- Added release-gate checks for builder/token debug regressions and public
+  segment-header fields.
 - Bumped workspace and internal crate dependency versions to `0.12.0`.
 - Added `scripts/release_0_12_gate.sh`.
 
@@ -52,6 +65,6 @@ crypto APIs must use.
 
 ## Pentest Status
 
-The initial `0.12.0` pentest has not yet been run. Root `PENTEST.md` is the
-temporary findings handoff file and must be removed after findings are
-resolved.
+The first `0.12.0` pentest pass has been resolved locally. Root `PENTEST.md`
+remains the temporary findings handoff file and must be removed after findings
+are resolved.

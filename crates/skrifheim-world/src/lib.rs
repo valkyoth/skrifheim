@@ -18,8 +18,7 @@ mod tests;
 pub const WORLD_NAME_MAX_BYTES: usize = 256;
 pub const WORLD_FACT_LIST_MAX_ITEMS: usize = 1_000_000;
 
-const WORLD_ID_OFFSET: u128 = 0x6c62_272e_07bb_0142_62b8_2175_6295_c58d;
-const WORLD_ID_PRIME: u128 = 0x0000_0000_0100_0000_0000_0000_0000_013b;
+const WORLD_ID_DERIVE_CONTEXT: &str = "skrifheim/world/v1";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum WorldKind {
@@ -245,11 +244,10 @@ fn validate_world_name(name: String) -> Result<String> {
     if name.is_empty() || name.len() > WORLD_NAME_MAX_BYTES {
         return Err(SkrifheimError::InvalidWorldName);
     }
-    if !name.bytes().all(|byte| {
-        byte.is_ascii_alphanumeric()
-            || byte == b' '
-            || matches!(byte, b'-' | b'_' | b'.' | b':' | b'/')
-    }) {
+    if !name
+        .bytes()
+        .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_' | b'.' | b':'))
+    {
         return Err(SkrifheimError::InvalidWorldName);
     }
     Ok(name)
@@ -262,37 +260,30 @@ fn derive_world_id(
     name: &str,
     kind: WorldKind,
 ) -> Result<WorldId> {
-    let mut state = WORLD_ID_OFFSET;
-    state = hash_field(state, b"domain", b"skrifheim/world/v1");
-    state = hash_field(state, b"tenant", &tenant_id.get().to_le_bytes());
-    state = hash_field(state, b"kind", &[kind.identity_tag()]);
-    state = hash_field(state, b"depth", &depth.to_le_bytes());
+    let mut hasher = blake3::Hasher::new_derive_key(WORLD_ID_DERIVE_CONTEXT);
+    hash_field(&mut hasher, b"tenant", &tenant_id.get().to_le_bytes());
+    hash_field(&mut hasher, b"kind", &[kind.identity_tag()]);
+    hash_field(&mut hasher, b"depth", &depth.to_le_bytes());
     match parent {
         Some(parent) => {
-            state = hash_field(state, b"parent-kind", b"child");
-            state = hash_field(state, b"parent-id", &parent.get().to_le_bytes());
+            hash_field(&mut hasher, b"parent-kind", b"child");
+            hash_field(&mut hasher, b"parent-id", &parent.get().to_le_bytes());
         }
         None => {
-            state = hash_field(state, b"parent-kind", b"root");
+            hash_field(&mut hasher, b"parent-kind", b"root");
         }
     }
-    state = hash_field(state, b"name", name.as_bytes());
-    let state = state | 1;
-    // INVARIANT: `state | 1` is always odd and therefore non-zero.
-    WorldId::from_u128(state).ok_or(SkrifheimError::InvalidWorldIdentity)
+    hash_field(&mut hasher, b"name", name.as_bytes());
+    let mut bytes = [0_u8; 16];
+    bytes.copy_from_slice(&hasher.finalize().as_bytes()[..16]);
+    let id = u128::from_le_bytes(bytes) | 1;
+    // INVARIANT: `id | 1` is always odd and therefore non-zero.
+    WorldId::from_u128(id).ok_or(SkrifheimError::InvalidWorldIdentity)
 }
 
-fn hash_field(mut state: u128, tag: &[u8], bytes: &[u8]) -> u128 {
-    state = hash_bytes(state, &(tag.len() as u64).to_le_bytes());
-    state = hash_bytes(state, tag);
-    state = hash_bytes(state, &(bytes.len() as u64).to_le_bytes());
-    hash_bytes(state, bytes)
-}
-
-fn hash_bytes(mut state: u128, bytes: &[u8]) -> u128 {
-    for byte in bytes {
-        state ^= u128::from(*byte);
-        state = state.wrapping_mul(WORLD_ID_PRIME);
-    }
-    state
+fn hash_field(hasher: &mut blake3::Hasher, tag: &[u8], bytes: &[u8]) {
+    hasher.update(&(tag.len() as u64).to_le_bytes());
+    hasher.update(tag);
+    hasher.update(&(bytes.len() as u64).to_le_bytes());
+    hasher.update(bytes);
 }

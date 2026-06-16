@@ -221,6 +221,16 @@ if grep -E "\\.field\\(\"classification\",[[:space:]]*&self\\.label\\.classifica
     exit 1
 fi
 
+if grep -E "SecurityLabel::classification|\\.classification\\(\\)" crates/skrifheim-fact/src/builder.rs >/dev/null; then
+    echo "FactBuilder Debug must redact label classification" >&2
+    exit 1
+fi
+
+if grep -E "\\.field\\(\"len\",[[:space:]]*&self\\.len\\)" crates/skrifheim-core/src/policy_token.rs >/dev/null; then
+    echo "PolicyTokenSlot Debug must redact exact token length" >&2
+    exit 1
+fi
+
 if grep -E "\\.field\\(\"(algorithm|epoch|key_id|signature_bytes)\",[[:space:]]*&self\\.(algorithm|epoch|key_id|signature\\.len\\(\\))\\)" crates/skrifheim-crypto/src/lib.rs >/dev/null; then
     echo "SignatureEnvelope Debug must redact key, algorithm, epoch, and signature length" >&2
     exit 1
@@ -233,6 +243,25 @@ fi
 
 if grep -E "\\.field\\(\"(surface|domain)\",[[:space:]]*&self\\.(surface|domain)\\)" crates/skrifheim-crypto/src/projection.rs >/dev/null; then
     echo "ProjectionEncryptionPolicy Debug must redact surface and domain" >&2
+    exit 1
+fi
+
+if awk '
+    /^[[:space:]]*pub[[:space:]]+struct[[:space:]]+SegmentHeader[[:space:]]*\{/ {
+        in_struct = 1
+        next
+    }
+    in_struct && /^[[:space:]]*\}/ {
+        in_struct = 0
+    }
+    in_struct && /^[[:space:]]*pub[[:space:]]+[[:alnum:]_]+[[:space:]]*:/ {
+        found = 1
+    }
+    END {
+        exit found ? 0 : 1
+    }
+' crates/skrifheim-storage/src/lib.rs; then
+    echo "SegmentHeader fields must stay private; use the validating constructor" >&2
     exit 1
 fi
 

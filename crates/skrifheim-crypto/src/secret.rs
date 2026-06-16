@@ -18,13 +18,19 @@ impl SecretBytes {
         secret.validate()
     }
 
+    /// Copies secret bytes from a borrowed slice into clear-on-drop storage.
+    ///
+    /// The source slice is not cleared. Callers that own a `Vec<u8>` should
+    /// prefer [`Self::from_vec`] to avoid leaving a duplicate plaintext
+    /// allocation alive outside this wrapper.
     pub fn from_slice(bytes: &[u8]) -> Result<Self> {
         if bytes.is_empty() || bytes.len() > SECRET_VALUE_MAX_BYTES {
             return Err(SkrifheimError::InvalidSecretMaterial);
         }
-        Ok(Self {
+        let secret = Self {
             bytes: SecretVec::from_slice(bytes),
-        })
+        };
+        secret.validate()
     }
 
     #[must_use]

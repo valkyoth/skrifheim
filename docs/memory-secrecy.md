@@ -19,6 +19,11 @@ It is intentionally narrow:
 - explicit `clear_secret` and `into_cleared`,
 - clear-on-drop storage through the admitted `sanitization` crate.
 
+`SecretBytes::from_slice` copies from a borrowed source slice and cannot clear
+that source memory. Callers that own secret bytes in a `Vec<u8>` should prefer
+`SecretBytes::from_vec`, which transfers the allocation into clear-on-drop
+storage instead of creating a duplicate plaintext allocation.
+
 The wrapper is not a key manager, KMS client, HSM handle, memory-locking
 system, or cryptographic verifier. It is the in-process ownership rule that
 future key and secret APIs must use before durable encryption paths exist.

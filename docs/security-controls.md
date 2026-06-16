@@ -41,7 +41,7 @@ Status: baseline control map
 | Cluster control plane | Future Hyve cells, control plane, policy-scoped tunnels, witness nodes, and compliance autopilot | Planned | `docs/hyve-cluster-and-compliance-roadmap.md` |
 | Tamper evidence | Segment header metadata and structural validation, including typed non-zero encryption key identifiers and explicit checksum presence representation; body CRC/hash recomputation is required before accepting segment bytes | Scaffolded | `skrifheim-storage` |
 | Segment size bounds | Segment headers reject empty and oversized bodies before future segment readers allocate | Scaffolded | `skrifheim-storage` |
-| World identity collision resistance | Deterministic world IDs are length-separated non-secret scaffold identifiers; storage must enforce uniqueness on `(tenant_id, kind, depth, parent, name)` and collision-resistant derivation is required before storage-key authority | Planned | `docs/VERSION_PLAN.md` |
+| World identity collision resistance | Deterministic world IDs are length-separated, tenant-scoped, non-secret BLAKE3-derived identifiers; storage must still enforce uniqueness on `(tenant_id, kind, depth, parent, name)` before storage-key authority | Scaffolded | `skrifheim-world` |
 | Tenant world quotas | Tenant-level world count and aggregate tracked fact-reference budgets are required before storage-backed world creation is exposed | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | AI authority | AI artifacts are derived, not truth | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | CMS isolation | Public/private world split | Planned | `docs/cms-1-0-target.md` |

@@ -117,9 +117,10 @@ Deliverables:
 - added and hidden fact sets,
 - deterministic world identity rules where `(tenant_id, kind, depth, parent,
   name)` is the idempotent uniqueness key,
-- documented requirement to replace scaffold world-id hashing with an admitted
-  collision-resistant derivation before world IDs become authoritative durable
-  storage keys,
+- admitted BLAKE3-based collision-resistant world-id derivation,
+- documented requirement that durable storage reject existing `WorldId` values
+  for different `(tenant_id, kind, depth, parent, name)` tuples before world IDs
+  become authoritative durable storage keys,
 - tests for branch isolation.
 
 ## v0.6.0 - World Diff And Promotion Preflight
