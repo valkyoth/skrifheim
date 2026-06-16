@@ -16,6 +16,9 @@
   and audit diagnostics; requiring attested break-glass device/workload
   context; rejecting stale or future attestation evidence; and extending
   release-gate redaction checks.
+- Recorded the second `0.13.0` pentest pass with no new findings; the remaining
+  low-severity `MissingAuditActor` diagnostic specificity item stays covered by
+  the engineering-policy trust-boundary error rule.
 - Bumped workspace and internal crate dependency versions to `0.13.0`.
 - Added `0.13.0` release metadata and gate script.
 

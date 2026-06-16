@@ -1,7 +1,7 @@
 # skrifheim 0.13.0 Release Notes
 
-Status: implementation stop, first pentest pass resolved locally, pending
-retest.
+Status: implementation stop, first pentest pass resolved locally, second
+pentest pass returned no new findings.
 
 ## Scope
 
@@ -44,6 +44,10 @@ signature metadata, and break-glass event shape.
   covered by `docs/engineering-policy.md`: trust-boundary paths must use
   `SkrifheimError::public_message()` rather than `Display`, `to_string()`, or
   generic error serialization.
+- Recorded the second pentest pass with no new findings. The remaining
+  low-severity `MissingAuditActor` diagnostic specificity item stays tracked as
+  a future service-boundary lint or review gate once API/server boundary code
+  exists.
 - Bumped workspace and internal crate dependency versions to `0.13.0`.
 - Added `scripts/release_0_13_gate.sh`.
 
@@ -63,6 +67,6 @@ transport, and policy layers must use.
 
 ## Pentest Status
 
-The first `0.13.0` pentest pass has been resolved locally. Root `PENTEST.md`
-remains the temporary findings handoff file and must be removed after findings
-are resolved.
+The first `0.13.0` pentest pass has been resolved locally. The second pass
+returned no new findings. Root `PENTEST.md` remains the temporary findings
+handoff file and must be removed after findings are resolved.
