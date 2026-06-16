@@ -108,17 +108,17 @@ impl QueryResultInput {
     }
 
     #[must_use]
-    pub const fn pii(&self) -> PiiMarker {
+    pub(crate) const fn pii(&self) -> PiiMarker {
         self.pii
     }
 
     #[must_use]
-    pub const fn ai_processing(&self) -> AiProcessingEligibility {
+    pub(crate) const fn ai_processing(&self) -> AiProcessingEligibility {
         self.ai_processing
     }
 
     #[must_use]
-    pub const fn confidence_threshold(&self) -> Option<ConfidenceThreshold> {
+    pub(crate) const fn confidence_threshold(&self) -> Option<ConfidenceThreshold> {
         self.confidence_threshold
     }
 }

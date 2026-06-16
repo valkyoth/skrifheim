@@ -114,14 +114,14 @@ if awk '
     in_query_result_input && /^[[:space:]]*\}/ {
         in_query_result_input = 0
     }
-    in_query_result_input && /^[[:space:]]*pub[[:space:]]+(const[[:space:]]+)?fn[[:space:]]+(label|sovereignty)[[:space:]]*\(/ {
+    in_query_result_input && /^[[:space:]]*pub[[:space:]]+(const[[:space:]]+)?fn[[:space:]]+(label|sovereignty|pii|ai_processing|confidence_threshold)[[:space:]]*\(/ {
         found = 1
     }
     END {
         exit found ? 0 : 1
     }
 ' crates/skrifheim-policy/src/result.rs; then
-    echo "QueryResultInput must not expose raw label or sovereignty accessors publicly" >&2
+    echo "QueryResultInput must not expose raw metadata accessors publicly" >&2
     exit 1
 fi
 
