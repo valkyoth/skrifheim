@@ -4,18 +4,17 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
-use skrifheim_core::{
-    Result, SECURITY_LABEL_FIXED_STORAGE_BYTES, SecurityLabel, SkrifheimError, WorldId,
-};
+use skrifheim_core::{Result, SecurityLabel, SkrifheimError, WorldId};
 use skrifheim_policy::{
-    AuthorityContext, PolicyProof, QueryResultInput, RESULT_CLASSIFICATION_INPUT_MAX_ITEMS,
+    AuthorityContext, PolicyProof, QueryResultInput,
+    RESULT_CLASSIFICATION_INPUT_FIXED_STORAGE_BYTES, RESULT_CLASSIFICATION_INPUT_MAX_ITEMS,
     ResultClassification, evaluate_read_result_set,
 };
 
 pub const QUERY_REQUEST_LABEL_MAX_ITEMS: usize = RESULT_CLASSIFICATION_INPUT_MAX_ITEMS;
-pub const QUERY_REQUEST_LABEL_MEMORY_BUDGET_BYTES: usize =
-    QUERY_REQUEST_LABEL_MAX_ITEMS * SECURITY_LABEL_FIXED_STORAGE_BYTES;
-const _: () = assert!(QUERY_REQUEST_LABEL_MEMORY_BUDGET_BYTES <= 2 * 1024 * 1024);
+pub const QUERY_REQUEST_INPUT_MEMORY_BUDGET_BYTES: usize =
+    QUERY_REQUEST_LABEL_MAX_ITEMS * RESULT_CLASSIFICATION_INPUT_FIXED_STORAGE_BYTES;
+const _: () = assert!(QUERY_REQUEST_INPUT_MEMORY_BUDGET_BYTES <= 2 * 1024 * 1024);
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum QueryIntent {
@@ -357,10 +356,10 @@ mod tests {
     }
 
     #[test]
-    fn query_label_memory_budget_is_explicit() {
+    fn query_result_input_memory_budget_is_explicit() {
         assert_eq!(
-            QUERY_REQUEST_LABEL_MEMORY_BUDGET_BYTES,
-            QUERY_REQUEST_LABEL_MAX_ITEMS * SECURITY_LABEL_FIXED_STORAGE_BYTES
+            QUERY_REQUEST_INPUT_MEMORY_BUDGET_BYTES,
+            QUERY_REQUEST_LABEL_MAX_ITEMS * RESULT_CLASSIFICATION_INPUT_FIXED_STORAGE_BYTES
         );
     }
 }

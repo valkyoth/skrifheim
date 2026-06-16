@@ -15,6 +15,8 @@
 - Added redaction-safe policy-token union support for sovereignty propagation.
 - Removed public equality from planner proof/result surfaces and extended the
   security gate to keep sensitive result metadata out of equality comparisons.
+- Updated query request memory accounting to budget full result inputs instead
+  of label metadata alone.
 - Bumped workspace and internal crate dependency versions to `0.10.0`.
 - Added `0.10.0` release metadata and gate script.
 - Re-checked the local Rust toolchain on 2026-06-16. Rust and Cargo report

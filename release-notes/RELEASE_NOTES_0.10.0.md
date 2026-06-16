@@ -26,6 +26,8 @@ AI processing, and compliance layers must honor.
 - Removed public equality from planner proof/result surfaces and extended the
   security gate so sensitive result metadata cannot be compared through
   `PartialEq`/`Eq`.
+- Updated query request memory accounting to budget full result inputs instead
+  of label metadata alone.
 - Kept `evaluate_read_set()` and `output_classification()` compatibility
   accessors for existing label-only planning.
 - Updated query planning to accept richer result inputs while keeping the

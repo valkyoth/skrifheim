@@ -70,6 +70,9 @@ pub struct QueryResultInput {
     confidence_threshold: Option<ConfidenceThreshold>,
 }
 
+pub const RESULT_CLASSIFICATION_INPUT_FIXED_STORAGE_BYTES: usize =
+    core::mem::size_of::<QueryResultInput>();
+
 impl QueryResultInput {
     #[must_use]
     pub fn label_only(label: SecurityLabel) -> Self {
