@@ -104,30 +104,19 @@ impl ProjectionEncryptionPolicy {
 }
 
 const fn projection_surface_eq(left: ProjectionSurface, right: ProjectionSurface) -> bool {
-    matches!(
-        (left, right),
-        (
-            ProjectionSurface::SecondaryIndex,
-            ProjectionSurface::SecondaryIndex
-        ) | (ProjectionSurface::GraphIndex, ProjectionSurface::GraphIndex)
-            | (
-                ProjectionSurface::SearchIndex,
-                ProjectionSurface::SearchIndex
-            )
-            | (
-                ProjectionSurface::VectorIndex,
-                ProjectionSurface::VectorIndex
-            )
-            | (
-                ProjectionSurface::ColumnarProjection,
-                ProjectionSurface::ColumnarProjection
-            )
-            | (ProjectionSurface::CacheFile, ProjectionSurface::CacheFile)
-            | (
-                ProjectionSurface::CompactionTemporaryFile,
-                ProjectionSurface::CompactionTemporaryFile
-            )
-    )
+    projection_surface_tag(left) == projection_surface_tag(right)
+}
+
+const fn projection_surface_tag(surface: ProjectionSurface) -> u8 {
+    match surface {
+        ProjectionSurface::SecondaryIndex => 1,
+        ProjectionSurface::GraphIndex => 2,
+        ProjectionSurface::SearchIndex => 3,
+        ProjectionSurface::VectorIndex => 4,
+        ProjectionSurface::ColumnarProjection => 5,
+        ProjectionSurface::CacheFile => 6,
+        ProjectionSurface::CompactionTemporaryFile => 7,
+    }
 }
 
 impl fmt::Debug for ProjectionSurface {

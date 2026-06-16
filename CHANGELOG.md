@@ -26,6 +26,9 @@
 - Resolved the second `0.11.0` pentest pass by aligning projection policy
   compatibility with merge semantics, redacting direct projection-surface debug
   output, and strengthening release-gate redaction checks.
+- Resolved the third `0.11.0` pentest pass by making projection-surface
+  structural comparison depend on an exhaustive internal tag match, forcing
+  future projection-surface variants through an explicit compile-time update.
 - Bumped workspace and internal crate dependency versions to `0.11.0`.
 - Added `0.11.0` release metadata and gate script.
 

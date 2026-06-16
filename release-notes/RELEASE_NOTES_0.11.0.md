@@ -50,6 +50,9 @@ domains.
   accessor cannot bypass `ProjectionEncryptionPolicy` diagnostic redaction.
 - Strengthened release-gate redaction checks for encryption-domain and
   projection-policy debug implementations.
+- Made projection-surface structural comparison depend on an exhaustive
+  internal tag match so future surface variants require an explicit
+  compile-time update.
 - Bumped workspace and internal crate dependency versions to `0.11.0`.
 - Added `scripts/release_0_11_gate.sh`.
 
@@ -67,6 +70,6 @@ policy contract that those future systems must satisfy.
 
 ## Pentest Status
 
-The initial `0.11.0` pentest has not yet been run. Root `PENTEST.md` is the
-temporary findings handoff file and must be removed after findings are
-resolved.
+The first three `0.11.0` pentest passes have been resolved locally. Root
+`PENTEST.md` remains the temporary findings handoff file and must be removed
+after findings are resolved.
