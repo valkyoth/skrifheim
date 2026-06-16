@@ -39,6 +39,8 @@ AI processing, and compliance layers must honor.
 - Replaced derived debug output on query result inputs, result classifications,
   planner decisions, policy proofs, query requests, and query plans with
   redacted diagnostic output.
+- Removed the public raw result-input accessor from query requests; callers get
+  aggregate counts while planning keeps label/result metadata internal.
 - Kept `evaluate_read_set()` and `output_classification()` compatibility
   accessors for existing label-only planning.
 - Updated query planning to accept richer result inputs while keeping the

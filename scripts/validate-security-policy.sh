@@ -97,6 +97,11 @@ if awk '
     exit 1
 fi
 
+if grep -E "^[[:space:]]*pub[[:space:]]+fn[[:space:]]+result_inputs[[:space:]]*\\(" crates/skrifheim-query/src/lib.rs >/dev/null; then
+    echo "QueryRequest must not expose raw result inputs through a public accessor" >&2
+    exit 1
+fi
+
 check_no_sensitive_derive crates/skrifheim-core/src/lib.rs Value Debug
 check_no_sensitive_derive crates/skrifheim-fact/src/lib.rs Fact Debug
 check_no_sensitive_derive crates/skrifheim-fact/src/builder.rs FactBuilder Debug

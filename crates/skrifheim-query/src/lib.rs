@@ -87,12 +87,12 @@ impl QueryRequest {
 
     #[must_use]
     pub fn requested_label_count(&self) -> usize {
-        self.result_inputs.len()
+        self.result_input_count()
     }
 
     #[must_use]
-    pub fn result_inputs(&self) -> &[QueryResultInput] {
-        &self.result_inputs
+    pub fn result_input_count(&self) -> usize {
+        self.result_inputs.len()
     }
 
     pub fn plan(&self, authority: &AuthorityContext) -> Result<QueryPlan> {
@@ -390,9 +390,9 @@ mod tests {
         )?;
 
         assert_eq!(request.requested_label_count(), 2);
-        assert_eq!(request.result_inputs().len(), 2);
+        assert_eq!(request.result_input_count(), 2);
         assert_eq!(
-            request.result_inputs()[1].label().classification(),
+            request.result_inputs[1].label().classification(),
             Classification::Secret
         );
         Ok(())
