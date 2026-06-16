@@ -12,6 +12,10 @@
 - Added validation for required actor attribution, attestation time bounds,
   audit-log encryption domains, and event/protection tenant consistency.
 - Added redacted debug output and security-gate checks for audit metadata.
+- Resolved the first `0.13.0` pentest pass by redacting storage, world, fact,
+  and audit diagnostics; requiring attested break-glass device/workload
+  context; rejecting stale or future attestation evidence; and extending
+  release-gate redaction checks.
 - Bumped workspace and internal crate dependency versions to `0.13.0`.
 - Added `0.13.0` release metadata and gate script.
 

@@ -4,6 +4,7 @@
 extern crate alloc;
 
 use alloc::{string::String, vec::Vec};
+use core::fmt;
 use skrifheim_core::{FactId, Result, SkrifheimError, TenantId, WorldId};
 
 mod diff;
@@ -45,7 +46,7 @@ impl WorldKind {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct WorldMetadata {
     id: WorldId,
     tenant_id: TenantId,
@@ -53,6 +54,19 @@ pub struct WorldMetadata {
     kind: WorldKind,
     parent: Option<WorldId>,
     depth: u32,
+}
+
+impl fmt::Debug for WorldMetadata {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("WorldMetadata")
+            .field("id", &"<redacted>")
+            .field("tenant_id", &"<redacted>")
+            .field("name", &"<redacted>")
+            .field("kind", &"<redacted>")
+            .field("parent", &"<redacted>")
+            .field("depth", &self.depth)
+            .finish()
+    }
 }
 
 impl WorldMetadata {
@@ -120,11 +134,21 @@ impl WorldMetadata {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct World {
     metadata: WorldMetadata,
     added_facts: Vec<FactId>,
     hidden_facts: Vec<FactId>,
+}
+
+impl fmt::Debug for World {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("World")
+            .field("metadata", &"<redacted>")
+            .field("added_facts", &"<redacted>")
+            .field("hidden_facts", &"<redacted>")
+            .finish()
+    }
 }
 
 impl World {

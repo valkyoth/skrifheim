@@ -4,6 +4,7 @@
 extern crate alloc;
 
 use alloc::string::String;
+use core::fmt;
 use skrifheim_core::{PolicyId, Result, SkrifheimError, TenantId, TxId};
 use skrifheim_crypto::KeyId;
 
@@ -25,7 +26,7 @@ pub enum BodyChecksum {
     Present(u64),
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct SegmentHeader {
     magic: [u8; 8],
     version: u16,
@@ -40,7 +41,24 @@ pub struct SegmentHeader {
     content_hash: Option<[u8; 32]>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+impl fmt::Debug for SegmentHeader {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("SegmentHeader")
+            .field("magic", &"<redacted>")
+            .field("version", &self.version)
+            .field("segment_kind", &self.segment_kind)
+            .field("tenant_id", &"<redacted>")
+            .field("tx_range", &"<redacted>")
+            .field("policy_id", &"<redacted>")
+            .field("encryption_key_id", &"<redacted>")
+            .field("body_len", &self.body_len)
+            .field("body_crc64", &"<redacted>")
+            .field("content_hash", &"<redacted>")
+            .finish()
+    }
+}
+
+#[derive(Clone, Eq, PartialEq)]
 pub struct SegmentHeaderInput {
     pub segment_kind: SegmentKind,
     pub tenant_id: TenantId,
@@ -51,6 +69,21 @@ pub struct SegmentHeaderInput {
     pub body_len: u64,
     pub body_crc64: BodyChecksum,
     pub content_hash: [u8; 32],
+}
+
+impl fmt::Debug for SegmentHeaderInput {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("SegmentHeaderInput")
+            .field("segment_kind", &self.segment_kind)
+            .field("tenant_id", &"<redacted>")
+            .field("tx_range", &"<redacted>")
+            .field("policy_id", &"<redacted>")
+            .field("encryption_key_id", &"<redacted>")
+            .field("body_len", &self.body_len)
+            .field("body_crc64", &"<redacted>")
+            .field("content_hash", &"<redacted>")
+            .finish()
+    }
 }
 
 impl SegmentHeader {
@@ -286,6 +319,23 @@ mod tests {
         input.body_crc64 = BodyChecksum::Present(0);
         let header = SegmentHeader::new(input)?;
         assert_eq!(header.validate(), Ok(()));
+        Ok(())
+    }
+
+    #[test]
+    fn debug_redacts_segment_header_sensitive_metadata() -> Result<()> {
+        let input = header_input()?;
+        let input_debug = alloc::format!("{input:?}");
+        let header_debug = alloc::format!("{:?}", SegmentHeader::new(input)?);
+
+        assert!(input_debug.contains("encryption_key_id: \"<redacted>\""));
+        assert!(input_debug.contains("content_hash: \"<redacted>\""));
+        assert!(header_debug.contains("encryption_key_id: \"<redacted>\""));
+        assert!(header_debug.contains("content_hash: \"<redacted>\""));
+        assert!(!input_debug.contains("KeyId"));
+        assert!(!input_debug.contains("[7, 7"));
+        assert!(!header_debug.contains("KeyId"));
+        assert!(!header_debug.contains("[7, 7"));
         Ok(())
     }
 }

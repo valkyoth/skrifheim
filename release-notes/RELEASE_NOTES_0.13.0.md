@@ -1,6 +1,7 @@
 # skrifheim 0.13.0 Release Notes
 
-Status: implementation stop, pending pentest.
+Status: implementation stop, first pentest pass resolved locally, pending
+retest.
 
 ## Scope
 
@@ -29,6 +30,20 @@ signature metadata, and break-glass event shape.
 - Added tests for required actor attribution, attestation time bounds,
   break-glass context requirements, audit-log domain validation, tenant
   consistency, signed audit-log metadata, and redacted diagnostics.
+- Replaced derived `Debug` output for segment headers, segment-header inputs,
+  world metadata, and worlds with redacted diagnostics.
+- Redacted fact actor attribution and policy identifiers in `Fact` diagnostics.
+- Redacted audit event kind in `AuditEvent` diagnostics so break-glass
+  justifications do not leak through logs.
+- Required break-glass audit events to carry attested device and workload
+  contexts.
+- Rejected audit events with stale or future-dated attestation evidence.
+- Extended security validation to gate storage, world, fact, and audit
+  diagnostic redaction.
+- Confirmed the `MissingAuditActor` diagnostic specificity note is already
+  covered by `docs/engineering-policy.md`: trust-boundary paths must use
+  `SkrifheimError::public_message()` rather than `Display`, `to_string()`, or
+  generic error serialization.
 - Bumped workspace and internal crate dependency versions to `0.13.0`.
 - Added `scripts/release_0_13_gate.sh`.
 
@@ -48,6 +63,6 @@ transport, and policy layers must use.
 
 ## Pentest Status
 
-`0.13.0` is at an implementation stop and is ready for pentest. Root
-`PENTEST.md` remains the temporary findings handoff file and must be removed
-after findings are resolved.
+The first `0.13.0` pentest pass has been resolved locally. Root `PENTEST.md`
+remains the temporary findings handoff file and must be removed after findings
+are resolved.

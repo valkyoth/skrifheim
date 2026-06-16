@@ -64,7 +64,7 @@ impl AuditIdentity {
 impl fmt::Debug for AuditIdentity {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("AuditIdentity")
-            .field("kind", &self.kind())
+            .field("kind", &"<redacted>")
             .field("id", &"<redacted>")
             .finish()
     }
@@ -152,6 +152,11 @@ impl DeviceAuditContext {
     pub const fn device_id(self) -> DeviceId {
         self.device_id
     }
+
+    #[must_use]
+    pub const fn attestation(self) -> Option<AttestationEvidenceRef> {
+        self.attestation
+    }
 }
 
 impl fmt::Debug for DeviceAuditContext {
@@ -186,6 +191,11 @@ impl WorkloadAuditContext {
     #[must_use]
     pub const fn workload_id(self) -> WorkloadId {
         self.workload_id
+    }
+
+    #[must_use]
+    pub const fn attestation(self) -> Option<AttestationEvidenceRef> {
+        self.attestation
     }
 }
 
@@ -251,10 +261,24 @@ pub struct AuditEvent {
 impl AuditEvent {
     pub fn new(input: AuditEventInput) -> Result<Self> {
         let actor = input.actor.ok_or(SkrifheimError::MissingAuditActor)?;
-        if matches!(input.kind, AuditEventKind::BreakGlass(_))
-            && (input.device.is_none() || input.workload.is_none())
-        {
-            return Err(SkrifheimError::InvalidAuditEvent);
+        validate_attestation_at(
+            input.device.and_then(DeviceAuditContext::attestation),
+            input.occurred_at,
+        )?;
+        validate_attestation_at(
+            input.workload.and_then(WorkloadAuditContext::attestation),
+            input.occurred_at,
+        )?;
+        if matches!(input.kind, AuditEventKind::BreakGlass(_)) {
+            let device_attested = input
+                .device
+                .is_some_and(DeviceAuditContext::has_attestation);
+            let workload_attested = input
+                .workload
+                .is_some_and(WorkloadAuditContext::has_attestation);
+            if !device_attested || !workload_attested {
+                return Err(SkrifheimError::InvalidAuditEvent);
+            }
         }
         Ok(Self {
             event_id: input.event_id,
@@ -348,7 +372,7 @@ impl fmt::Debug for AuditEvent {
             .field("actor", &self.actor)
             .field("device", &"<redacted>")
             .field("workload", &"<redacted>")
-            .field("kind", &self.kind)
+            .field("kind", &"<redacted>")
             .field("targets", &"<redacted>")
             .field("crypto_epoch", &"<redacted>")
             .finish()
@@ -434,6 +458,18 @@ impl fmt::Debug for AuditRecord {
             .field("protection", &self.protection)
             .finish()
     }
+}
+
+fn validate_attestation_at(
+    attestation: Option<AttestationEvidenceRef>,
+    occurred_at: Timestamp,
+) -> Result<()> {
+    if let Some(attestation) = attestation
+        && !attestation.is_current_at(occurred_at)
+    {
+        return Err(SkrifheimError::InvalidAttestationEvidence);
+    }
+    Ok(())
 }
 
 #[cfg(test)]

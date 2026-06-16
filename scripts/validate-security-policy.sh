@@ -121,6 +121,11 @@ for derive_name in Debug PartialEq Eq; do
     check_no_sensitive_derive crates/skrifheim-audit/src/lib.rs AuditRecord "$derive_name"
 done
 
+check_no_sensitive_derive crates/skrifheim-storage/src/lib.rs SegmentHeader Debug
+check_no_sensitive_derive crates/skrifheim-storage/src/lib.rs SegmentHeaderInput Debug
+check_no_sensitive_derive crates/skrifheim-world/src/lib.rs WorldMetadata Debug
+check_no_sensitive_derive crates/skrifheim-world/src/lib.rs World Debug
+
 for derive_name in Debug Clone PartialEq Eq; do
     check_no_sensitive_derive crates/skrifheim-crypto/src/secret.rs SecretBytes "$derive_name"
 done
@@ -228,6 +233,11 @@ if grep -E "\\.field\\(\"classification\",[[:space:]]*&self\\.label\\.classifica
     exit 1
 fi
 
+if grep -E "\\.field\\(\"(asserted_by|policy_id)\",[[:space:]]*&self\\.(asserted_by|policy_id)\\)" crates/skrifheim-fact/src/lib.rs >/dev/null; then
+    echo "Fact Debug must redact asserted_by actor attribution and policy identifiers" >&2
+    exit 1
+fi
+
 if grep -E "SecurityLabel::classification|\\.classification\\(\\)" crates/skrifheim-fact/src/builder.rs >/dev/null; then
     echo "FactBuilder Debug must redact label classification" >&2
     exit 1
@@ -250,6 +260,16 @@ fi
 
 if grep -E "\\.field\\(\"(surface|domain)\",[[:space:]]*&self\\.(surface|domain)\\)" crates/skrifheim-crypto/src/projection.rs >/dev/null; then
     echo "ProjectionEncryptionPolicy Debug must redact surface and domain" >&2
+    exit 1
+fi
+
+if grep -E "\\.field\\(\"(magic|tenant_id|tx_range|policy_id|encryption_key_id|body_crc64|content_hash)\",[[:space:]]*&self\\." crates/skrifheim-storage/src/lib.rs >/dev/null; then
+    echo "SegmentHeader Debug must redact identifiers, keys, checksums, and hashes" >&2
+    exit 1
+fi
+
+if grep -E "\\.field\\(\"(id|tenant_id|name|kind|parent|metadata|added_facts|hidden_facts)\",[[:space:]]*&self\\." crates/skrifheim-world/src/lib.rs >/dev/null; then
+    echo "World Debug output must redact operational metadata and fact lists" >&2
     exit 1
 fi
 
@@ -279,6 +299,16 @@ fi
 
 if grep -E "\\.field\\(\"(event_id|tenant_id|occurred_at|device|workload|targets|crypto_epoch|domain|signature_count)\",[[:space:]]*&self\\." crates/skrifheim-audit/src/lib.rs >/dev/null; then
     echo "Audit Debug output must redact identifiers, targets, domains, signatures, and epochs" >&2
+    exit 1
+fi
+
+if grep -E "\\.field\\(\"kind\",[[:space:]]*&self\\.kind\\)" crates/skrifheim-audit/src/lib.rs >/dev/null; then
+    echo "AuditEvent Debug must redact event kind" >&2
+    exit 1
+fi
+
+if grep -E "\\.field\\(\"kind\",[[:space:]]*&self\\.kind\\(\\)\\)" crates/skrifheim-audit/src/lib.rs >/dev/null; then
+    echo "AuditIdentity Debug must redact identity kind" >&2
     exit 1
 fi
 

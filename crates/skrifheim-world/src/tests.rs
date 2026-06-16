@@ -60,6 +60,43 @@ fn deterministic_identity_changes_with_kind() -> Result<()> {
 }
 
 #[test]
+fn debug_redacts_world_operational_metadata() -> Result<()> {
+    let world = World::root(
+        tenant(1)?,
+        "operation-arctic-shield",
+        WorldKind::MissionCapsule,
+    )?;
+    let debug = alloc::format!("{world:?}");
+
+    assert!(debug.contains("metadata: \"<redacted>\""));
+    assert!(debug.contains("added_facts: \"<redacted>\""));
+    assert!(debug.contains("hidden_facts: \"<redacted>\""));
+    assert!(!debug.contains("operation-arctic-shield"));
+    assert!(!debug.contains("MissionCapsule"));
+    assert!(!debug.contains("WorldId"));
+    assert!(!debug.contains("TenantId"));
+    Ok(())
+}
+
+#[test]
+fn debug_redacts_world_metadata_operational_fields() -> Result<()> {
+    let metadata = WorldMetadata::root(
+        tenant(1)?,
+        "operation-arctic-shield",
+        WorldKind::MissionCapsule,
+    )?;
+    let debug = alloc::format!("{metadata:?}");
+
+    assert!(debug.contains("name: \"<redacted>\""));
+    assert!(debug.contains("kind: \"<redacted>\""));
+    assert!(!debug.contains("operation-arctic-shield"));
+    assert!(!debug.contains("MissionCapsule"));
+    assert!(!debug.contains("WorldId"));
+    assert!(!debug.contains("TenantId"));
+    Ok(())
+}
+
+#[test]
 fn deterministic_identity_separates_hash_fields() -> Result<()> {
     let tenant_id = tenant(1)?;
     let parent = id(WorldId::from_u128(2))?;

@@ -115,6 +115,49 @@ fn break_glass_requires_device_and_workload_context() -> Result<()> {
 }
 
 #[test]
+fn break_glass_requires_attested_device_and_workload_context() -> Result<()> {
+    let mut input = event_input()?;
+    input.kind = AuditEventKind::BreakGlass(BreakGlassJustification::TenantRecovery);
+    input.device = Some(DeviceAuditContext::new(id(DeviceId::from_u128(5))?, None));
+
+    assert!(matches!(
+        AuditEvent::new(input),
+        Err(SkrifheimError::InvalidAuditEvent)
+    ));
+
+    let mut input = event_input()?;
+    input.kind = AuditEventKind::BreakGlass(BreakGlassJustification::TenantRecovery);
+    input.workload = Some(WorkloadAuditContext::new(
+        id(WorkloadId::from_u128(6))?,
+        None,
+    ));
+
+    assert!(matches!(
+        AuditEvent::new(input),
+        Err(SkrifheimError::InvalidAuditEvent)
+    ));
+    Ok(())
+}
+
+#[test]
+fn audit_event_rejects_stale_or_future_attestation() -> Result<()> {
+    let mut stale = event_input()?;
+    stale.occurred_at = Timestamp::new(30);
+    assert!(matches!(
+        AuditEvent::new(stale),
+        Err(SkrifheimError::InvalidAttestationEvidence)
+    ));
+
+    let mut future = event_input()?;
+    future.occurred_at = Timestamp::new(9);
+    assert!(matches!(
+        AuditEvent::new(future),
+        Err(SkrifheimError::InvalidAttestationEvidence)
+    ));
+    Ok(())
+}
+
+#[test]
 fn audit_log_protection_requires_audit_log_domain() -> Result<()> {
     let domain = EncryptionDomain::tenant(tenant()?);
 
@@ -172,5 +215,20 @@ fn debug_output_redacts_ids_targets_and_crypto_metadata() -> Result<()> {
     assert!(!debug.contains("event_id: 4"));
     assert!(!debug.contains("tenant_id: 1"));
     assert!(!debug.contains("crypto_epoch: 1"));
+    assert!(!debug.contains("kind: Actor"));
+    assert!(!debug.contains("BreakGlass"));
+    assert!(!debug.contains("LifeSafety"));
+    Ok(())
+}
+
+#[test]
+fn debug_output_redacts_break_glass_kind() -> Result<()> {
+    let mut input = event_input()?;
+    input.kind = AuditEventKind::BreakGlass(BreakGlassJustification::LifeSafety);
+    let debug = format!("{:?}", AuditEvent::new(input)?);
+
+    assert!(debug.contains("kind: \"<redacted>\""));
+    assert!(!debug.contains("BreakGlass"));
+    assert!(!debug.contains("LifeSafety"));
     Ok(())
 }
