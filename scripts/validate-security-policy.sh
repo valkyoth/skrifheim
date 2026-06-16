@@ -35,12 +35,33 @@ check_no_sensitive_derive() {
     fi
 }
 
+check_no_sensitive_impl() {
+    file="$1"
+    type_name="$2"
+    trait_name="$3"
+    if grep -E "impl([[:space:]]+[^[:space:]]+)?[[:space:]]+$trait_name[[:space:]]+for[[:space:]]+$type_name([^[:alnum:]_]|$)" "$file" >/dev/null; then
+        echo "$file must not implement $trait_name for sensitive type $type_name" >&2
+        exit 1
+    fi
+}
+
 for derive_name in Debug PartialEq Eq; do
     check_no_sensitive_derive crates/skrifheim-core/src/lib.rs SecurityLabel "$derive_name"
     check_no_sensitive_derive crates/skrifheim-core/src/policy_token.rs PolicyTokenSet "$derive_name"
     check_no_sensitive_derive crates/skrifheim-core/src/policy_token.rs PolicyTokenSlot "$derive_name"
     check_no_sensitive_derive crates/skrifheim-crypto/src/lib.rs SignatureEnvelope "$derive_name"
     check_no_sensitive_derive crates/skrifheim-crypto/src/lib.rs SignatureSet "$derive_name"
+done
+
+for derive_name in PartialEq Eq; do
+    check_no_sensitive_derive crates/skrifheim-policy/src/decision.rs PlannerDecision "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-policy/src/decision.rs PolicyProof "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-policy/src/result.rs ResultClassification "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-query/src/lib.rs QueryPlan "$derive_name"
+done
+
+for trait_name in PartialEq Eq; do
+    check_no_sensitive_impl crates/skrifheim-policy/src/result.rs ResultClassification "$trait_name"
 done
 
 check_no_sensitive_derive crates/skrifheim-core/src/lib.rs Value Debug

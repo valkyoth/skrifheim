@@ -33,7 +33,7 @@ pub struct QueryRequest {
     result_inputs: Vec<QueryResultInput>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct QueryPlan {
     world: WorldId,
     intent: QueryIntent,

@@ -194,18 +194,6 @@ impl ResultClassification {
     }
 }
 
-impl PartialEq for ResultClassification {
-    fn eq(&self, other: &Self) -> bool {
-        self.output_classification == other.output_classification
-            && self.sovereignty.structurally_equal(&other.sovereignty)
-            && self.pii == other.pii
-            && self.ai_processing == other.ai_processing
-            && self.confidence_threshold == other.confidence_threshold
-    }
-}
-
-impl Eq for ResultClassification {}
-
 pub(crate) fn derive_result_classification(
     inputs: &[QueryResultInput],
 ) -> Result<ResultClassification> {

@@ -23,6 +23,9 @@ AI processing, and compliance layers must honor.
   metadata only after all labels are allowed.
 - Added an explicit policy-layer result input count bound and overflow tests for
   combined sovereignty propagation.
+- Removed public equality from planner proof/result surfaces and extended the
+  security gate so sensitive result metadata cannot be compared through
+  `PartialEq`/`Eq`.
 - Kept `evaluate_read_set()` and `output_classification()` compatibility
   accessors for existing label-only planning.
 - Updated query planning to accept richer result inputs while keeping the

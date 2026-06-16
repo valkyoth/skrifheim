@@ -8,7 +8,7 @@ use crate::{
     AuthorityContext, QueryResultInput, RESULT_CLASSIFICATION_INPUT_MAX_ITEMS, ResultClassification,
 };
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub enum PlannerDecision {
     Allow {
         proof: PolicyProof,
@@ -58,7 +58,7 @@ pub enum DecisionKind {
     Reject,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug)]
 pub struct PolicyProof {
     decision: DecisionKind,
     input_label_count: usize,
