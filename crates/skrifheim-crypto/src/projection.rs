@@ -4,7 +4,7 @@ use skrifheim_core::{Result, SkrifheimError};
 
 use crate::{EncryptionDomain, EncryptionDomainPurpose};
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy)]
 pub enum ProjectionSurface {
     SecondaryIndex,
     GraphIndex,
@@ -81,7 +81,8 @@ impl ProjectionEncryptionPolicy {
 
     #[must_use]
     pub fn is_domain_compatible_with(self, other: Self) -> bool {
-        self.domain.is_merge_compatible_with(other.domain)
+        projection_surface_eq(self.surface, other.surface)
+            && self.domain.is_merge_compatible_with(other.domain)
     }
 
     #[must_use]
@@ -97,7 +98,41 @@ impl ProjectionEncryptionPolicy {
     /// decisions.
     #[must_use]
     pub fn structurally_equal(&self, other: &Self) -> bool {
-        self.surface == other.surface && self.domain.structurally_equal(&other.domain)
+        projection_surface_eq(self.surface, other.surface)
+            && self.domain.structurally_equal(&other.domain)
+    }
+}
+
+const fn projection_surface_eq(left: ProjectionSurface, right: ProjectionSurface) -> bool {
+    matches!(
+        (left, right),
+        (
+            ProjectionSurface::SecondaryIndex,
+            ProjectionSurface::SecondaryIndex
+        ) | (ProjectionSurface::GraphIndex, ProjectionSurface::GraphIndex)
+            | (
+                ProjectionSurface::SearchIndex,
+                ProjectionSurface::SearchIndex
+            )
+            | (
+                ProjectionSurface::VectorIndex,
+                ProjectionSurface::VectorIndex
+            )
+            | (
+                ProjectionSurface::ColumnarProjection,
+                ProjectionSurface::ColumnarProjection
+            )
+            | (ProjectionSurface::CacheFile, ProjectionSurface::CacheFile)
+            | (
+                ProjectionSurface::CompactionTemporaryFile,
+                ProjectionSurface::CompactionTemporaryFile
+            )
+    )
+}
+
+impl fmt::Debug for ProjectionSurface {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("ProjectionSurface(<redacted>)")
     }
 }
 

@@ -215,6 +215,23 @@ fn projection_policy_rejects_cross_compartment_mixing() -> Result<()> {
 }
 
 #[test]
+fn projection_policy_compatibility_requires_same_surface() -> Result<()> {
+    let domain = EncryptionDomain::projection(
+        tenant()?,
+        Some(region(1)?),
+        Classification::Secret,
+        Some(compartment(21)?),
+        Some(world(31)?),
+    );
+    let secondary = ProjectionEncryptionPolicy::secondary_index(domain)?;
+    let vector = ProjectionEncryptionPolicy::vector_index(domain)?;
+
+    assert!(!secondary.is_domain_compatible_with(vector));
+    assert!(secondary.merge_with(vector).is_none());
+    Ok(())
+}
+
+#[test]
 fn compaction_temporary_projection_files_are_encrypted() -> Result<()> {
     let policy =
         ProjectionEncryptionPolicy::compaction_temporary_file(EncryptionDomain::projection(
@@ -225,7 +242,10 @@ fn compaction_temporary_projection_files_are_encrypted() -> Result<()> {
             Some(world(31)?),
         ))?;
 
-    assert_eq!(policy.surface(), ProjectionSurface::CompactionTemporaryFile);
+    assert!(matches!(
+        policy.surface(),
+        ProjectionSurface::CompactionTemporaryFile
+    ));
     assert!(policy.requires_encryption_at_rest());
     assert!(!policy.allows_plaintext_temporary_files());
     Ok(())
@@ -266,4 +286,12 @@ fn projection_policy_debug_redacts_surface_and_domain() -> Result<()> {
     assert!(!debug.contains("CompartmentKeyId"));
     assert!(debug.contains("<redacted>"));
     Ok(())
+}
+
+#[test]
+fn projection_surface_debug_is_redacted() {
+    let debug = alloc::format!("{:?}", ProjectionSurface::VectorIndex);
+
+    assert!(!debug.contains("VectorIndex"));
+    assert!(debug.contains("<redacted>"));
 }

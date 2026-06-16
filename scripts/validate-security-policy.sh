@@ -107,6 +107,7 @@ for derive_name in Debug PartialEq Eq; do
     check_no_sensitive_derive crates/skrifheim-core/src/lib.rs SecurityLabel "$derive_name"
     check_no_sensitive_derive crates/skrifheim-core/src/policy_token.rs PolicyTokenSet "$derive_name"
     check_no_sensitive_derive crates/skrifheim-core/src/policy_token.rs PolicyTokenSlot "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-crypto/src/projection.rs ProjectionSurface "$derive_name"
     check_no_sensitive_derive crates/skrifheim-crypto/src/domain.rs EncryptionDomain "$derive_name"
     check_no_sensitive_derive crates/skrifheim-crypto/src/projection.rs ProjectionEncryptionPolicy "$derive_name"
     check_no_sensitive_derive crates/skrifheim-crypto/src/lib.rs SignatureEnvelope "$derive_name"
@@ -222,6 +223,16 @@ fi
 
 if grep -E "\\.field\\(\"(surface|domain)\",[[:space:]]*&self\\.(surface|domain)\\)" crates/skrifheim-crypto/src/projection.rs >/dev/null; then
     echo "ProjectionEncryptionPolicy Debug must redact surface and domain" >&2
+    exit 1
+fi
+
+if ! grep -q '"<redacted>"' crates/skrifheim-crypto/src/domain.rs; then
+    echo "EncryptionDomain Debug must use redacted field values" >&2
+    exit 1
+fi
+
+if ! grep -q '"<redacted>"' crates/skrifheim-crypto/src/projection.rs; then
+    echo "ProjectionSurface and ProjectionEncryptionPolicy Debug must use redacted field values" >&2
     exit 1
 fi
 

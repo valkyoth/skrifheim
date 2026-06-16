@@ -23,6 +23,9 @@
   projection domains, making policy-token shape checks fail closed in release
   builds, encapsulating timestamps, and documenting remaining production
   constant-time and cryptographic world-ID requirements.
+- Resolved the second `0.11.0` pentest pass by aligning projection policy
+  compatibility with merge semantics, redacting direct projection-surface debug
+  output, and strengthening release-gate redaction checks.
 - Bumped workspace and internal crate dependency versions to `0.11.0`.
 - Added `0.11.0` release metadata and gate script.
 

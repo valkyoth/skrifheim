@@ -43,6 +43,13 @@ domains.
 - Added release-gate checks for sensitive encryption-domain/projection-policy
   derives, direct domain debug exposure, public timestamp tuple fields, and
   `debug_assert!` use in policy decisions.
+- Aligned projection policy compatibility checks with merge semantics so
+  matching domains are not treated as compatible when projection surfaces
+  differ.
+- Redacted direct `ProjectionSurface` debug output so the public `surface()`
+  accessor cannot bypass `ProjectionEncryptionPolicy` diagnostic redaction.
+- Strengthened release-gate redaction checks for encryption-domain and
+  projection-policy debug implementations.
 - Bumped workspace and internal crate dependency versions to `0.11.0`.
 - Added `scripts/release_0_11_gate.sh`.
 
