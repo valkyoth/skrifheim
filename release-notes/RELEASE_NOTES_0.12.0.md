@@ -45,6 +45,9 @@ plane APIs.
   read-only accessors.
 - Added release-gate checks for builder/token debug regressions and public
   segment-header fields.
+- Documented that `WorldId` uses 16 bytes of BLAKE3 output because the ID is a
+  `u128`; the forced low bit only satisfies the non-zero ID type and is not a
+  secrecy boundary.
 - Bumped workspace and internal crate dependency versions to `0.12.0`.
 - Added `scripts/release_0_12_gate.sh`.
 
@@ -65,6 +68,6 @@ crypto APIs must use.
 
 ## Pentest Status
 
-The first `0.12.0` pentest pass has been resolved locally. Root `PENTEST.md`
-remains the temporary findings handoff file and must be removed after findings
-are resolved.
+The first two `0.12.0` pentest passes have been resolved locally. Root
+`PENTEST.md` remains the temporary findings handoff file and must be removed
+after findings are resolved.

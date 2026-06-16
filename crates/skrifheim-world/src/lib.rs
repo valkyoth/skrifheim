@@ -275,6 +275,9 @@ fn derive_world_id(
     }
     hash_field(&mut hasher, b"name", name.as_bytes());
     let mut bytes = [0_u8; 16];
+    // WorldId is a u128, so the deterministic identity uses 16 bytes of the
+    // BLAKE3 output. The low bit is forced on only to satisfy the non-zero ID
+    // type; it is not a secrecy boundary or bearer capability.
     bytes.copy_from_slice(&hasher.finalize().as_bytes()[..16]);
     let id = u128::from_le_bytes(bytes) | 1;
     // INVARIANT: `id | 1` is always odd and therefore non-zero.

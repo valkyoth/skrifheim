@@ -18,6 +18,8 @@
   names, making segment headers constructor-validated, documenting borrowed
   secret-slice behavior, and replacing scaffold world-id hashing with admitted
   BLAKE3 derivation.
+- Resolved the second `0.12.0` pentest pass by documenting the 16-byte BLAKE3
+  output truncation used for `WorldId`'s `u128` representation.
 - Bumped workspace and internal crate dependency versions to `0.12.0`.
 - Added `0.12.0` release metadata and gate script.
 
