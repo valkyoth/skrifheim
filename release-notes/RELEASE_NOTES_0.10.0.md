@@ -36,6 +36,8 @@ AI processing, and compliance layers must honor.
   derive attributes.
 - Hardened release-gate impl-method scans with brace-depth tracking so later
   methods in sensitive impl blocks cannot bypass API exposure checks.
+- Hardened the raw query-result input accessor gate so `pub const fn`
+  variants cannot bypass the release check.
 - Updated query request memory accounting to budget full result inputs instead
   of label metadata alone.
 - Collapsed query requests to a single result-input vector so sensitive label

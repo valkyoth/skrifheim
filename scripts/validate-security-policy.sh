@@ -153,10 +153,11 @@ check_no_public_impl_method \
     "new" \
     "PolicyProof::new must stay crate-private"
 
-if grep -E "^[[:space:]]*pub[[:space:]]+fn[[:space:]]+result_inputs[[:space:]]*\\(" crates/skrifheim-query/src/lib.rs >/dev/null; then
-    echo "QueryRequest must not expose raw result inputs through a public accessor" >&2
-    exit 1
-fi
+check_no_public_impl_method \
+    crates/skrifheim-query/src/lib.rs \
+    QueryRequest \
+    "result_inputs" \
+    "QueryRequest must not expose raw result inputs through a public accessor"
 
 check_no_public_impl_method \
     crates/skrifheim-policy/src/result.rs \
