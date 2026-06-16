@@ -26,7 +26,7 @@ Status: baseline control map
 | Confidence and mandatory access control | Propagated confidence is evaluated together with mandatory access control | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | Timing side channels | Policy-token checks use fixed-slot byte sets, local compiler barriers, bounded scans, and fail-closed oversize guards; production constant-time evidence remains required | Scaffolded | `docs/engineering-policy.md` |
 | Query inference | Public query plans expose aggregate proof/decision state, not per-label decisions | Scaffolded | `skrifheim-query` |
-| Query request memory | Query requests fail closed for empty result input sets, use constructor-enforced input limits, and keep an explicit fixed result-input memory budget | Scaffolded | `skrifheim-query` |
+| Query request memory | Query requests fail closed for empty result input sets, use constructor-enforced input limits, store one result-input vector, and keep an explicit fixed result-input memory budget | Scaffolded | `skrifheim-query` |
 | Query-result classification | Allowed query plans propagate output classification, sovereignty, PII-derived output, AI-processing eligibility, and confidence-threshold policy metadata; non-allow plans expose only public sentinel metadata | Scaffolded | `skrifheim-policy`, `skrifheim-query` |
 | Crypto agility | Algorithm and signature envelopes | Scaffolded | `skrifheim-crypto` |
 | Key hierarchy | Root trust, deployment, region, tenant, compartment, segment, and data key parent metadata with tenant deployment/region and segment/data compartment binding | Scaffolded | `skrifheim-crypto` |

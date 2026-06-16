@@ -28,7 +28,6 @@ pub enum QueryIntent {
 pub struct QueryRequest {
     world: WorldId,
     intent: QueryIntent,
-    requested_labels: Vec<SecurityLabel>,
     result_inputs: Vec<QueryResultInput>,
 }
 
@@ -49,14 +48,12 @@ impl QueryRequest {
             return Err(SkrifheimError::InvalidQueryRequest);
         }
         let result_inputs = requested_labels
-            .iter()
-            .cloned()
+            .into_iter()
             .map(QueryResultInput::label_only)
             .collect();
         Ok(Self {
             world,
             intent,
-            requested_labels,
             result_inputs,
         })
     }
@@ -69,14 +66,9 @@ impl QueryRequest {
         if result_inputs.is_empty() || result_inputs.len() > QUERY_REQUEST_LABEL_MAX_ITEMS {
             return Err(SkrifheimError::InvalidQueryRequest);
         }
-        let requested_labels = result_inputs
-            .iter()
-            .map(|input| input.label().clone())
-            .collect();
         Ok(Self {
             world,
             intent,
-            requested_labels,
             result_inputs,
         })
     }
@@ -92,8 +84,8 @@ impl QueryRequest {
     }
 
     #[must_use]
-    pub fn requested_labels(&self) -> &[SecurityLabel] {
-        &self.requested_labels
+    pub fn requested_label_count(&self) -> usize {
+        self.result_inputs.len()
     }
 
     #[must_use]
@@ -345,13 +337,32 @@ mod tests {
         let request = QueryRequest {
             world,
             intent: QueryIntent::ReadFacts,
-            requested_labels: Vec::new(),
             result_inputs: Vec::new(),
         };
         assert!(matches!(
             request.plan(&authority(Classification::TopSecret)?),
             Err(SkrifheimError::InvalidQueryRequest)
         ));
+        Ok(())
+    }
+
+    #[test]
+    fn label_only_constructor_stores_result_inputs_once() -> skrifheim_core::Result<()> {
+        let request = QueryRequest::new(
+            id(WorldId::from_u128(1))?,
+            QueryIntent::ReadFacts,
+            vec![
+                SecurityLabel::new(Classification::Public, Vec::new(), Vec::new())?,
+                SecurityLabel::new(Classification::Secret, Vec::new(), Vec::new())?,
+            ],
+        )?;
+
+        assert_eq!(request.requested_label_count(), 2);
+        assert_eq!(request.result_inputs().len(), 2);
+        assert_eq!(
+            request.result_inputs()[1].label().classification(),
+            Classification::Secret
+        );
         Ok(())
     }
 

@@ -19,6 +19,8 @@
   security gate to keep sensitive result metadata out of equality comparisons.
 - Updated query request memory accounting to budget full result inputs instead
   of label metadata alone.
+- Collapsed query requests to a single result-input vector so sensitive label
+  state is not duplicated inside the request model.
 - Bumped workspace and internal crate dependency versions to `0.10.0`.
 - Added `0.10.0` release metadata and gate script.
 - Re-checked the local Rust toolchain on 2026-06-16. Rust and Cargo report

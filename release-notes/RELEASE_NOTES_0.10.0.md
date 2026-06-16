@@ -30,6 +30,8 @@ AI processing, and compliance layers must honor.
   `PartialEq`/`Eq`.
 - Updated query request memory accounting to budget full result inputs instead
   of label metadata alone.
+- Collapsed query requests to a single result-input vector so sensitive label
+  state is not duplicated inside the request model.
 - Kept `evaluate_read_set()` and `output_classification()` compatibility
   accessors for existing label-only planning.
 - Updated query planning to accept richer result inputs while keeping the
