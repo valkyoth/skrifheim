@@ -62,7 +62,22 @@ nonzero_id!(WorkloadId);
 nonzero_id!(SourceId);
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct Timestamp(pub u64);
+pub struct Timestamp(u64);
+
+impl Timestamp {
+    /// Creates a timestamp value.
+    ///
+    /// Zero is valid and represents the beginning of the database time domain.
+    #[must_use]
+    pub const fn new(value: u64) -> Self {
+        Self(value)
+    }
+
+    #[must_use]
+    pub const fn get(self) -> u64 {
+        self.0
+    }
+}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct TimeRange {
@@ -73,7 +88,7 @@ pub struct TimeRange {
 impl TimeRange {
     pub const fn new(start: Timestamp, end: Option<Timestamp>) -> Result<Self> {
         if let Some(end) = end
-            && end.0 <= start.0
+            && end.get() <= start.get()
         {
             return Err(SkrifheimError::InvalidTimeRange);
         }
@@ -92,11 +107,11 @@ impl TimeRange {
 
     #[must_use]
     pub const fn contains(self, timestamp: Timestamp) -> bool {
-        if timestamp.0 < self.start.0 {
+        if timestamp.get() < self.start.get() {
             return false;
         }
         match self.end {
-            Some(end) => timestamp.0 < end.0,
+            Some(end) => timestamp.get() < end.get(),
             None => true,
         }
     }

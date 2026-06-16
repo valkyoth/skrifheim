@@ -263,23 +263,30 @@ fn derive_world_id(
     kind: WorldKind,
 ) -> Result<WorldId> {
     let mut state = WORLD_ID_OFFSET;
-    state = hash_bytes(state, b"skrifheim/world/v1");
-    state = hash_bytes(state, &tenant_id.get().to_le_bytes());
-    state = hash_bytes(state, &[kind.identity_tag()]);
-    state = hash_bytes(state, &depth.to_le_bytes());
+    state = hash_field(state, b"domain", b"skrifheim/world/v1");
+    state = hash_field(state, b"tenant", &tenant_id.get().to_le_bytes());
+    state = hash_field(state, b"kind", &[kind.identity_tag()]);
+    state = hash_field(state, b"depth", &depth.to_le_bytes());
     match parent {
         Some(parent) => {
-            state = hash_bytes(state, b"child");
-            state = hash_bytes(state, &parent.get().to_le_bytes());
+            state = hash_field(state, b"parent-kind", b"child");
+            state = hash_field(state, b"parent-id", &parent.get().to_le_bytes());
         }
         None => {
-            state = hash_bytes(state, b"root");
+            state = hash_field(state, b"parent-kind", b"root");
         }
     }
-    state = hash_bytes(state, name.as_bytes());
+    state = hash_field(state, b"name", name.as_bytes());
     let state = state | 1;
     // INVARIANT: `state | 1` is always odd and therefore non-zero.
     WorldId::from_u128(state).ok_or(SkrifheimError::InvalidWorldIdentity)
+}
+
+fn hash_field(mut state: u128, tag: &[u8], bytes: &[u8]) -> u128 {
+    state = hash_bytes(state, &(tag.len() as u64).to_le_bytes());
+    state = hash_bytes(state, tag);
+    state = hash_bytes(state, &(bytes.len() as u64).to_le_bytes());
+    hash_bytes(state, bytes)
 }
 
 fn hash_bytes(mut state: u128, bytes: &[u8]) -> u128 {

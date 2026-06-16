@@ -3,24 +3,24 @@ use alloc::vec;
 
 #[test]
 fn open_time_range_contains_later_time() -> Result<()> {
-    let range = TimeRange::new(Timestamp(10), None)?;
-    assert!(range.contains(Timestamp(11)));
+    let range = TimeRange::new(Timestamp::new(10), None)?;
+    assert!(range.contains(Timestamp::new(11)));
     Ok(())
 }
 
 #[test]
 fn closed_time_range_excludes_end() -> Result<()> {
-    let range = TimeRange::new(Timestamp(10), Some(Timestamp(20)))?;
-    assert!(range.contains(Timestamp(19)));
-    assert!(!range.contains(Timestamp(20)));
+    let range = TimeRange::new(Timestamp::new(10), Some(Timestamp::new(20)))?;
+    assert!(range.contains(Timestamp::new(19)));
+    assert!(!range.contains(Timestamp::new(20)));
     Ok(())
 }
 
 #[test]
 fn time_range_rejects_inverted_bounds() {
-    for end in [Timestamp(10), Timestamp(20)] {
+    for end in [Timestamp::new(10), Timestamp::new(20)] {
         assert_eq!(
-            TimeRange::new(Timestamp(20), Some(end)),
+            TimeRange::new(Timestamp::new(20), Some(end)),
             Err(SkrifheimError::InvalidTimeRange)
         );
     }

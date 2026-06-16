@@ -27,7 +27,7 @@ fn invalid_fact_without_evidence() -> Result<Fact> {
         subject: id(EntityId::from_u128(3))?,
         predicate: id(PredicateId::from_u128(4))?,
         object: Value::Boolean(true),
-        valid_time: TimeRange::new(Timestamp(5), None)?,
+        valid_time: TimeRange::new(Timestamp::new(5), None)?,
         committed_at: id(TxId::from_u128(6))?,
         asserted_by: id(ActorId::from_u128(7))?,
         evidence: Vec::new(),
@@ -56,7 +56,7 @@ fn base_builder() -> Result<FactBuilder> {
         .subject(id(EntityId::from_u128(3))?)
         .predicate(id(PredicateId::from_u128(4))?)
         .object(Value::Boolean(true))?
-        .valid_time(TimeRange::new(Timestamp(5), None)?)
+        .valid_time(TimeRange::new(Timestamp::new(5), None)?)
         .committed_at(id(TxId::from_u128(6))?)
         .asserted_by(id(ActorId::from_u128(7))?)
         .add_evidence(id(SourceId::from_u128(8))?)?
@@ -78,7 +78,7 @@ fn base_builder_without_evidence() -> Result<FactBuilder> {
         .subject(id(EntityId::from_u128(3))?)
         .predicate(id(PredicateId::from_u128(4))?)
         .object(Value::Boolean(true))?
-        .valid_time(TimeRange::new(Timestamp(5), None)?)
+        .valid_time(TimeRange::new(Timestamp::new(5), None)?)
         .committed_at(id(TxId::from_u128(6))?)
         .asserted_by(id(ActorId::from_u128(7))?)
         .confidence(Confidence::max())
@@ -164,7 +164,7 @@ fn fact_rejects_self_referential_causality() -> Result<()> {
 
 #[test]
 fn builder_rejects_invalid_valid_time() -> Result<()> {
-    let result = TimeRange::new(Timestamp(20), Some(Timestamp(10)));
+    let result = TimeRange::new(Timestamp::new(20), Some(Timestamp::new(10)));
     assert_eq!(result, Err(SkrifheimError::InvalidTimeRange));
     Ok(())
 }

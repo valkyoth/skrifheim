@@ -27,6 +27,22 @@ domains.
   projection mixing.
 - Added tests that compaction temporary projection files require encryption and
   disallow plaintext temporary files.
+- Length-separated scaffold world ID hash fields to remove field-boundary
+  ambiguity while keeping collision-resistant world ID derivation planned before
+  storage-key authority.
+- Replaced derived debug output on encryption domains and projection encryption
+  policies with redacted diagnostics.
+- Removed derived equality from encryption domains and projection encryption
+  policies; structural comparison is now explicit and documented as
+  non-constant-time.
+- Projection encryption policies now require a classified projection domain.
+- Policy-token shape checks in policy evaluation now fail closed in release
+  builds instead of relying on `debug_assert!`.
+- `Timestamp` now has a private field with explicit `new()` and `get()`
+  methods; zero remains a documented valid timestamp.
+- Added release-gate checks for sensitive encryption-domain/projection-policy
+  derives, direct domain debug exposure, public timestamp tuple fields, and
+  `debug_assert!` use in policy decisions.
 - Bumped workspace and internal crate dependency versions to `0.11.0`.
 - Added `scripts/release_0_11_gate.sh`.
 

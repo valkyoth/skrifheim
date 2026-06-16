@@ -82,12 +82,12 @@ Required operations:
 
 World kinds include production, staging, user-local, agent scratchpad, simulation, legal/audit, and mission capsule.
 
-The scaffold deterministic world ID is non-secret and must not become a bearer
-capability or sole authorization input. Before durable storage treats world ID
-as an authoritative key, the derivation must move to an admitted
-collision-resistant hash with documented dependency/security review. Storage
-must also reject creation when a `WorldId` already exists for a different
-`(tenant_id, kind, depth, parent, name)` tuple.
+The scaffold deterministic world ID is length-separated, non-secret, and must
+not become a bearer capability or sole authorization input. Before durable
+storage treats world ID as an authoritative key, the derivation must move to an
+admitted collision-resistant hash with documented dependency/security review.
+Storage must also reject creation when a `WorldId` already exists for a
+different `(tenant_id, kind, depth, parent, name)` tuple.
 
 Storage and orchestration must enforce tenant-level aggregate world budgets,
 including maximum world count and total tracked fact references across all

@@ -17,6 +17,12 @@
   projection and compaction surfaces.
 - Added tests for encrypted index/projection surfaces, cross-compartment
   rejection, invalid domain rejection, and encrypted compaction temporary files.
+- Resolved the first `0.11.0` pentest pass by length-separating scaffold world
+  ID hash fields, redacting encryption-domain and projection-policy diagnostics,
+  removing derived equality from those policy types, enforcing classified
+  projection domains, making policy-token shape checks fail closed in release
+  builds, encapsulating timestamps, and documenting remaining production
+  constant-time and cryptographic world-ID requirements.
 - Bumped workspace and internal crate dependency versions to `0.11.0`.
 - Added `0.11.0` release metadata and gate script.
 

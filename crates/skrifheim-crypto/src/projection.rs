@@ -1,3 +1,5 @@
+use core::fmt;
+
 use skrifheim_core::{Result, SkrifheimError};
 
 use crate::{EncryptionDomain, EncryptionDomainPurpose};
@@ -13,7 +15,7 @@ pub enum ProjectionSurface {
     CompactionTemporaryFile,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy)]
 pub struct ProjectionEncryptionPolicy {
     surface: ProjectionSurface,
     domain: EncryptionDomain,
@@ -21,7 +23,9 @@ pub struct ProjectionEncryptionPolicy {
 
 impl ProjectionEncryptionPolicy {
     pub fn new(surface: ProjectionSurface, domain: EncryptionDomain) -> Result<Self> {
-        if domain.purpose() != EncryptionDomainPurpose::Projection {
+        if domain.purpose() != EncryptionDomainPurpose::Projection
+            || domain.classification_level().is_none()
+        {
             return Err(SkrifheimError::InvalidProjectionPolicy);
         }
         Ok(Self { surface, domain })
@@ -82,10 +86,26 @@ impl ProjectionEncryptionPolicy {
 
     #[must_use]
     pub fn merge_with(self, other: Self) -> Option<Self> {
-        if self.surface == other.surface && self.is_domain_compatible_with(other) {
+        if self.structurally_equal(&other) {
             Some(self)
         } else {
             None
         }
+    }
+
+    /// Structural comparison only. Not constant-time and not for authorization
+    /// decisions.
+    #[must_use]
+    pub fn structurally_equal(&self, other: &Self) -> bool {
+        self.surface == other.surface && self.domain.structurally_equal(&other.domain)
+    }
+}
+
+impl fmt::Debug for ProjectionEncryptionPolicy {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ProjectionEncryptionPolicy")
+            .field("surface", &"<redacted>")
+            .field("domain", &"<redacted>")
+            .finish()
     }
 }

@@ -56,7 +56,7 @@ fn compartment_domains_reject_cross_compartment_merges() -> Result<()> {
     );
 
     assert_eq!(left.compartment_id(), Some(compartment(21)?));
-    assert_eq!(left.merge_with(right), None);
+    assert!(left.merge_with(right).is_none());
     Ok(())
 }
 
@@ -107,8 +107,11 @@ fn segment_domains_include_segment_identity() -> Result<()> {
     );
 
     assert_eq!(left.segment_id(), Some(segment(41)?));
-    assert_eq!(left.merge_with(same), Some(left));
-    assert_eq!(left.merge_with(other_segment), None);
+    assert!(
+        left.merge_with(same)
+            .is_some_and(|merged| merged.structurally_equal(&left))
+    );
+    assert!(left.merge_with(other_segment).is_none());
     Ok(())
 }
 
@@ -178,6 +181,12 @@ fn projection_policy_requires_projection_domains() -> Result<()> {
         ProjectionEncryptionPolicy::secondary_index(segment_domain),
         Err(SkrifheimError::InvalidProjectionPolicy)
     ));
+    assert!(matches!(
+        ProjectionEncryptionPolicy::secondary_index(
+            EncryptionDomain::projection_without_classification_for_test(tenant_id)
+        ),
+        Err(SkrifheimError::InvalidProjectionPolicy)
+    ));
     Ok(())
 }
 
@@ -201,7 +210,7 @@ fn projection_policy_rejects_cross_compartment_mixing() -> Result<()> {
     ))?;
 
     assert!(!left.is_domain_compatible_with(right));
-    assert_eq!(left.merge_with(right), None);
+    assert!(left.merge_with(right).is_none());
     Ok(())
 }
 
@@ -219,5 +228,42 @@ fn compaction_temporary_projection_files_are_encrypted() -> Result<()> {
     assert_eq!(policy.surface(), ProjectionSurface::CompactionTemporaryFile);
     assert!(policy.requires_encryption_at_rest());
     assert!(!policy.allows_plaintext_temporary_files());
+    Ok(())
+}
+
+#[test]
+fn encryption_domain_debug_redacts_sensitive_metadata() -> Result<()> {
+    let domain = EncryptionDomain::projection(
+        tenant()?,
+        Some(region(1)?),
+        Classification::TopSecret,
+        Some(compartment(21)?),
+        Some(world(31)?),
+    );
+    let debug = alloc::format!("{domain:?}");
+
+    assert!(!debug.contains("TopSecret"));
+    assert!(!debug.contains("TenantId"));
+    assert!(!debug.contains("CompartmentKeyId"));
+    assert!(!debug.contains("WorldId"));
+    assert!(debug.contains("<redacted>"));
+    Ok(())
+}
+
+#[test]
+fn projection_policy_debug_redacts_surface_and_domain() -> Result<()> {
+    let policy = ProjectionEncryptionPolicy::vector_index(EncryptionDomain::projection(
+        tenant()?,
+        Some(region(1)?),
+        Classification::TopSecret,
+        Some(compartment(21)?),
+        Some(world(31)?),
+    ))?;
+    let debug = alloc::format!("{policy:?}");
+
+    assert!(!debug.contains("VectorIndex"));
+    assert!(!debug.contains("TopSecret"));
+    assert!(!debug.contains("CompartmentKeyId"));
+    assert!(debug.contains("<redacted>"));
     Ok(())
 }

@@ -60,6 +60,29 @@ fn deterministic_identity_changes_with_kind() -> Result<()> {
 }
 
 #[test]
+fn deterministic_identity_separates_hash_fields() -> Result<()> {
+    let tenant_id = tenant(1)?;
+    let parent = id(WorldId::from_u128(2))?;
+    let root_with_child_prefix = derive_world_id(
+        tenant_id,
+        None,
+        0,
+        "child-production",
+        WorldKind::Production,
+    )?;
+    let child_with_matching_prefix = derive_world_id(
+        tenant_id,
+        Some(parent),
+        1,
+        "production",
+        WorldKind::Production,
+    )?;
+
+    assert_ne!(root_with_child_prefix, child_with_matching_prefix);
+    Ok(())
+}
+
+#[test]
 fn duplicate_fact_adds_are_idempotent() -> Result<()> {
     let mut world = World::root(tenant(1)?, "production", WorldKind::Production)?;
     world.add_fact(id(FactId::from_u128(7))?)?;

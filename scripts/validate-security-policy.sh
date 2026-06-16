@@ -107,6 +107,8 @@ for derive_name in Debug PartialEq Eq; do
     check_no_sensitive_derive crates/skrifheim-core/src/lib.rs SecurityLabel "$derive_name"
     check_no_sensitive_derive crates/skrifheim-core/src/policy_token.rs PolicyTokenSet "$derive_name"
     check_no_sensitive_derive crates/skrifheim-core/src/policy_token.rs PolicyTokenSlot "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-crypto/src/domain.rs EncryptionDomain "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-crypto/src/projection.rs ProjectionEncryptionPolicy "$derive_name"
     check_no_sensitive_derive crates/skrifheim-crypto/src/lib.rs SignatureEnvelope "$derive_name"
     check_no_sensitive_derive crates/skrifheim-crypto/src/lib.rs SignatureSet "$derive_name"
 done
@@ -144,6 +146,16 @@ done
 
 if grep -E "^[[:space:]]*pub[[:space:]]+enum[[:space:]]+PlannerDecision([^[:alnum:]_]|$)" crates/skrifheim-policy/src/decision.rs >/dev/null; then
     echo "PlannerDecision must not be a publicly constructible enum" >&2
+    exit 1
+fi
+
+if grep -E "^[[:space:]]*pub[[:space:]]+struct[[:space:]]+Timestamp[[:space:]]*\\([[:space:]]*pub[[:space:]]+" crates/skrifheim-core/src/lib.rs >/dev/null; then
+    echo "Timestamp must not expose a public tuple field" >&2
+    exit 1
+fi
+
+if grep -n "debug_assert!" crates/skrifheim-policy/src/decision.rs >/dev/null; then
+    echo "policy decision invariants must not rely on debug_assert" >&2
     exit 1
 fi
 
@@ -200,6 +212,16 @@ fi
 
 if grep -E "\\.field\\(\"(algorithm|epoch|key_id|signature_bytes)\",[[:space:]]*&self\\.(algorithm|epoch|key_id|signature\\.len\\(\\))\\)" crates/skrifheim-crypto/src/lib.rs >/dev/null; then
     echo "SignatureEnvelope Debug must redact key, algorithm, epoch, and signature length" >&2
+    exit 1
+fi
+
+if grep -E "\\.field\\(\"(purpose|tenant_id|region_id|classification|compartment_id|world_id|segment_id)\",[[:space:]]*&self\\.(purpose|tenant_id|region_id|classification|compartment_id|world_id|segment_id)\\)" crates/skrifheim-crypto/src/domain.rs >/dev/null; then
+    echo "EncryptionDomain Debug must redact domain metadata" >&2
+    exit 1
+fi
+
+if grep -E "\\.field\\(\"(surface|domain)\",[[:space:]]*&self\\.(surface|domain)\\)" crates/skrifheim-crypto/src/projection.rs >/dev/null; then
+    echo "ProjectionEncryptionPolicy Debug must redact surface and domain" >&2
     exit 1
 fi
 

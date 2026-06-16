@@ -1,3 +1,5 @@
+use core::fmt;
+
 use skrifheim_core::{Classification, TenantId, WorldId};
 
 use crate::{CompartmentKeyId, RegionKeyId, SegmentKeyId};
@@ -19,7 +21,7 @@ pub enum EncryptionDomainPurpose {
     AuditLog,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy)]
 pub struct EncryptionDomain {
     purpose: EncryptionDomainPurpose,
     tenant_id: TenantId,
@@ -166,6 +168,19 @@ impl EncryptionDomain {
         )
     }
 
+    #[cfg(test)]
+    pub(crate) const fn projection_without_classification_for_test(tenant_id: TenantId) -> Self {
+        Self::new(
+            EncryptionDomainPurpose::Projection,
+            tenant_id,
+            None,
+            None,
+            None,
+            None,
+            None,
+        )
+    }
+
     #[must_use]
     pub const fn backup(tenant_id: TenantId, region_id: Option<RegionKeyId>) -> Self {
         Self::new(
@@ -278,6 +293,22 @@ impl EncryptionDomain {
 
     #[must_use]
     pub fn is_merge_compatible_with(self, other: Self) -> bool {
+        self.structurally_equal(&other)
+    }
+
+    #[must_use]
+    pub fn merge_with(self, other: Self) -> Option<Self> {
+        if self.structurally_equal(&other) {
+            Some(self)
+        } else {
+            None
+        }
+    }
+
+    /// Structural comparison only. Not constant-time and not for authorization
+    /// decisions.
+    #[must_use]
+    pub fn structurally_equal(&self, other: &Self) -> bool {
         self.purpose == other.purpose
             && self.tenant_id.get() == other.tenant_id.get()
             && option_region_eq(self.region_id, other.region_id)
@@ -285,15 +316,6 @@ impl EncryptionDomain {
             && option_compartment_eq(self.compartment_id, other.compartment_id)
             && option_world_eq(self.world_id, other.world_id)
             && option_segment_eq(self.segment_id, other.segment_id)
-    }
-
-    #[must_use]
-    pub fn merge_with(self, other: Self) -> Option<Self> {
-        if self.is_merge_compatible_with(other) {
-            Some(self)
-        } else {
-            None
-        }
     }
 
     const fn new(
@@ -314,6 +336,20 @@ impl EncryptionDomain {
             world_id,
             segment_id,
         }
+    }
+}
+
+impl fmt::Debug for EncryptionDomain {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("EncryptionDomain")
+            .field("purpose", &"<redacted>")
+            .field("tenant_id", &"<redacted>")
+            .field("region_id", &"<redacted>")
+            .field("classification", &"<redacted>")
+            .field("compartment_id", &"<redacted>")
+            .field("world_id", &"<redacted>")
+            .field("segment_id", &"<redacted>")
+            .finish()
     }
 }
 

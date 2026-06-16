@@ -280,10 +280,13 @@ fn evaluate_required_tokens(
     device: &PolicyTokenSet,
     workload: &PolicyTokenSet,
 ) -> u8 {
-    debug_assert!(required.len() <= POLICY_TOKEN_SET_MAX_ITEMS);
-    debug_assert!(subject.len() <= POLICY_TOKEN_SET_MAX_ITEMS);
-    debug_assert!(device.len() <= POLICY_TOKEN_SET_MAX_ITEMS);
-    debug_assert!(workload.len() <= POLICY_TOKEN_SET_MAX_ITEMS);
+    if !policy_token_set_shape_is_valid(required)
+        || !policy_token_set_shape_is_valid(subject)
+        || !policy_token_set_shape_is_valid(device)
+        || !policy_token_set_shape_is_valid(workload)
+    {
+        return 0;
+    }
 
     let mut allowed = 1_u8;
     for token in required.slots() {
@@ -296,6 +299,10 @@ fn evaluate_required_tokens(
         allowed &= (present ^ 1) | token_allowed;
     }
     allowed
+}
+
+fn policy_token_set_shape_is_valid(tokens: &PolicyTokenSet) -> bool {
+    tokens.len() <= POLICY_TOKEN_SET_MAX_ITEMS
 }
 
 pub fn require_allowed(decision: PlannerDecision) -> Result<()> {
