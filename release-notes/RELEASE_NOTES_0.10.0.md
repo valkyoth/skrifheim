@@ -1,6 +1,8 @@
 # skrifheim 0.10.0 Release Notes
 
-Status: implementation complete, pending pentest.
+Status: implementation complete; local release gate passed; pending explicit
+maintainer approval for tag creation after any required external CI or pentest
+confirmation.
 
 ## Scope
 
@@ -97,8 +99,9 @@ persist results, enforce runtime export paths, perform AI processing, or compute
 Bayesian confidence. The new result-classification model is policy metadata for
 future query execution and compliance enforcement.
 
-## Pentest Status
+## Stop Status
 
-The initial `0.10.0` pentest has not yet been run. Root `PENTEST.md` is the
-temporary findings handoff file and must be removed after findings are
-resolved.
+All submitted `0.10.0` pentest findings have been resolved in the codebase, and
+no root `PENTEST.md` is present. Root `PENTEST.md` remains the temporary
+findings handoff file for any further review pass and must be removed after
+findings are resolved.

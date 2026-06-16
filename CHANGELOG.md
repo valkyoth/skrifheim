@@ -47,6 +47,8 @@
   query plan debug output while keeping explicit decision accessors.
 - Added release-gate checks that block direct query debug exposure of world
   identifiers, raw inputs, input counts, and proofs.
+- Updated release documentation to record the resolved 0.10.0 pentest handoff
+  state and local release-gate status.
 - Removed the public raw result-input accessor from query requests; callers get
   aggregate counts while planning keeps label/result metadata internal.
 - Removed public raw metadata accessors from query-result inputs; policy
