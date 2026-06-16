@@ -20,6 +20,8 @@
   BLAKE3 derivation.
 - Resolved the second `0.12.0` pentest pass by documenting the 16-byte BLAKE3
   output truncation used for `WorldId`'s `u128` representation.
+- Prepared `0.12.0` for signed tag creation after pentest and GitHub
+  verification passed.
 - Bumped workspace and internal crate dependency versions to `0.12.0`.
 - Added `0.12.0` release metadata and gate script.
 
