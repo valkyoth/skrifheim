@@ -34,6 +34,8 @@
   authority contexts with redacted diagnostics.
 - Made the label-only aggregate read helper fail closed for empty or oversized
   label sets, matching the 0.10.0 result-input path.
+- Redacted exact query/proof input counts from debug output while keeping
+  explicit count accessors for programmatic policy use.
 - Bumped workspace and internal crate dependency versions to `0.10.0`.
 - Added `0.10.0` release metadata and gate script.
 - Re-checked the local Rust toolchain on 2026-06-16. Rust and Cargo report

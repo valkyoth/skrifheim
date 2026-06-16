@@ -45,6 +45,8 @@ AI processing, and compliance layers must honor.
   authority contexts with redacted diagnostics.
 - Made the label-only aggregate read helper fail closed for empty or oversized
   label sets, matching the 0.10.0 result-input path.
+- Redacted exact query/proof input counts from debug output while keeping
+  explicit count accessors for programmatic policy use.
 - Kept `evaluate_read_set()` and `output_classification()` compatibility
   accessors for existing label-only planning.
 - Updated query planning to accept richer result inputs while keeping the

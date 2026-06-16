@@ -133,7 +133,7 @@ impl fmt::Debug for PolicyProof {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("PolicyProof")
             .field("decision", &self.decision)
-            .field("input_label_count", &self.input_label_count)
+            .field("input_label_count", &"<redacted>")
             .field("result_classification", &"<redacted>")
             .finish()
     }
@@ -357,6 +357,7 @@ mod tests {
         assert!(!proof_debug.contains("ContainsPii"));
         assert!(!proof_debug.contains("NotEligible"));
         assert!(!proof_debug.contains("900"));
+        assert!(!proof_debug.contains("input_label_count: 1"));
         Ok(())
     }
 }

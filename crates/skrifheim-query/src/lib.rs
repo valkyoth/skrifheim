@@ -114,7 +114,7 @@ impl fmt::Debug for QueryRequest {
         f.debug_struct("QueryRequest")
             .field("world", &"<redacted>")
             .field("intent", &self.intent)
-            .field("result_input_count", &self.result_inputs.len())
+            .field("result_input_count", &"<redacted>")
             .field("result_inputs", &"<redacted>")
             .finish()
     }
@@ -447,6 +447,7 @@ mod tests {
         assert!(!request_debug.contains("ContainsPii"));
         assert!(!request_debug.contains("NotEligible"));
         assert!(!request_debug.contains("900"));
+        assert!(!request_debug.contains("result_input_count: 1"));
 
         let plan = request.plan(&authority(Classification::TopSecret)?)?;
         let plan_debug = alloc::format!("{plan:?}");
