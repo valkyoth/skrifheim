@@ -56,7 +56,9 @@ done
 for derive_name in PartialEq Eq; do
     check_no_sensitive_derive crates/skrifheim-policy/src/decision.rs PlannerDecision "$derive_name"
     check_no_sensitive_derive crates/skrifheim-policy/src/decision.rs PolicyProof "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-policy/src/result.rs QueryResultInput "$derive_name"
     check_no_sensitive_derive crates/skrifheim-policy/src/result.rs ResultClassification "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-query/src/lib.rs QueryRequest "$derive_name"
     check_no_sensitive_derive crates/skrifheim-query/src/lib.rs QueryPlan "$derive_name"
 done
 
@@ -74,7 +76,12 @@ for derive_name in Debug; do
 done
 
 for trait_name in PartialEq Eq; do
+    check_no_sensitive_impl crates/skrifheim-policy/src/decision.rs PlannerDecision "$trait_name"
+    check_no_sensitive_impl crates/skrifheim-policy/src/decision.rs PolicyProof "$trait_name"
+    check_no_sensitive_impl crates/skrifheim-policy/src/result.rs QueryResultInput "$trait_name"
     check_no_sensitive_impl crates/skrifheim-policy/src/result.rs ResultClassification "$trait_name"
+    check_no_sensitive_impl crates/skrifheim-query/src/lib.rs QueryRequest "$trait_name"
+    check_no_sensitive_impl crates/skrifheim-query/src/lib.rs QueryPlan "$trait_name"
 done
 
 if grep -E "^[[:space:]]*pub[[:space:]]+enum[[:space:]]+PlannerDecision([^[:alnum:]_]|$)" crates/skrifheim-policy/src/decision.rs >/dev/null; then

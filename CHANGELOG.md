@@ -17,6 +17,8 @@
 - Added redaction-safe policy-token union support for sovereignty propagation.
 - Removed public equality from planner proof/result surfaces and extended the
   security gate to keep sensitive result metadata out of equality comparisons.
+- Extended the equality release gate to cover query-result inputs and query
+  requests, including manual `PartialEq`/`Eq` implementations.
 - Updated query request memory accounting to budget full result inputs instead
   of label metadata alone.
 - Collapsed query requests to a single result-input vector so sensitive label
