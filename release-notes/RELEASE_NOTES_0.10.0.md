@@ -56,6 +56,8 @@ AI processing, and compliance layers must honor.
   keeping explicit intent accessors for programmatic planning.
 - Redacted planner decision state from planner decision, policy proof, and
   query plan debug output while keeping explicit decision accessors.
+- Added release-gate checks that block direct query debug exposure of world
+  identifiers, raw inputs, input counts, and proofs.
 - Removed the public raw result-input accessor from query requests; callers get
   aggregate counts while planning keeps label/result metadata internal.
 - Removed public raw metadata accessors from query-result inputs; policy

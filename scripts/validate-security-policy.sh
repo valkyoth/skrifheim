@@ -170,6 +170,11 @@ if grep -E "\\.field\\(\"intent\",[[:space:]]*&self\\.intent\\)" crates/skrifhei
     exit 1
 fi
 
+if grep -E "\\.field\\(\"(world|result_input_count|result_inputs|proof)\",[[:space:]]*&self\\.(world|result_inputs|result_inputs\\.len\\(\\)|proof)" crates/skrifheim-query/src/lib.rs >/dev/null; then
+    echo "QueryRequest and QueryPlan Debug must redact world, inputs, counts, and proof" >&2
+    exit 1
+fi
+
 if grep -E "\\.field\\(\"(kind|decision)\",[[:space:]]*&self\\.(kind|decision|proof\\.decision\\(\\))\\)" crates/skrifheim-policy/src/decision.rs crates/skrifheim-query/src/lib.rs >/dev/null; then
     echo "Planner decision Debug output must redact decision state" >&2
     exit 1
