@@ -123,6 +123,11 @@ The planner must classify query results:
 - Classified source facts cannot be embedded, summarized, cached, exported, or
   synced into a lower domain without an explicit release path.
 
+The `0.10.0` scaffold records this as `ResultClassification` metadata on
+allowed query plans: output classification, sovereignty tokens, PII-derived
+state, AI-processing eligibility, and a future confidence-threshold hook.
+Rejected and redacted plans deliberately expose only public sentinel metadata.
+
 ## Index And Projection Encryption
 
 Indexes can leak nearly as much as the original facts.

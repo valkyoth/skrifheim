@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+## 0.10.0
+
+- Added query-result classification metadata for sovereignty propagation,
+  PII-derived output marking, AI-processing eligibility, and confidence
+  threshold policy hooks.
+- Query plans now preserve full result-classification metadata for allowed
+  plans while masking non-allow proofs to a public, non-PII, AI-eligible
+  sentinel.
+- Added redaction-safe policy-token union support for sovereignty propagation.
+- Bumped workspace and internal crate dependency versions to `0.10.0`.
+- Added `0.10.0` release metadata and gate script.
+- Re-checked the local Rust toolchain on 2026-06-16. Rust and Cargo report
+  `1.96.0`; the workspace has no external crate dependencies beyond local
+  workspace crates.
+
 ## 0.9.0
 
 - Added encryption-domain metadata for tenant, region, classification,

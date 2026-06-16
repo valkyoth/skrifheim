@@ -5,11 +5,16 @@ extern crate alloc;
 
 mod context;
 mod decision;
+mod result;
 
 #[cfg(test)]
 mod tests;
 
 pub use context::{AuthorityContext, DeviceContext, SubjectContext, WorkloadContext};
 pub use decision::{
-    DecisionKind, PlannerDecision, PolicyProof, evaluate_read, evaluate_read_set, require_allowed,
+    DecisionKind, PlannerDecision, PolicyProof, evaluate_read, evaluate_read_result_set,
+    evaluate_read_set, require_allowed,
+};
+pub use result::{
+    AiProcessingEligibility, ConfidenceThreshold, PiiMarker, QueryResultInput, ResultClassification,
 };

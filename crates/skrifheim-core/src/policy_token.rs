@@ -60,6 +60,13 @@ impl PolicyTokenSet {
         contains_policy_token_ct(self, needle)
     }
 
+    pub fn union(&self, other: &Self) -> Result<Self> {
+        let mut merged = Self::empty();
+        merged.extend_from(self)?;
+        merged.extend_from(other)?;
+        Ok(merged)
+    }
+
     /// Compares canonical token-set structure with ordinary equality.
     ///
     /// This is not constant-time. Access-control and policy decisions must use
@@ -86,6 +93,25 @@ impl PolicyTokenSet {
     #[must_use]
     pub fn slots(&self) -> &[PolicyTokenSlot; POLICY_TOKEN_SET_MAX_ITEMS] {
         &self.slots
+    }
+
+    fn extend_from(&mut self, other: &Self) -> Result<()> {
+        for slot in other.slots {
+            if slot.present_mask() == 1 && !self.contains_slot_structural(slot) {
+                if self.len == POLICY_TOKEN_SET_MAX_ITEMS {
+                    return Err(SkrifheimError::InvalidSecurityToken);
+                }
+                self.slots[self.len] = slot;
+                self.len += 1;
+            }
+        }
+        Ok(())
+    }
+
+    fn contains_slot_structural(&self, needle: PolicyTokenSlot) -> bool {
+        self.slots
+            .iter()
+            .any(|slot| slot.structurally_equal(needle))
     }
 }
 

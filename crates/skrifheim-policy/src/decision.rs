@@ -3,7 +3,8 @@ use skrifheim_core::{
     SecurityLabel, SkrifheimError, contains_policy_token_slot_ct,
 };
 
-use crate::AuthorityContext;
+use crate::result::derive_result_classification;
+use crate::{AuthorityContext, QueryResultInput, ResultClassification};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum PlannerDecision {
@@ -59,20 +60,20 @@ pub enum DecisionKind {
 pub struct PolicyProof {
     decision: DecisionKind,
     input_label_count: usize,
-    output_classification: Classification,
+    result_classification: ResultClassification,
 }
 
 impl PolicyProof {
     #[must_use]
-    pub const fn new(
+    pub fn new(
         decision: DecisionKind,
         input_label_count: usize,
-        output_classification: Classification,
+        result_classification: ResultClassification,
     ) -> Self {
         Self {
             decision,
             input_label_count,
-            output_classification,
+            result_classification,
         }
     }
 
@@ -88,7 +89,12 @@ impl PolicyProof {
 
     #[must_use]
     pub const fn output_classification(&self) -> Classification {
-        self.output_classification
+        self.result_classification.output_classification()
+    }
+
+    #[must_use]
+    pub const fn result_classification(&self) -> &ResultClassification {
+        &self.result_classification
     }
 }
 
@@ -116,21 +122,82 @@ pub fn evaluate_read_set(
     if rejected == 1 {
         return PlannerDecision::Reject {
             reason: AccessDeniedReason::new(),
-            proof: PolicyProof::new(DecisionKind::Reject, labels.len(), Classification::Public),
+            proof: PolicyProof::new(
+                DecisionKind::Reject,
+                labels.len(),
+                ResultClassification::public(),
+            ),
         };
     }
 
     if redacted == 1 {
         return PlannerDecision::Redact {
             reason: AccessDeniedReason::new(),
-            proof: PolicyProof::new(DecisionKind::Redact, labels.len(), Classification::Public),
+            proof: PolicyProof::new(
+                DecisionKind::Redact,
+                labels.len(),
+                ResultClassification::public(),
+            ),
         };
     }
 
     let output_classification = calculate_output_classification(labels);
     PlannerDecision::Allow {
-        proof: PolicyProof::new(DecisionKind::Allow, labels.len(), output_classification),
+        proof: PolicyProof::new(
+            DecisionKind::Allow,
+            labels.len(),
+            ResultClassification::classification_only(output_classification),
+        ),
     }
+}
+
+pub fn evaluate_read_result_set(
+    authority: &AuthorityContext,
+    inputs: &[QueryResultInput],
+) -> Result<PlannerDecision> {
+    if inputs.is_empty() {
+        return Err(SkrifheimError::InvalidQueryRequest);
+    }
+    let mut rejected = 0_u8;
+    let mut redacted = 0_u8;
+
+    for input in inputs {
+        match evaluate_label(authority, input.label()) {
+            DecisionKind::Allow => {}
+            DecisionKind::Redact => redacted = 1,
+            DecisionKind::Reject => rejected = 1,
+        }
+    }
+
+    if rejected == 1 {
+        return Ok(PlannerDecision::Reject {
+            reason: AccessDeniedReason::new(),
+            proof: PolicyProof::new(
+                DecisionKind::Reject,
+                inputs.len(),
+                ResultClassification::public(),
+            ),
+        });
+    }
+
+    if redacted == 1 {
+        return Ok(PlannerDecision::Redact {
+            reason: AccessDeniedReason::new(),
+            proof: PolicyProof::new(
+                DecisionKind::Redact,
+                inputs.len(),
+                ResultClassification::public(),
+            ),
+        });
+    }
+
+    Ok(PlannerDecision::Allow {
+        proof: PolicyProof::new(
+            DecisionKind::Allow,
+            inputs.len(),
+            derive_result_classification(inputs)?,
+        ),
+    })
 }
 
 #[must_use]

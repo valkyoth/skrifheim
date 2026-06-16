@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "skrifheim"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "skrifheim-core",
  "skrifheim-crypto",
@@ -17,18 +17,18 @@ dependencies = [
 
 [[package]]
 name = "skrifheim-core"
-version = "0.9.0"
+version = "0.10.0"
 
 [[package]]
 name = "skrifheim-crypto"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "skrifheim-core",
 ]
 
 [[package]]
 name = "skrifheim-fact"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "skrifheim-core",
  "skrifheim-crypto",
@@ -36,14 +36,14 @@ dependencies = [
 
 [[package]]
 name = "skrifheim-policy"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "skrifheim-core",
 ]
 
 [[package]]
 name = "skrifheim-query"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "skrifheim-core",
  "skrifheim-policy",
@@ -51,7 +51,7 @@ dependencies = [
 
 [[package]]
 name = "skrifheim-storage"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "skrifheim-core",
  "skrifheim-crypto",
@@ -59,11 +59,11 @@ dependencies = [
 
 [[package]]
 name = "skrifheim-world"
-version = "0.9.0"
+version = "0.10.0"
 dependencies = [
  "skrifheim-core",
 ]
 
 [[package]]
 name = "xtask"
-version = "0.9.0"
+version = "0.10.0"

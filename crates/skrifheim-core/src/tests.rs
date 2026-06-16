@@ -126,6 +126,35 @@ fn policy_token_slot_access_is_bounded() -> Result<()> {
 }
 
 #[test]
+fn policy_token_union_deduplicates_without_exposing_tokens() -> Result<()> {
+    let left = PolicyTokenSet::new(vec![String::from("eu"), String::from("se")])?;
+    let right = PolicyTokenSet::new(vec![String::from("SE"), String::from("no")])?;
+    let merged = left.union(&right)?;
+
+    assert_eq!(merged.len(), 3);
+    assert!(merged.contains("EU"));
+    assert!(merged.contains("SE"));
+    assert!(merged.contains("NO"));
+    Ok(())
+}
+
+#[test]
+fn policy_token_union_rejects_overflow() -> Result<()> {
+    let mut left = Vec::new();
+    for index in 0..POLICY_TOKEN_SET_MAX_ITEMS {
+        left.push(alloc::format!("TOKEN-{index}"));
+    }
+    let left = PolicyTokenSet::new(left)?;
+    let right = PolicyTokenSet::new(vec![String::from("EXTRA")])?;
+
+    assert!(matches!(
+        left.union(&right),
+        Err(SkrifheimError::InvalidSecurityToken)
+    ));
+    Ok(())
+}
+
+#[test]
 fn debug_redacts_security_labels_policy_tokens_and_values() -> Result<()> {
     let label = SecurityLabel::new(
         Classification::TopSecret,
