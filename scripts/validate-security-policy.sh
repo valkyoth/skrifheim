@@ -39,7 +39,7 @@ check_no_sensitive_impl() {
     file="$1"
     type_name="$2"
     trait_name="$3"
-    if grep -E "impl([[:space:]]+[^[:space:]]+)?[[:space:]]+$trait_name[[:space:]]+for[[:space:]]+$type_name([^[:alnum:]_]|$)" "$file" >/dev/null; then
+    if grep -E "^[[:space:]]*impl([[:space:]]*<[^>]*>)?[[:space:]]+(::)?([[:alnum:]_]+::)*$trait_name([[:space:]]*<[^>]*>)?[[:space:]]+for[[:space:]]+$type_name([^[:alnum:]_]|$)" "$file" >/dev/null; then
         echo "$file must not implement $trait_name for sensitive type $type_name" >&2
         exit 1
     fi

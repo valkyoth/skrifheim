@@ -30,6 +30,8 @@ AI processing, and compliance layers must honor.
   `PartialEq`/`Eq`.
 - Extended the equality release gate to cover query-result inputs and query
   requests, including manual `PartialEq`/`Eq` implementations.
+- Hardened manual equality blockers to catch path-qualified trait
+  implementations such as `core::cmp::PartialEq`.
 - Hardened release-gate impl-method scans with brace-depth tracking so later
   methods in sensitive impl blocks cannot bypass API exposure checks.
 - Updated query request memory accounting to budget full result inputs instead
