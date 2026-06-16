@@ -73,7 +73,7 @@ impl PlannerDecision {
 impl fmt::Debug for PlannerDecision {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("PlannerDecision")
-            .field("kind", &self.kind)
+            .field("kind", &"<redacted>")
             .field("denial_reason", &self.reason.as_ref().map(|_| "<redacted>"))
             .field("proof", &"<redacted>")
             .finish()
@@ -136,7 +136,7 @@ impl PolicyProof {
 impl fmt::Debug for PolicyProof {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("PolicyProof")
-            .field("decision", &self.decision)
+            .field("decision", &"<redacted>")
             .field("input_label_count", &"<redacted>")
             .field("result_classification", &"<redacted>")
             .finish()
@@ -349,6 +349,7 @@ mod tests {
         let decision = PlannerDecision::allow(1, classification);
 
         let decision_debug = format!("{decision:?}");
+        assert!(!decision_debug.contains("Allow"));
         assert!(!decision_debug.contains("Secret"));
         assert!(!decision_debug.contains("SE"));
         assert!(!decision_debug.contains("ContainsPii"));
@@ -356,6 +357,7 @@ mod tests {
         assert!(!decision_debug.contains("900"));
 
         let proof_debug = format!("{:?}", decision.proof());
+        assert!(!proof_debug.contains("Allow"));
         assert!(!proof_debug.contains("Secret"));
         assert!(!proof_debug.contains("SE"));
         assert!(!proof_debug.contains("ContainsPii"));

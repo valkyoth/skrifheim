@@ -181,7 +181,7 @@ impl fmt::Debug for QueryPlan {
         f.debug_struct("QueryPlan")
             .field("world", &"<redacted>")
             .field("intent", &"<redacted>")
-            .field("decision", &self.proof.decision())
+            .field("decision", &"<redacted>")
             .field("proof", &"<redacted>")
             .finish()
     }
@@ -456,6 +456,7 @@ mod tests {
         assert!(!plan_debug.contains("NotEligible"));
         assert!(!plan_debug.contains("900"));
         assert!(!plan_debug.contains("BuildContextPack"));
+        assert!(!plan_debug.contains("Allow"));
         Ok(())
     }
 }

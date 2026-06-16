@@ -54,6 +54,8 @@ AI processing, and compliance layers must honor.
   redacted diagnostic output.
 - Redacted query intent from query request and query plan debug output while
   keeping explicit intent accessors for programmatic planning.
+- Redacted planner decision state from planner decision, policy proof, and
+  query plan debug output while keeping explicit decision accessors.
 - Removed the public raw result-input accessor from query requests; callers get
   aggregate counts while planning keeps label/result metadata internal.
 - Removed public raw metadata accessors from query-result inputs; policy
