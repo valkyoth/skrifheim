@@ -10,6 +10,8 @@
 - Query plans now preserve full result-classification metadata for allowed
   plans while masking non-allow proofs to a public, non-PII, AI-eligible
   sentinel.
+- Added explicit policy-layer result input count bounds and tests for combined
+  sovereignty overflow.
 - Added redaction-safe policy-token union support for sovereignty propagation.
 - Bumped workspace and internal crate dependency versions to `0.10.0`.
 - Added `0.10.0` release metadata and gate script.

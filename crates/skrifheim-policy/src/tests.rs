@@ -235,6 +235,26 @@ fn aggregate_read_proof_counts_all_labels() -> Result<()> {
 }
 
 #[test]
+fn result_set_rejects_too_many_inputs() -> Result<()> {
+    let authority = authority(
+        Classification::TopSecret,
+        Classification::TopSecret,
+        Classification::TopSecret,
+        Vec::new(),
+        Vec::new(),
+    )?;
+    let mut inputs = Vec::new();
+    for _ in 0..=RESULT_CLASSIFICATION_INPUT_MAX_ITEMS {
+        inputs.push(QueryResultInput::label_only(SecurityLabel::public()));
+    }
+    assert!(matches!(
+        evaluate_read_result_set(&authority, &inputs),
+        Err(SkrifheimError::InvalidQueryRequest)
+    ));
+    Ok(())
+}
+
+#[test]
 fn dangerous_join_rejects_when_output_exceeds_authority() -> Result<()> {
     let authority = authority(
         Classification::Restricted,

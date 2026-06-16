@@ -4,7 +4,9 @@ use skrifheim_core::{
 };
 
 use crate::result::derive_result_classification;
-use crate::{AuthorityContext, QueryResultInput, ResultClassification};
+use crate::{
+    AuthorityContext, QueryResultInput, RESULT_CLASSIFICATION_INPUT_MAX_ITEMS, ResultClassification,
+};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum PlannerDecision {
@@ -155,7 +157,7 @@ pub fn evaluate_read_result_set(
     authority: &AuthorityContext,
     inputs: &[QueryResultInput],
 ) -> Result<PlannerDecision> {
-    if inputs.is_empty() {
+    if inputs.is_empty() || inputs.len() > RESULT_CLASSIFICATION_INPUT_MAX_ITEMS {
         return Err(SkrifheimError::InvalidQueryRequest);
     }
     let mut rejected = 0_u8;

@@ -16,5 +16,6 @@ pub use decision::{
     evaluate_read_set, require_allowed,
 };
 pub use result::{
-    AiProcessingEligibility, ConfidenceThreshold, PiiMarker, QueryResultInput, ResultClassification,
+    AiProcessingEligibility, ConfidenceThreshold, PiiMarker, QueryResultInput,
+    RESULT_CLASSIFICATION_INPUT_MAX_ITEMS, ResultClassification,
 };

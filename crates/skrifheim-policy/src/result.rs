@@ -3,6 +3,8 @@ use skrifheim_core::{
     Classification, PolicyTokenSet, Result, SecurityLabel, SkrifheimError, canonical_policy_set,
 };
 
+pub const RESULT_CLASSIFICATION_INPUT_MAX_ITEMS: usize = 64;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum PiiMarker {
     NoPii,
@@ -226,5 +228,98 @@ const fn join_thresholds(
         (Some(left), None) => Some(left),
         (None, Some(right)) => Some(right),
         (None, None) => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use alloc::{string::String, vec, vec::Vec};
+
+    fn input(
+        classification: Classification,
+        sovereignty: Vec<String>,
+        pii: PiiMarker,
+        ai_processing: AiProcessingEligibility,
+        threshold: Option<u16>,
+    ) -> Result<QueryResultInput> {
+        QueryResultInput::new(
+            SecurityLabel::new(classification, Vec::new(), Vec::new())?,
+            sovereignty,
+            pii,
+            ai_processing,
+            match threshold {
+                Some(value) => Some(ConfidenceThreshold::new(value)?),
+                None => None,
+            },
+        )
+    }
+
+    #[test]
+    fn confidence_threshold_is_bounded() {
+        assert!(matches!(
+            ConfidenceThreshold::new(ConfidenceThreshold::MAX + 1),
+            Err(SkrifheimError::InvalidConfidence)
+        ));
+    }
+
+    #[test]
+    fn result_classification_joins_all_metadata() -> Result<()> {
+        let result = derive_result_classification(&[
+            input(
+                Classification::Restricted,
+                vec![String::from("eu")],
+                PiiMarker::NoPii,
+                AiProcessingEligibility::Eligible,
+                Some(500),
+            )?,
+            input(
+                Classification::Secret,
+                vec![String::from("se")],
+                PiiMarker::ContainsPii,
+                AiProcessingEligibility::NotEligible,
+                Some(900),
+            )?,
+        ])?;
+
+        assert_eq!(result.output_classification(), Classification::Secret);
+        assert_eq!(result.sovereignty().len(), 2);
+        assert!(result.sovereignty().contains("EU"));
+        assert!(result.sovereignty().contains("SE"));
+        assert_eq!(result.pii(), PiiMarker::ContainsPii);
+        assert_eq!(result.ai_processing(), AiProcessingEligibility::NotEligible);
+        assert_eq!(
+            result.confidence_threshold(),
+            Some(ConfidenceThreshold::new(900)?)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn result_classification_rejects_empty_input_sets() {
+        assert!(matches!(
+            derive_result_classification(&[]),
+            Err(SkrifheimError::InvalidQueryRequest)
+        ));
+    }
+
+    #[test]
+    fn result_classification_rejects_sovereignty_overflow() -> Result<()> {
+        let mut inputs = Vec::new();
+        for index in 0..=RESULT_CLASSIFICATION_INPUT_MAX_ITEMS {
+            inputs.push(input(
+                Classification::Public,
+                vec![alloc::format!("JURISDICTION-{index}")],
+                PiiMarker::NoPii,
+                AiProcessingEligibility::Eligible,
+                None,
+            )?);
+        }
+
+        assert!(matches!(
+            derive_result_classification(&inputs),
+            Err(SkrifheimError::InvalidSecurityToken)
+        ));
+        Ok(())
     }
 }

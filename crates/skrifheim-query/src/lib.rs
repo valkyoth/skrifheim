@@ -8,10 +8,11 @@ use skrifheim_core::{
     Result, SECURITY_LABEL_FIXED_STORAGE_BYTES, SecurityLabel, SkrifheimError, WorldId,
 };
 use skrifheim_policy::{
-    AuthorityContext, PolicyProof, QueryResultInput, ResultClassification, evaluate_read_result_set,
+    AuthorityContext, PolicyProof, QueryResultInput, RESULT_CLASSIFICATION_INPUT_MAX_ITEMS,
+    ResultClassification, evaluate_read_result_set,
 };
 
-pub const QUERY_REQUEST_LABEL_MAX_ITEMS: usize = 64;
+pub const QUERY_REQUEST_LABEL_MAX_ITEMS: usize = RESULT_CLASSIFICATION_INPUT_MAX_ITEMS;
 pub const QUERY_REQUEST_LABEL_MEMORY_BUDGET_BYTES: usize =
     QUERY_REQUEST_LABEL_MAX_ITEMS * SECURITY_LABEL_FIXED_STORAGE_BYTES;
 const _: () = assert!(QUERY_REQUEST_LABEL_MEMORY_BUDGET_BYTES <= 2 * 1024 * 1024);
