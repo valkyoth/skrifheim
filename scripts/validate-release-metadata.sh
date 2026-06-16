@@ -13,6 +13,7 @@ SECURITY.md
 CHANGELOG.md
 docs/IMPLEMENTATION_PLAN.md
 docs/VERSION_PLAN.md
+docs/memory-secrecy.md
 docs/security-controls.md
 docs/threat-model.md
 release-notes/RELEASE_NOTES_0.1.0.md
@@ -26,6 +27,7 @@ release-notes/RELEASE_NOTES_0.8.0.md
 release-notes/RELEASE_NOTES_0.9.0.md
 release-notes/RELEASE_NOTES_0.10.0.md
 release-notes/RELEASE_NOTES_0.11.0.md
+release-notes/RELEASE_NOTES_0.12.0.md
 security/pentest/v0.5.0.md
 security/pentest/v0.6.0.md
 "

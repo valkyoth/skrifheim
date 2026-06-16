@@ -10,6 +10,7 @@ use skrifheim_core::{Result, SkrifheimError};
 mod domain;
 mod key;
 mod projection;
+mod secret;
 
 #[cfg(test)]
 mod tests;
@@ -20,6 +21,7 @@ pub use key::{
     KeyLifecycleState, KeyMetadata, KeyRotationPreflight, KeyScope, RegionKeyId, SegmentKeyId,
 };
 pub use projection::{ProjectionEncryptionPolicy, ProjectionSurface};
+pub use secret::{SECRET_VALUE_MAX_BYTES, SecretBytes};
 
 pub const ED25519_SIG_BYTES: usize = 64;
 pub const ML_DSA_65_SIG_BYTES: usize = 3293;

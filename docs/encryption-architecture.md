@@ -159,24 +159,30 @@ durable projection builder exists.
 
 Rust memory safety does not automatically protect secrets in RAM.
 
-Planned controls:
+The `0.12.0` scaffold admits `sanitization` `1.1.0` with only the `alloc`
+feature and exposes `SecretBytes` in `skrifheim-crypto`. `SecretBytes` is a
+bounded, non-clone, redacted, clear-on-drop wrapper for future key material,
+bearer tokens, and other crypto-control-plane secrets. See
+[Memory Secrecy](memory-secrecy.md).
+
+Current controls:
 
 - no secrets in logs or panic text,
-- secret buffers cleaned with the project-approved `sanitization` crate after
-  dependency admission,
+- secret buffers cleaned with the project-approved `sanitization` crate,
+- raw secret byte access only through closure-scoped APIs,
+- rejected owned secret buffers clear before drop,
+- secret wrappers must not derive `Debug`, `Clone`, `PartialEq`, or `Eq`.
+
+Planned controls:
+
 - classification-sensitive metadata types such as `QueryResultInput` and
   `ResultClassification` must be included in the reviewed cleanup-on-drop plan
   before untrusted query results are durable or cross a trust boundary,
 - crypto-erasure metadata such as `KeyErasureMetadata` must be prioritised for
-  reviewed cleanup-on-drop with key-material types once `sanitization` is
-  admitted,
-- raw key material types must implement reviewed cleanup on drop through the
-  project-approved `sanitization` path before they are admitted,
+  reviewed cleanup-on-drop with key-material types,
 - `zeroize` is not admitted for this project; if `sanitization` cannot satisfy
   a future key-material requirement, the unsafe-boundary exception process must
   be completed before key bytes land,
-- raw key material types must not derive `Debug` or `Clone` without an explicit
-  security review and release-gate test,
 - optional locked memory for key material where the OS supports it,
 - no swapping of long-lived key material where practical,
 - separated secure arenas for key material,

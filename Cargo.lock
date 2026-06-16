@@ -3,8 +3,14 @@
 version = 4
 
 [[package]]
+name = "sanitization"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1fbb455919a30bfc235cd956c90ba1ff774888c7c66c0743eeaf720ebc5ac64d"
+
+[[package]]
 name = "skrifheim"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "skrifheim-core",
  "skrifheim-crypto",
@@ -17,18 +23,19 @@ dependencies = [
 
 [[package]]
 name = "skrifheim-core"
-version = "0.11.0"
+version = "0.12.0"
 
 [[package]]
 name = "skrifheim-crypto"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
+ "sanitization",
  "skrifheim-core",
 ]
 
 [[package]]
 name = "skrifheim-fact"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "skrifheim-core",
  "skrifheim-crypto",
@@ -36,14 +43,14 @@ dependencies = [
 
 [[package]]
 name = "skrifheim-policy"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "skrifheim-core",
 ]
 
 [[package]]
 name = "skrifheim-query"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "skrifheim-core",
  "skrifheim-policy",
@@ -51,7 +58,7 @@ dependencies = [
 
 [[package]]
 name = "skrifheim-storage"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "skrifheim-core",
  "skrifheim-crypto",
@@ -59,11 +66,11 @@ dependencies = [
 
 [[package]]
 name = "skrifheim-world"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "skrifheim-core",
 ]
 
 [[package]]
 name = "xtask"
-version = "0.11.0"
+version = "0.12.0"

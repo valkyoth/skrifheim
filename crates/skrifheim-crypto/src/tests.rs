@@ -3,6 +3,7 @@ use skrifheim_core::{Result, TenantId};
 
 mod domain;
 mod key_lifecycle;
+mod secret;
 mod signature;
 
 fn id<T>(id: Option<T>) -> Result<T> {

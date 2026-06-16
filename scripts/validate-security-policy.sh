@@ -114,6 +114,10 @@ for derive_name in Debug PartialEq Eq; do
     check_no_sensitive_derive crates/skrifheim-crypto/src/lib.rs SignatureSet "$derive_name"
 done
 
+for derive_name in Debug Clone PartialEq Eq; do
+    check_no_sensitive_derive crates/skrifheim-crypto/src/secret.rs SecretBytes "$derive_name"
+done
+
 for derive_name in PartialEq Eq; do
     check_no_sensitive_derive crates/skrifheim-policy/src/decision.rs PlannerDecision "$derive_name"
     check_no_sensitive_derive crates/skrifheim-policy/src/decision.rs PolicyProof "$derive_name"
@@ -178,6 +182,12 @@ check_no_public_impl_method \
     "label|sovereignty|pii|ai_processing|confidence_threshold" \
     "QueryResultInput must not expose raw metadata accessors publicly"
 
+check_no_public_impl_method \
+    crates/skrifheim-crypto/src/secret.rs \
+    SecretBytes \
+    "as_slice|as_mut_slice|to_vec|into_vec|bytes|secret_bytes|expose" \
+    "SecretBytes must not expose raw secret bytes through public accessors"
+
 if grep -E "\\.field\\(\"intent\",[[:space:]]*&self\\.intent\\)" crates/skrifheim-query/src/lib.rs >/dev/null; then
     echo "QueryRequest and QueryPlan Debug must redact query intent" >&2
     exit 1
@@ -223,6 +233,11 @@ fi
 
 if grep -E "\\.field\\(\"(surface|domain)\",[[:space:]]*&self\\.(surface|domain)\\)" crates/skrifheim-crypto/src/projection.rs >/dev/null; then
     echo "ProjectionEncryptionPolicy Debug must redact surface and domain" >&2
+    exit 1
+fi
+
+if grep -E "\\.field\\(\"(bytes|len|capacity|contents)\",[[:space:]]*&self\\.bytes" crates/skrifheim-crypto/src/secret.rs >/dev/null; then
+    echo "SecretBytes Debug must redact secret contents and exact size" >&2
     exit 1
 fi
 

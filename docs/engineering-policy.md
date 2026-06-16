@@ -69,7 +69,28 @@ Removal condition:
 
 Current external dependency exceptions:
 
-- None.
+- Crate: `sanitization` `1.1.0`
+  Used by: `skrifheim-crypto`
+  Scope: `SecretBytes` clear-on-drop heap secret storage for memory-secrecy
+  scaffolding.
+  Reason: secret cleanup requires a compiler-resistant volatile wipe boundary
+  that safe local Rust cannot provide by itself.
+  Why not local: implementing the wipe backend locally would require adding an
+  unsafe boundary to `skrifheim`; `sanitization` is a separate reviewed
+  no-std-first crate owned by the same project family and intended for this
+  purpose.
+  Unsafe review: `skrifheim` uses only the safe API with
+  `default-features = false` and `alloc`; the selected feature set uses the
+  crate's documented volatile wipe boundary and no platform memory-locking,
+  derive, serde, zeroize, or subtle interop features.
+  Transitive dependency review: selected features have no transitive runtime
+  dependencies.
+  License: `MIT OR Apache-2.0`, allowed by `deny.toml`.
+  Review deadline: revisit before any release that stores real key material or
+  before `v0.20.0`, whichever comes first.
+  Removal condition: remove or replace if the crate adds mandatory transitive
+  dependencies, changes license posture, loses no-std support, or if a narrower
+  admitted local unsafe boundary is approved.
 
 ## Specific Crate Rules
 

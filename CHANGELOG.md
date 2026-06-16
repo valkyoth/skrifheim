@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+## 0.12.0
+
+- Added `SecretBytes`, a bounded secret-material wrapper in `skrifheim-crypto`
+  backed by admitted `sanitization` clear-on-drop storage.
+- Added closure-only access, explicit clearing, redacted diagnostics, and
+  oversize/capacity rejection for secret bytes.
+- Admitted `sanitization` `1.1.0` with only the `alloc` feature under the
+  external dependency policy.
+- Added memory-secrecy documentation and security-control tracking.
+- Added release-gate checks that prevent `SecretBytes` from deriving `Debug`,
+  `Clone`, `PartialEq`, or `Eq`, and block raw secret byte accessors.
+- Bumped workspace and internal crate dependency versions to `0.12.0`.
+- Added `0.12.0` release metadata and gate script.
+
 ## 0.11.0
 
 - Added projection encryption policy primitives for secondary indexes, graph

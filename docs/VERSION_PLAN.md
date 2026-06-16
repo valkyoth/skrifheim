@@ -224,7 +224,7 @@ Deliverables:
 - secret value wrapper,
 - no-debug secret policy,
 - no secrets in panic/log text tests,
-- approved cleanup path using `sanitization` after dependency admission,
+- approved cleanup path using admitted `sanitization`,
 - memory-secrecy documentation.
 
 ## v0.13.0 - Identity And Audit Event Model
