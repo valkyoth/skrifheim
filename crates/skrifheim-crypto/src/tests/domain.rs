@@ -143,3 +143,81 @@ fn special_purpose_domains_do_not_merge_with_data_domains() -> Result<()> {
     assert_eq!(ai.purpose(), EncryptionDomainPurpose::AiArtifact);
     Ok(())
 }
+
+#[test]
+fn projection_policy_requires_projection_domains() -> Result<()> {
+    let tenant_id = tenant()?;
+    let region_id = Some(region(1)?);
+    let domain = EncryptionDomain::projection(
+        tenant_id,
+        region_id,
+        Classification::Secret,
+        Some(compartment(21)?),
+        Some(world(31)?),
+    );
+    let segment_domain = EncryptionDomain::segment(
+        tenant_id,
+        region_id,
+        Classification::Secret,
+        compartment(21)?,
+        segment(41)?,
+    );
+
+    let secondary = ProjectionEncryptionPolicy::secondary_index(domain)?;
+    let graph = ProjectionEncryptionPolicy::graph_index(domain)?;
+    let search = ProjectionEncryptionPolicy::search_index(domain)?;
+    let vector = ProjectionEncryptionPolicy::vector_index(domain)?;
+    let columnar = ProjectionEncryptionPolicy::columnar_projection(domain)?;
+
+    assert!(secondary.requires_encryption_at_rest());
+    assert!(graph.requires_encryption_at_rest());
+    assert!(search.requires_encryption_at_rest());
+    assert!(vector.requires_encryption_at_rest());
+    assert!(columnar.requires_encryption_at_rest());
+    assert!(matches!(
+        ProjectionEncryptionPolicy::secondary_index(segment_domain),
+        Err(SkrifheimError::InvalidProjectionPolicy)
+    ));
+    Ok(())
+}
+
+#[test]
+fn projection_policy_rejects_cross_compartment_mixing() -> Result<()> {
+    let tenant_id = tenant()?;
+    let region_id = Some(region(1)?);
+    let left = ProjectionEncryptionPolicy::search_index(EncryptionDomain::projection(
+        tenant_id,
+        region_id,
+        Classification::Secret,
+        Some(compartment(21)?),
+        Some(world(31)?),
+    ))?;
+    let right = ProjectionEncryptionPolicy::search_index(EncryptionDomain::projection(
+        tenant_id,
+        region_id,
+        Classification::Secret,
+        Some(compartment(22)?),
+        Some(world(31)?),
+    ))?;
+
+    assert!(!left.is_domain_compatible_with(right));
+    assert_eq!(left.merge_with(right), None);
+    Ok(())
+}
+
+#[test]
+fn compaction_temporary_projection_files_are_encrypted() -> Result<()> {
+    let policy =
+        ProjectionEncryptionPolicy::compaction_temporary_file(EncryptionDomain::projection(
+            tenant()?,
+            Some(region(1)?),
+            Classification::Restricted,
+            Some(compartment(21)?),
+            Some(world(31)?),
+        ))?;
+
+    assert_eq!(policy.surface(), ProjectionSurface::CompactionTemporaryFile);
+    assert!(policy.requires_encryption_at_rest());
+    assert!(!policy.allows_plaintext_temporary_files());
+    Ok(())
+}

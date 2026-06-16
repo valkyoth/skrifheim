@@ -148,6 +148,13 @@ These must be encrypted and policy-scoped:
 Projection builders must refuse to mix incompatible compartments or encryption
 domains.
 
+The `0.11.0` scaffold records this as `ProjectionEncryptionPolicy` metadata for
+secondary indexes, graph indexes, search indexes, vector indexes, columnar
+projections, cache files, and compaction temporary files. These policies require
+`EncryptionDomainPurpose::Projection`, require encryption at rest, disallow
+plaintext temporary files, and expose domain-compatibility checks before any
+durable projection builder exists.
+
 ## Memory Secrecy
 
 Rust memory safety does not automatically protect secrets in RAM.

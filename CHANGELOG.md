@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+## 0.11.0
+
+- Added projection encryption policy primitives for secondary indexes, graph
+  indexes, search indexes, vector indexes, columnar projections, cache files,
+  and compaction temporary files.
+- Projection encryption policies now require
+  `EncryptionDomainPurpose::Projection` domains and reject non-projection
+  domains.
+- Added domain-compatibility checks for projection builders so
+  cross-compartment and otherwise incompatible projection/index mixing can be
+  rejected before any durable projection work exists.
+- Added explicit encrypted-at-rest and no-plaintext-temporary-file hooks for
+  projection and compaction surfaces.
+- Added tests for encrypted index/projection surfaces, cross-compartment
+  rejection, invalid domain rejection, and encrypted compaction temporary files.
+- Bumped workspace and internal crate dependency versions to `0.11.0`.
+- Added `0.11.0` release metadata and gate script.
+
 ## 0.10.0
 
 - Added query-result classification metadata for sovereignty propagation,

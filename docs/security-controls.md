@@ -33,6 +33,7 @@ Status: baseline control map
 | Key hierarchy | Root trust, deployment, region, tenant, compartment, segment, and data key parent metadata with tenant deployment/region and segment/data compartment binding | Scaffolded | `skrifheim-crypto` |
 | Key lifecycle | Creation, activation, rotation preflight, compromise, quarantine, unsafe-parent rejection, destruction, and destruction-gated crypto-erasure metadata | Scaffolded | `skrifheim-crypto` |
 | Encryption domains | Tenant, region, classification, compartment, world, WAL, segment, projection, backup, export, AI artifact, WASM/plugin secret, and audit-log blast-radius boundaries with exact merge compatibility checks | Scaffolded | `skrifheim-crypto` |
+| Index and projection encryption | Secondary, graph, search, vector, columnar, cache, and compaction projection surfaces must use projection encryption domains, require encryption at rest, disallow plaintext temporary files, and reject incompatible domain mixing | Scaffolded | `skrifheim-crypto` |
 | Encryption control plane | Key hierarchy, lifecycle, domains, memory secrecy, encrypted projections, and compromise handling | Planned | `docs/encryption-architecture.md` |
 | Legal/compliance planning | Instance/node, data, and operation passports with signed law-pack metadata and legal operation/transfer decisions | Planned | `docs/hyve-cluster-and-compliance-roadmap.md` |
 | Sovereign placement | Placement and failover decisions constrained by jurisdiction, compliance, data category, and legal basis | Planned | `docs/hyve-cluster-and-compliance-roadmap.md` |

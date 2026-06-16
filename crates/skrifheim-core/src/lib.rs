@@ -271,6 +271,7 @@ pub enum SkrifheimError {
     InvalidWorldDiff,
     InvalidKeyHierarchy,
     InvalidKeyLifecycle,
+    InvalidProjectionPolicy,
 }
 
 impl fmt::Display for SkrifheimError {
@@ -303,6 +304,7 @@ impl fmt::Display for SkrifheimError {
             Self::InvalidWorldDiff => write!(f, "target world is not a child of source world"),
             Self::InvalidKeyHierarchy => write!(f, "invalid key hierarchy"),
             Self::InvalidKeyLifecycle => write!(f, "invalid key lifecycle"),
+            Self::InvalidProjectionPolicy => write!(f, "invalid projection encryption policy"),
         }
     }
 }
@@ -335,6 +337,7 @@ impl SkrifheimError {
             Self::InvalidWorldDiff => "invalid world diff",
             Self::InvalidKeyHierarchy => "invalid key hierarchy",
             Self::InvalidKeyLifecycle => "invalid key lifecycle",
+            Self::InvalidProjectionPolicy => "invalid projection policy",
         }
     }
 }

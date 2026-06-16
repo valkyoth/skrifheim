@@ -31,9 +31,7 @@ provenance; classification-aware planning; tamper-evident storage; and CMS
 integration through typed facts, atomic releases, sanitized projections, and AI
 artifacts with provenance.
 
-The project is currently at the `v0.10.0` release-prep stop. Local release
-gates and submitted pentest handoffs are green; final tag creation waits for
-GitHub verification and explicit maintainer approval.
+The project is currently at the `v0.11.0` implementation stop, pending pentest.
 It is not a usable database engine.
 
 `skrifheim` is licensed under the European Union Public Licence 1.2.
@@ -49,7 +47,7 @@ It is not a usable database engine.
 | `no_std` core policy | Active | Library crates under `crates/` use `#![no_std]` and `#![forbid(unsafe_code)]`. |
 | Dependency policy | Active | `cargo deny` policy denies wildcard external dependencies and unknown sources. |
 | Security reporting | Active | Private-first vulnerability process in `SECURITY.md`. |
-| Release notes | Active | `release-notes/RELEASE_NOTES_0.10.0.md` records scope, verification, and non-claims. |
+| Release notes | Active | `release-notes/RELEASE_NOTES_0.11.0.md` records scope, verification, and non-claims. |
 
 ### Initial Models
 
@@ -60,6 +58,7 @@ It is not a usable database engine.
 | World overlays | Scaffolded | Worlds support deterministic metadata identity, parent pointers, depth, added facts, hidden facts, fork, diff, promotion preflight, rollback preflight, and conflict categories. |
 | Authority-aware policy context | Scaffolded | Subject, device, and workload context constrain clearance, compartments, releasability, output classification, and aggregate proof metadata. |
 | Query-result classification | Scaffolded | Allowed plans propagate output classification, sovereignty, PII-derived state, AI-processing eligibility, and confidence-threshold policy hooks. |
+| Index and projection encryption policy | Scaffolded | Secondary, graph, search, vector, columnar, cache, and compaction projection surfaces require projection encryption domains and reject incompatible domain mixing. |
 | Crypto-agile envelopes | Scaffolded | Algorithm IDs, crypto epochs, bounded signature sets, key hierarchy metadata, key lifecycle metadata, and encryption-domain metadata exist without locking the database to one permanent algorithm. |
 | Storage metadata | Scaffolded | Immutable segment headers validate magic, version, transaction range, and body length. |
 | Query planning primitives | Scaffolded | Query requests become policy decision plans for early read, causality, simulation, and context intents. |
@@ -69,7 +68,7 @@ It is not a usable database engine.
 | Capability | Status | Notes |
 | --- | --- | --- |
 | Local gate | Active | `scripts/checks.sh` runs formatting, shell syntax, doc links, release metadata, engineering policy, modularity, security policy, clippy, and tests. |
-| `v0.10.0` release gate | Active | `scripts/release_0_10_gate.sh` runs local checks, dependency policy, RustSec audit, CLI startup, and rootless Podman smoke. |
+| `v0.11.0` release gate | Active | `scripts/release_0_11_gate.sh` runs local checks, dependency policy, RustSec audit, CLI startup, and rootless Podman smoke. |
 | Rootless Podman | Active | `Containerfile` builds and runs the current CLI in a non-root runtime image. |
 | Pentest stop rule | Active | Every version has a clean implementation stop before tagging. Root `PENTEST.md` is temporary findings input and must be removed after resolution. |
 | Modularity gate | Active | Non-generated Rust files over 500 lines fail the local gate. |
@@ -137,7 +136,7 @@ cargo run -p skrifheim
 Expected output:
 
 ```text
-skrifheim 0.10.0
+skrifheim 0.11.0
 ```
 
 Run the normal local checks:
@@ -146,16 +145,16 @@ Run the normal local checks:
 scripts/checks.sh
 ```
 
-Run the `v0.10.0` release gate:
+Run the `v0.11.0` release gate:
 
 ```bash
-scripts/release_0_10_gate.sh
+scripts/release_0_11_gate.sh
 ```
 
 Skip the rootless Podman part only when the host cannot run containers:
 
 ```bash
-SKRIFHEIM_SKIP_PODMAN=1 scripts/release_0_10_gate.sh
+SKRIFHEIM_SKIP_PODMAN=1 scripts/release_0_11_gate.sh
 ```
 
 ## Rootless Podman
