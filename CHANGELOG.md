@@ -21,6 +21,8 @@
   of label metadata alone.
 - Collapsed query requests to a single result-input vector so sensitive label
   state is not duplicated inside the request model.
+- Normalized query request result-input vector capacity after validation so
+  spare caller capacity is not retained.
 - Bumped workspace and internal crate dependency versions to `0.10.0`.
 - Added `0.10.0` release metadata and gate script.
 - Re-checked the local Rust toolchain on 2026-06-16. Rust and Cargo report

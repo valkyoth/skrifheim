@@ -32,6 +32,8 @@ AI processing, and compliance layers must honor.
   of label metadata alone.
 - Collapsed query requests to a single result-input vector so sensitive label
   state is not duplicated inside the request model.
+- Normalized query request result-input vector capacity after validation so
+  spare caller capacity is not retained.
 - Kept `evaluate_read_set()` and `output_classification()` compatibility
   accessors for existing label-only planning.
 - Updated query planning to accept richer result inputs while keeping the

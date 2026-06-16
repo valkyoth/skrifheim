@@ -47,10 +47,10 @@ impl QueryRequest {
         if requested_labels.is_empty() || requested_labels.len() > QUERY_REQUEST_LABEL_MAX_ITEMS {
             return Err(SkrifheimError::InvalidQueryRequest);
         }
-        let result_inputs = requested_labels
-            .into_iter()
-            .map(QueryResultInput::label_only)
-            .collect();
+        let mut result_inputs = Vec::with_capacity(requested_labels.len());
+        for label in requested_labels {
+            result_inputs.push(QueryResultInput::label_only(label));
+        }
         Ok(Self {
             world,
             intent,
@@ -66,6 +66,7 @@ impl QueryRequest {
         if result_inputs.is_empty() || result_inputs.len() > QUERY_REQUEST_LABEL_MAX_ITEMS {
             return Err(SkrifheimError::InvalidQueryRequest);
         }
+        let result_inputs = exact_capacity_result_inputs(result_inputs);
         Ok(Self {
             world,
             intent,
@@ -105,6 +106,14 @@ impl QueryRequest {
             proof: aggregate_decision.proof().clone(),
         })
     }
+}
+
+fn exact_capacity_result_inputs(inputs: Vec<QueryResultInput>) -> Vec<QueryResultInput> {
+    let mut exact = Vec::with_capacity(inputs.len());
+    for input in inputs {
+        exact.push(input);
+    }
+    exact
 }
 
 impl QueryPlan {
@@ -363,6 +372,28 @@ mod tests {
             request.result_inputs()[1].label().classification(),
             Classification::Secret
         );
+        Ok(())
+    }
+
+    #[test]
+    fn result_input_constructor_drops_excess_vec_capacity() -> skrifheim_core::Result<()> {
+        let mut inputs = Vec::with_capacity(QUERY_REQUEST_LABEL_MAX_ITEMS);
+        inputs.push(QueryResultInput::new(
+            SecurityLabel::new(Classification::Secret, Vec::new(), Vec::new())?,
+            Vec::new(),
+            PiiMarker::NoPii,
+            AiProcessingEligibility::Eligible,
+            None,
+        )?);
+
+        let request = QueryRequest::with_result_inputs(
+            id(WorldId::from_u128(1))?,
+            QueryIntent::ReadFacts,
+            inputs,
+        )?;
+
+        assert_eq!(request.result_inputs.len(), 1);
+        assert_eq!(request.result_inputs.capacity(), 1);
         Ok(())
     }
 
