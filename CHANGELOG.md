@@ -45,6 +45,8 @@
   authority contexts with redacted diagnostics.
 - Made the label-only aggregate read helper fail closed for empty or oversized
   label sets, matching the 0.10.0 result-input path.
+- Masked invalid aggregate label-set proof counts to a public zero sentinel
+  instead of preserving exact oversized request lengths.
 - Redacted exact query/proof input counts from debug output while keeping
   explicit count accessors for programmatic policy use.
 - Bumped workspace and internal crate dependency versions to `0.10.0`.

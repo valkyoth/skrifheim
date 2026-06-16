@@ -268,10 +268,7 @@ fn aggregate_read_rejects_oversized_label_sets() -> Result<()> {
     }
     let decision = evaluate_read_set(&authority, &labels);
     assert_eq!(decision.kind(), DecisionKind::Reject);
-    assert_eq!(
-        decision.proof().input_label_count(),
-        RESULT_CLASSIFICATION_INPUT_MAX_ITEMS + 1
-    );
+    assert_eq!(decision.proof().input_label_count(), 0);
     assert_eq!(
         decision.proof().output_classification(),
         Classification::Public

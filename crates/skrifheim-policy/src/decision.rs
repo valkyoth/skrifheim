@@ -154,7 +154,7 @@ pub fn evaluate_read_set(
     labels: &[SecurityLabel],
 ) -> PlannerDecision {
     if labels.is_empty() || labels.len() > RESULT_CLASSIFICATION_INPUT_MAX_ITEMS {
-        return PlannerDecision::reject(labels.len());
+        return PlannerDecision::reject(0);
     }
 
     let mut rejected = 0_u8;
