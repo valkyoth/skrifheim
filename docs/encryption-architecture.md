@@ -157,6 +157,12 @@ Planned controls:
 - no secrets in logs or panic text,
 - secret buffers cleaned with the project-approved `sanitization` crate after
   dependency admission,
+- classification-sensitive metadata types such as `QueryResultInput` and
+  `ResultClassification` must be included in the reviewed cleanup-on-drop plan
+  before untrusted query results are durable or cross a trust boundary,
+- crypto-erasure metadata such as `KeyErasureMetadata` must be prioritised for
+  reviewed cleanup-on-drop with key-material types once `sanitization` is
+  admitted,
 - raw key material types must implement reviewed cleanup on drop through the
   project-approved `sanitization` path before they are admitted,
 - `zeroize` is not admitted for this project; if `sanitization` cannot satisfy

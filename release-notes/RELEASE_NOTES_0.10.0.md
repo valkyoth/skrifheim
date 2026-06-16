@@ -60,6 +60,21 @@ AI processing, and compliance layers must honor.
   query plan debug output while keeping explicit decision accessors.
 - Added release-gate checks that block direct query debug exposure of world
   identifiers, raw inputs, input counts, and proofs.
+- Hardened `PolicyTokenSet::union()` so deduplication uses the fixed-slot
+  token comparison path and merged sets are canonical regardless of operand
+  order.
+- Redacted `SignatureEnvelope` debug output for algorithm, epoch, key
+  identifier, and signature length.
+- Redacted `SecurityLabel` debug output for classification and exact policy
+  token counts.
+- Masked policy-proof input counts to zero for rejected and redacted decisions
+  while preserving counts for allowed plans.
+- Preserved the trusted-code distinction between rejected and redacted
+  decisions in `require_allowed()` without changing the generic public error
+  message.
+- Documented that `QueryResultInput`, `ResultClassification`, and
+  `KeyErasureMetadata` need reviewed cleanup-on-drop once the project-approved
+  `sanitization` crate is admitted.
 - Removed the public raw result-input accessor from query requests; callers get
   aggregate counts while planning keeps label/result metadata internal.
 - Removed public raw metadata accessors from query-result inputs; policy

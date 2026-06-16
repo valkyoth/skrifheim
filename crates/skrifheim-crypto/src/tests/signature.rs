@@ -62,7 +62,10 @@ fn debug_redacts_signature_bytes_and_set_contents() -> Result<()> {
     )?;
     let envelope_debug = alloc::format!("{envelope:?}");
     assert!(envelope_debug.contains("signature_bytes"));
-    assert!(envelope_debug.contains("64"));
+    assert!(!envelope_debug.contains("Ed25519"));
+    assert!(!envelope_debug.contains("debug-key"));
+    assert!(!envelope_debug.contains("CryptoEpoch"));
+    assert!(!envelope_debug.contains("64"));
     assert!(!envelope_debug.contains("[255"));
 
     let set = SignatureSet::new(vec![envelope])?;

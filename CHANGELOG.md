@@ -49,6 +49,11 @@
   identifiers, raw inputs, input counts, and proofs.
 - Updated release documentation to record the resolved 0.10.0 pentest handoff
   state and local release-gate status.
+- Resolved the first `0.10.0` pentest pass by hardening policy-token union
+  deduplication, preserving canonical union order, redacting signature and
+  security-label diagnostics, masking non-allow proof input counts, preserving
+  redact/reject distinction for trusted errors, and documenting remaining
+  memory-secrecy and production constant-time admission requirements.
 - Removed the public raw result-input accessor from query requests; callers get
   aggregate counts while planning keeps label/result metadata internal.
 - Removed public raw metadata accessors from query-result inputs; policy

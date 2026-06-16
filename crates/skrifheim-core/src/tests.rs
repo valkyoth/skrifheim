@@ -130,11 +130,13 @@ fn policy_token_union_deduplicates_without_exposing_tokens() -> Result<()> {
     let left = PolicyTokenSet::new(vec![String::from("eu"), String::from("se")])?;
     let right = PolicyTokenSet::new(vec![String::from("SE"), String::from("no")])?;
     let merged = left.union(&right)?;
+    let reversed = right.union(&left)?;
 
     assert_eq!(merged.len(), 3);
     assert!(merged.contains("EU"));
     assert!(merged.contains("SE"));
     assert!(merged.contains("NO"));
+    assert!(merged.structurally_equal(&reversed));
     Ok(())
 }
 
@@ -167,11 +169,14 @@ fn debug_redacts_security_labels_policy_tokens_and_values() -> Result<()> {
     let bytes_debug = alloc::format!("{:?}", Value::Bytes(vec![1, 2, 3]));
 
     assert!(!token_set_debug.contains("EU-COMMAND"));
+    assert!(!token_set_debug.contains("\"EU\""));
     assert!(!label_debug.contains("EU-COMMAND"));
     assert!(!label_debug.contains("\"EU\""));
+    assert!(!label_debug.contains("TopSecret"));
+    assert!(!label_debug.contains("compartment_count: 1"));
+    assert!(!label_debug.contains("releasable_to_count: 1"));
     assert!(!text_debug.contains("classified payload"));
     assert!(!bytes_debug.contains("[1, 2, 3]"));
-    assert!(label_debug.contains("TopSecret"));
     assert!(text_debug.contains("<redacted>"));
     assert!(bytes_debug.contains("<redacted>"));
     Ok(())

@@ -101,9 +101,9 @@ impl PolicyProof {
         input_label_count: usize,
         result_classification: ResultClassification,
     ) -> Self {
-        let result_classification = match decision {
-            DecisionKind::Allow => result_classification,
-            DecisionKind::Redact | DecisionKind::Reject => ResultClassification::public(),
+        let (input_label_count, result_classification) = match decision {
+            DecisionKind::Allow => (input_label_count, result_classification),
+            DecisionKind::Redact | DecisionKind::Reject => (0, ResultClassification::public()),
         };
         Self {
             decision,
@@ -299,10 +299,11 @@ fn evaluate_required_tokens(
 }
 
 pub fn require_allowed(decision: PlannerDecision) -> Result<()> {
-    if decision.kind() == DecisionKind::Allow {
-        return Ok(());
+    match decision.kind() {
+        DecisionKind::Allow => Ok(()),
+        DecisionKind::Redact => Err(SkrifheimError::PolicyRedacted(AccessDeniedReason::new())),
+        DecisionKind::Reject => Err(SkrifheimError::PolicyDenied(AccessDeniedReason::new())),
     }
-    Err(SkrifheimError::PolicyDenied(AccessDeniedReason::new()))
 }
 
 #[cfg(test)]
@@ -388,6 +389,7 @@ mod tests {
             let result = proof.result_classification();
 
             assert_eq!(proof.decision(), decision);
+            assert_eq!(proof.input_label_count(), 0);
             assert_eq!(result.output_classification(), Classification::Public);
             assert_eq!(result.sovereignty().len(), 0);
             assert_eq!(result.pii(), crate::PiiMarker::NoPii);

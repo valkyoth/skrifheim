@@ -311,6 +311,7 @@ fn dangerous_join_rejects_when_output_exceeds_authority() -> Result<()> {
     ];
     let decision = evaluate_read_set(&authority, &labels);
     assert_eq!(decision.kind(), DecisionKind::Reject);
+    assert_eq!(decision.proof().input_label_count(), 0);
     assert_eq!(
         decision.proof().output_classification(),
         Classification::Public
@@ -337,10 +338,40 @@ fn aggregate_redaction_uses_constant_shape_denial() -> Result<()> {
     let reason = AccessDeniedReason::new();
     assert_eq!(decision.denial_reason(), Some(&reason));
     assert_eq!(decision.proof().decision(), DecisionKind::Redact);
+    assert_eq!(decision.proof().input_label_count(), 0);
     assert_eq!(
         decision.proof().output_classification(),
         Classification::Public
     );
+    Ok(())
+}
+
+#[test]
+fn require_allowed_preserves_redact_and_reject_distinction() -> Result<()> {
+    let authority = authority(
+        Classification::Secret,
+        Classification::Secret,
+        Classification::Secret,
+        Vec::new(),
+        Vec::new(),
+    )?;
+    let redacted = evaluate_read(
+        &authority,
+        &SecurityLabel::new(Classification::Secret, Vec::new(), vec![String::from("EU")])?,
+    );
+    let rejected = evaluate_read(
+        &authority,
+        &SecurityLabel::new(Classification::TopSecret, Vec::new(), Vec::new())?,
+    );
+
+    assert!(matches!(
+        require_allowed(redacted),
+        Err(SkrifheimError::PolicyRedacted(_))
+    ));
+    assert!(matches!(
+        require_allowed(rejected),
+        Err(SkrifheimError::PolicyDenied(_))
+    ));
     Ok(())
 }
 

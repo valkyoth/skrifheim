@@ -257,7 +257,7 @@ mod tests {
         let plan = request.plan(&authority)?;
         assert!(plan.has_redaction());
         assert!(!plan.is_executable());
-        assert_eq!(plan.proof().input_label_count(), 1);
+        assert_eq!(plan.proof().input_label_count(), 0);
         assert_eq!(plan.output_classification(), Classification::Public);
         Ok(())
     }

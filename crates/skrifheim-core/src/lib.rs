@@ -184,9 +184,9 @@ impl SecurityLabel {
 impl fmt::Debug for SecurityLabel {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("SecurityLabel")
-            .field("classification", &self.classification)
-            .field("compartment_count", &self.compartments.len())
-            .field("releasable_to_count", &self.releasable_to.len())
+            .field("classification", &"<redacted>")
+            .field("compartment_count", &"<redacted>")
+            .field("releasable_to_count", &"<redacted>")
             .field("tokens", &"<redacted>")
             .finish()
     }
@@ -266,6 +266,7 @@ pub enum SkrifheimError {
     InvalidQueryRequest,
     SelfReferentialFact,
     PolicyDenied(AccessDeniedReason),
+    PolicyRedacted(AccessDeniedReason),
     InvalidStorageHeader(String),
     InvalidWorldDiff,
     InvalidKeyHierarchy,
@@ -297,6 +298,7 @@ impl fmt::Display for SkrifheimError {
             Self::InvalidQueryRequest => write!(f, "invalid query request"),
             Self::SelfReferentialFact => write!(f, "fact cannot refer to itself causally"),
             Self::PolicyDenied(_) => write!(f, "policy denied operation: access denied"),
+            Self::PolicyRedacted(_) => write!(f, "policy redacted operation: access denied"),
             Self::InvalidStorageHeader(reason) => write!(f, "invalid storage header: {reason}"),
             Self::InvalidWorldDiff => write!(f, "target world is not a child of source world"),
             Self::InvalidKeyHierarchy => write!(f, "invalid key hierarchy"),
@@ -309,7 +311,7 @@ impl SkrifheimError {
     #[must_use]
     pub const fn public_message(&self) -> &'static str {
         match self {
-            Self::PolicyDenied(_) => "operation denied",
+            Self::PolicyDenied(_) | Self::PolicyRedacted(_) => "operation denied",
             Self::InvalidStorageHeader(_) => "invalid storage data",
             Self::InvalidSignatureEnvelope(_) => "invalid signature envelope",
             Self::MissingFactField(_) => "invalid fact",

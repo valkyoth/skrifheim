@@ -170,6 +170,16 @@ if grep -E "\\.field\\(\"intent\",[[:space:]]*&self\\.intent\\)" crates/skrifhei
     exit 1
 fi
 
+if grep -E "\\.field\\(\"(classification|compartment_count|releasable_to_count)\",[[:space:]]*&self\\.(classification|compartments\\.len\\(\\)|releasable_to\\.len\\(\\))\\)" crates/skrifheim-core/src/lib.rs >/dev/null; then
+    echo "SecurityLabel Debug must redact classification and token counts" >&2
+    exit 1
+fi
+
+if grep -E "\\.field\\(\"(algorithm|epoch|key_id|signature_bytes)\",[[:space:]]*&self\\.(algorithm|epoch|key_id|signature\\.len\\(\\))\\)" crates/skrifheim-crypto/src/lib.rs >/dev/null; then
+    echo "SignatureEnvelope Debug must redact key, algorithm, epoch, and signature length" >&2
+    exit 1
+fi
+
 if grep -E "\\.field\\(\"(world|result_input_count|result_inputs|proof)\",[[:space:]]*&self\\.(world|result_inputs|result_inputs\\.len\\(\\)|proof)" crates/skrifheim-query/src/lib.rs >/dev/null; then
     echo "QueryRequest and QueryPlan Debug must redact world, inputs, counts, and proof" >&2
     exit 1
@@ -177,6 +187,11 @@ fi
 
 if grep -E "\\.field\\(\"(kind|decision)\",[[:space:]]*&self\\.(kind|decision|proof\\.decision\\(\\))\\)" crates/skrifheim-policy/src/decision.rs crates/skrifheim-query/src/lib.rs >/dev/null; then
     echo "Planner decision Debug output must redact decision state" >&2
+    exit 1
+fi
+
+if grep -E "\\.any\\([|][^|]*[|][[:space:]]*[^)]*structurally_equal" crates/skrifheim-core/src/policy_token.rs >/dev/null; then
+    echo "PolicyTokenSet deduplication must not use early-exit structural scans" >&2
     exit 1
 fi
 

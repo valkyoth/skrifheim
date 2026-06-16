@@ -64,6 +64,7 @@ impl PolicyTokenSet {
         let mut merged = Self::empty();
         merged.extend_from(self)?;
         merged.extend_from(other)?;
+        merged.sort_present_slots();
         Ok(merged)
     }
 
@@ -97,7 +98,7 @@ impl PolicyTokenSet {
 
     fn extend_from(&mut self, other: &Self) -> Result<()> {
         for slot in other.slots {
-            if slot.present_mask() == 1 && !self.contains_slot_structural(slot) {
+            if slot.present_mask() == 1 && !contains_policy_token_slot_ct(self, slot) {
                 if self.len == POLICY_TOKEN_SET_MAX_ITEMS {
                     return Err(SkrifheimError::InvalidSecurityToken);
                 }
@@ -108,10 +109,18 @@ impl PolicyTokenSet {
         Ok(())
     }
 
-    fn contains_slot_structural(&self, needle: PolicyTokenSlot) -> bool {
-        self.slots
-            .iter()
-            .any(|slot| slot.structurally_equal(needle))
+    fn sort_present_slots(&mut self) {
+        let mut index = 1;
+        while index < self.len {
+            let slot = self.slots[index];
+            let mut insert_at = index;
+            while insert_at > 0 && slot_sorts_after(self.slots[insert_at - 1], slot) {
+                self.slots[insert_at] = self.slots[insert_at - 1];
+                insert_at -= 1;
+            }
+            self.slots[insert_at] = slot;
+            index += 1;
+        }
     }
 }
 
@@ -242,6 +251,19 @@ fn policy_token_eq_ct(left: PolicyTokenSlot, right: PolicyTokenSlot) -> u8 {
         index += 1;
     }
     black_box(usize_is_zero(black_box(diff)))
+}
+
+fn slot_sorts_after(left: PolicyTokenSlot, right: PolicyTokenSlot) -> bool {
+    let mut index = 0;
+    while index < POLICY_TOKEN_MAX_BYTES {
+        let left_byte = left.bytes[index];
+        let right_byte = right.bytes[index];
+        if left_byte != right_byte {
+            return left_byte > right_byte;
+        }
+        index += 1;
+    }
+    left.len > right.len
 }
 
 fn usize_is_zero(value: usize) -> u8 {

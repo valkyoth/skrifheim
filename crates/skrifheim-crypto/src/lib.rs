@@ -106,10 +106,10 @@ pub struct SignatureEnvelope {
 impl fmt::Debug for SignatureEnvelope {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("SignatureEnvelope")
-            .field("algorithm", &self.algorithm)
-            .field("epoch", &self.epoch)
-            .field("key_id", &self.key_id)
-            .field("signature_bytes", &self.signature.len())
+            .field("algorithm", &"<redacted>")
+            .field("epoch", &"<redacted>")
+            .field("key_id", &"<redacted>")
+            .field("signature_bytes", &"<redacted>")
             .finish()
     }
 }
