@@ -85,8 +85,9 @@ checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
 
 [[package]]
 name = "skrifheim"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
+ "skrifheim-audit",
  "skrifheim-core",
  "skrifheim-crypto",
  "skrifheim-fact",
@@ -97,12 +98,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "skrifheim-audit"
+version = "0.13.0"
+dependencies = [
+ "skrifheim-core",
+ "skrifheim-crypto",
+]
+
+[[package]]
 name = "skrifheim-core"
-version = "0.12.0"
+version = "0.13.0"
 
 [[package]]
 name = "skrifheim-crypto"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "sanitization",
  "skrifheim-core",
@@ -110,7 +119,7 @@ dependencies = [
 
 [[package]]
 name = "skrifheim-fact"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "skrifheim-core",
  "skrifheim-crypto",
@@ -118,14 +127,14 @@ dependencies = [
 
 [[package]]
 name = "skrifheim-policy"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "skrifheim-core",
 ]
 
 [[package]]
 name = "skrifheim-query"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "skrifheim-core",
  "skrifheim-policy",
@@ -133,7 +142,7 @@ dependencies = [
 
 [[package]]
 name = "skrifheim-storage"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "skrifheim-core",
  "skrifheim-crypto",
@@ -141,7 +150,7 @@ dependencies = [
 
 [[package]]
 name = "skrifheim-world"
-version = "0.12.0"
+version = "0.13.0"
 dependencies = [
  "blake3",
  "skrifheim-core",
@@ -149,4 +158,4 @@ dependencies = [
 
 [[package]]
 name = "xtask"
-version = "0.12.0"
+version = "0.13.0"

@@ -112,6 +112,13 @@ for derive_name in Debug PartialEq Eq; do
     check_no_sensitive_derive crates/skrifheim-crypto/src/projection.rs ProjectionEncryptionPolicy "$derive_name"
     check_no_sensitive_derive crates/skrifheim-crypto/src/lib.rs SignatureEnvelope "$derive_name"
     check_no_sensitive_derive crates/skrifheim-crypto/src/lib.rs SignatureSet "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-audit/src/lib.rs AuditIdentity "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-audit/src/lib.rs AttestationEvidenceRef "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-audit/src/lib.rs DeviceAuditContext "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-audit/src/lib.rs WorkloadAuditContext "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-audit/src/lib.rs AuditEvent "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-audit/src/lib.rs AuditLogProtection "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-audit/src/lib.rs AuditRecord "$derive_name"
 done
 
 for derive_name in Debug Clone PartialEq Eq; do
@@ -267,6 +274,11 @@ fi
 
 if grep -E "\\.field\\(\"(bytes|len|capacity|contents)\",[[:space:]]*&self\\.bytes" crates/skrifheim-crypto/src/secret.rs >/dev/null; then
     echo "SecretBytes Debug must redact secret contents and exact size" >&2
+    exit 1
+fi
+
+if grep -E "\\.field\\(\"(event_id|tenant_id|occurred_at|device|workload|targets|crypto_epoch|domain|signature_count)\",[[:space:]]*&self\\." crates/skrifheim-audit/src/lib.rs >/dev/null; then
+    echo "Audit Debug output must redact identifiers, targets, domains, signatures, and epochs" >&2
     exit 1
 fi
 

@@ -35,6 +35,7 @@ from truth.
 - `skrifheim-world`: production, draft, simulation, legal/audit, user-local, mission-capsule worlds.
 - `skrifheim-policy`: clearance lattice, compartment checks, releasability, planner decisions.
 - `skrifheim-crypto`: crypto-agile envelopes, epochs, algorithm identifiers, future threshold signatures.
+- `skrifheim-audit`: identities, attestation evidence references, audit events, and audit-log protection metadata.
 - `skrifheim-storage`: WAL, immutable segment metadata, Merkle manifests, content-addressed blobs.
 - `skrifheim-query`: query intent, policy-aware planning, context-pack planning.
 - `skrifheim-compliance`: future legal/compliance passports, law-pack metadata, and legal transfer decisions.
@@ -152,6 +153,8 @@ Build crypto-agile metadata before hard-coding any final algorithm:
 - query-result classification rules,
 - encrypted index and projection boundaries,
 - memory secrecy rules for key material and secret buffers,
+- audit-log protection metadata and actor attribution for dangerous
+  control-plane operations,
 - threshold approval records,
 - signed manifests,
 - encrypted and signed audit logs,

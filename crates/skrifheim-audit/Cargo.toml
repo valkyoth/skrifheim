@@ -1,6 +1,6 @@
 [package]
-name = "skrifheim-storage"
-description = "Storage metadata and validation primitives for skrifheim."
+name = "skrifheim-audit"
+description = "Identity and audit-event model for skrifheim."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

@@ -57,9 +57,19 @@ nonzero_id!(PredicateId);
 nonzero_id!(PolicyId);
 nonzero_id!(TxId);
 nonzero_id!(ActorId);
+nonzero_id!(UserId);
 nonzero_id!(DeviceId);
 nonzero_id!(WorkloadId);
+nonzero_id!(ServiceId);
+nonzero_id!(NodeId);
+nonzero_id!(ReplicaId);
+nonzero_id!(PluginId);
+nonzero_id!(AiWorkerId);
+nonzero_id!(BackupAgentId);
+nonzero_id!(AdminToolId);
 nonzero_id!(SourceId);
+nonzero_id!(AttestationEvidenceId);
+nonzero_id!(AuditEventId);
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Timestamp(u64);
@@ -288,6 +298,10 @@ pub enum SkrifheimError {
     InvalidKeyLifecycle,
     InvalidProjectionPolicy,
     InvalidSecretMaterial,
+    MissingAuditActor,
+    InvalidAttestationEvidence,
+    InvalidAuditEvent,
+    InvalidAuditProtection,
 }
 
 impl fmt::Display for SkrifheimError {
@@ -322,6 +336,10 @@ impl fmt::Display for SkrifheimError {
             Self::InvalidKeyLifecycle => write!(f, "invalid key lifecycle"),
             Self::InvalidProjectionPolicy => write!(f, "invalid projection encryption policy"),
             Self::InvalidSecretMaterial => write!(f, "invalid secret material"),
+            Self::MissingAuditActor => write!(f, "audit event is missing required actor"),
+            Self::InvalidAttestationEvidence => write!(f, "invalid attestation evidence"),
+            Self::InvalidAuditEvent => write!(f, "invalid audit event"),
+            Self::InvalidAuditProtection => write!(f, "invalid audit protection"),
         }
     }
 }
@@ -356,6 +374,10 @@ impl SkrifheimError {
             Self::InvalidKeyLifecycle => "invalid key lifecycle",
             Self::InvalidProjectionPolicy => "invalid projection policy",
             Self::InvalidSecretMaterial => "invalid secret material",
+            Self::MissingAuditActor => "invalid audit event",
+            Self::InvalidAttestationEvidence => "invalid attestation evidence",
+            Self::InvalidAuditEvent => "invalid audit event",
+            Self::InvalidAuditProtection => "invalid audit protection",
         }
     }
 }

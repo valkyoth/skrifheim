@@ -1,6 +1,7 @@
 #![no_std]
 #![forbid(unsafe_code)]
 
+pub use skrifheim_audit as audit;
 pub use skrifheim_core as core;
 pub use skrifheim_crypto as crypto;
 pub use skrifheim_fact as fact;

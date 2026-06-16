@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+## 0.13.0
+
+- Added `skrifheim-audit` for typed identity and audit-event metadata.
+- Added core IDs for user, service, node, replica, plugin, AI worker,
+  backup-agent, admin-tool, attestation-evidence, and audit-event identities.
+- Added audit identities, device/workload attestation references, audit events,
+  break-glass event skeletons, audit-log protection metadata, and audit records.
+- Added validation for required actor attribution, attestation time bounds,
+  audit-log encryption domains, and event/protection tenant consistency.
+- Added redacted debug output and security-gate checks for audit metadata.
+- Bumped workspace and internal crate dependency versions to `0.13.0`.
+- Added `0.13.0` release metadata and gate script.
+
 ## 0.12.0
 
 - Added `SecretBytes`, a bounded secret-material wrapper in `skrifheim-crypto`
