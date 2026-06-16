@@ -1,8 +1,8 @@
 # skrifheim 0.10.0 Release Notes
 
-Status: implementation complete; local release gate passed; pending explicit
-maintainer approval for tag creation after any required external CI or pentest
-confirmation.
+Status: release-prep complete; local release gate and submitted pentest
+handoffs passed; pending GitHub verification and explicit maintainer approval
+for tag creation.
 
 ## Scope
 
@@ -124,6 +124,7 @@ future query execution and compliance enforcement.
 ## Stop Status
 
 All submitted `0.10.0` pentest findings have been resolved in the codebase, and
-no root `PENTEST.md` is present. Root `PENTEST.md` remains the temporary
-findings handoff file for any further review pass and must be removed after
-findings are resolved.
+no root `PENTEST.md` is present. The local `scripts/release_0_10_gate.sh` gate
+passed on 2026-06-16 for the release-prep commit. Root `PENTEST.md` remains the
+temporary findings handoff file for any further review pass and must be removed
+after findings are resolved.

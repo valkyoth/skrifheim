@@ -31,9 +31,9 @@ provenance; classification-aware planning; tamper-evident storage; and CMS
 integration through typed facts, atomic releases, sanitized projections, and AI
 artifacts with provenance.
 
-The project is currently at the `v0.10.0` implementation stop. Local release
-gates are green; final tag creation still waits for explicit maintainer
-approval after any required external CI or pentest confirmation.
+The project is currently at the `v0.10.0` release-prep stop. Local release
+gates and submitted pentest handoffs are green; final tag creation waits for
+GitHub verification and explicit maintainer approval.
 It is not a usable database engine.
 
 `skrifheim` is licensed under the European Union Public Licence 1.2.

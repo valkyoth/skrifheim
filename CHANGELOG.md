@@ -58,6 +58,8 @@
   diagnostics, redacting policy-token set counts, adding release-gate checks for
   both regressions, and documenting the scaffold-only non-constant-time union
   sort comparator.
+- Prepared `0.10.0` for GitHub verification after the local release gate and
+  submitted pentest handoffs passed.
 - Removed the public raw result-input accessor from query requests; callers get
   aggregate counts while planning keeps label/result metadata internal.
 - Removed public raw metadata accessors from query-result inputs; policy
