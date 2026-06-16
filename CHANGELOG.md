@@ -30,6 +30,8 @@
   redacted diagnostic output.
 - Removed the public raw result-input accessor from query requests; callers get
   aggregate counts while planning keeps label/result metadata internal.
+- Replaced derived debug output on subject, device, workload, and aggregate
+  authority contexts with redacted diagnostics.
 - Bumped workspace and internal crate dependency versions to `0.10.0`.
 - Added `0.10.0` release metadata and gate script.
 - Re-checked the local Rust toolchain on 2026-06-16. Rust and Cargo report

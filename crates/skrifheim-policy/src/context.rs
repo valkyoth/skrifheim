@@ -1,9 +1,10 @@
 use alloc::{string::String, vec::Vec};
+use core::fmt;
 use skrifheim_core::{
     Classification, DeviceId, PolicyTokenSet, Result, WorkloadId, canonical_policy_set,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct SubjectContext {
     clearance: Classification,
     compartments: PolicyTokenSet,
@@ -39,7 +40,17 @@ impl SubjectContext {
     }
 }
 
-#[derive(Clone, Debug)]
+impl fmt::Debug for SubjectContext {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("SubjectContext")
+            .field("clearance", &"<redacted>")
+            .field("compartments", &"<redacted>")
+            .field("releasable_to", &"<redacted>")
+            .finish()
+    }
+}
+
+#[derive(Clone)]
 pub struct DeviceContext {
     device_id: DeviceId,
     clearance: Classification,
@@ -83,7 +94,18 @@ impl DeviceContext {
     }
 }
 
-#[derive(Clone, Debug)]
+impl fmt::Debug for DeviceContext {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("DeviceContext")
+            .field("device_id", &"<redacted>")
+            .field("clearance", &"<redacted>")
+            .field("compartments", &"<redacted>")
+            .field("releasable_to", &"<redacted>")
+            .finish()
+    }
+}
+
+#[derive(Clone)]
 pub struct WorkloadContext {
     workload_id: WorkloadId,
     clearance: Classification,
@@ -127,7 +149,18 @@ impl WorkloadContext {
     }
 }
 
-#[derive(Clone, Debug)]
+impl fmt::Debug for WorkloadContext {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("WorkloadContext")
+            .field("workload_id", &"<redacted>")
+            .field("clearance", &"<redacted>")
+            .field("compartments", &"<redacted>")
+            .field("releasable_to", &"<redacted>")
+            .finish()
+    }
+}
+
+#[derive(Clone)]
 pub struct AuthorityContext {
     subject: SubjectContext,
     device: DeviceContext,
@@ -161,5 +194,57 @@ impl AuthorityContext {
     #[must_use]
     pub const fn workload(&self) -> &WorkloadContext {
         &self.workload
+    }
+}
+
+impl fmt::Debug for AuthorityContext {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("AuthorityContext")
+            .field("subject", &"<redacted>")
+            .field("device", &"<redacted>")
+            .field("workload", &"<redacted>")
+            .finish()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use alloc::{format, string::String, vec};
+
+    #[test]
+    fn debug_redacts_authority_context_metadata() -> Result<()> {
+        let subject = SubjectContext::new(
+            Classification::TopSecret,
+            vec![String::from("SECRET-COMPARTMENT")],
+            vec![String::from("EU")],
+        )?;
+        let device = DeviceContext::new(
+            DeviceId::from_u128(42).ok_or(skrifheim_core::SkrifheimError::InvalidIdentifier)?,
+            Classification::TopSecret,
+            vec![String::from("SECRET-COMPARTMENT")],
+            vec![String::from("EU")],
+        )?;
+        let workload = WorkloadContext::new(
+            WorkloadId::from_u128(43).ok_or(skrifheim_core::SkrifheimError::InvalidIdentifier)?,
+            Classification::TopSecret,
+            vec![String::from("SECRET-COMPARTMENT")],
+            vec![String::from("EU")],
+        )?;
+        let authority = AuthorityContext::new(subject, device, workload);
+
+        for debug in [
+            format!("{:?}", authority.subject()),
+            format!("{:?}", authority.device()),
+            format!("{:?}", authority.workload()),
+            format!("{authority:?}"),
+        ] {
+            assert!(!debug.contains("TopSecret"));
+            assert!(!debug.contains("SECRET-COMPARTMENT"));
+            assert!(!debug.contains("EU"));
+            assert!(!debug.contains("42"));
+            assert!(!debug.contains("43"));
+        }
+        Ok(())
     }
 }

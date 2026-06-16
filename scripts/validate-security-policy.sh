@@ -61,6 +61,10 @@ for derive_name in PartialEq Eq; do
 done
 
 for derive_name in Debug; do
+    check_no_sensitive_derive crates/skrifheim-policy/src/context.rs SubjectContext "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-policy/src/context.rs DeviceContext "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-policy/src/context.rs WorkloadContext "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-policy/src/context.rs AuthorityContext "$derive_name"
     check_no_sensitive_derive crates/skrifheim-policy/src/decision.rs PlannerDecision "$derive_name"
     check_no_sensitive_derive crates/skrifheim-policy/src/decision.rs PolicyProof "$derive_name"
     check_no_sensitive_derive crates/skrifheim-policy/src/result.rs QueryResultInput "$derive_name"

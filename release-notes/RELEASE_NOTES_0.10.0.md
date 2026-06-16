@@ -41,6 +41,8 @@ AI processing, and compliance layers must honor.
   redacted diagnostic output.
 - Removed the public raw result-input accessor from query requests; callers get
   aggregate counts while planning keeps label/result metadata internal.
+- Replaced derived debug output on subject, device, workload, and aggregate
+  authority contexts with redacted diagnostics.
 - Kept `evaluate_read_set()` and `output_classification()` compatibility
   accessors for existing label-only planning.
 - Updated query planning to accept richer result inputs while keeping the
