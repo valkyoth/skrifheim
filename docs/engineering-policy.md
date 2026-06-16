@@ -101,6 +101,13 @@ include statistical timing evidence, such as a dudect-style harness or
 equivalent codegen review, for policy-token comparison and other
 timing-sensitive authorization helpers.
 
+Structural canonicalization helpers, such as policy-token union sorting, may
+use ordinary ordering comparisons while the scaffold is not operating as a
+remote timing oracle. They must be documented as non-constant-time, must not be
+used for authorization decisions, and must be replaced or covered by timing
+evidence before any production path can expose them to untrusted timing
+measurement.
+
 ## Unsafe Boundary Rule
 
 Unsafe Rust is not allowed in core crates.

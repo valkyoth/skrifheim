@@ -54,6 +54,10 @@
   security-label diagnostics, masking non-allow proof input counts, preserving
   redact/reject distinction for trusted errors, and documenting remaining
   memory-secrecy and production constant-time admission requirements.
+- Resolved the second `0.10.0` pentest pass by redacting fact classification
+  diagnostics, redacting policy-token set counts, adding release-gate checks for
+  both regressions, and documenting the scaffold-only non-constant-time union
+  sort comparator.
 - Removed the public raw result-input accessor from query requests; callers get
   aggregate counts while planning keeps label/result metadata internal.
 - Removed public raw metadata accessors from query-result inputs; policy

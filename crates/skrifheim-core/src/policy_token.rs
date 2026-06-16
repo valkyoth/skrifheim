@@ -127,7 +127,7 @@ impl PolicyTokenSet {
 impl fmt::Debug for PolicyTokenSet {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("PolicyTokenSet")
-            .field("len", &self.len)
+            .field("len", &"<redacted>")
             .field("capacity", &POLICY_TOKEN_SET_MAX_ITEMS)
             .field("tokens", &"<redacted>")
             .finish()
@@ -254,6 +254,8 @@ fn policy_token_eq_ct(left: PolicyTokenSlot, right: PolicyTokenSlot) -> u8 {
 }
 
 fn slot_sorts_after(left: PolicyTokenSlot, right: PolicyTokenSlot) -> bool {
+    // Structural canonicalization only. This comparator is intentionally not
+    // constant-time and must not be used for policy authorization decisions.
     let mut index = 0;
     while index < POLICY_TOKEN_MAX_BYTES {
         let left_byte = left.bytes[index];

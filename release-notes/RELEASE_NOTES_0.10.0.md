@@ -67,6 +67,13 @@ AI processing, and compliance layers must honor.
   identifier, and signature length.
 - Redacted `SecurityLabel` debug output for classification and exact policy
   token counts.
+- Redacted `Fact` debug output for label classification.
+- Redacted `PolicyTokenSet` debug output for exact token count.
+- Added release-gate checks that block direct fact-classification and
+  policy-token-count diagnostic regressions.
+- Documented that policy-token union sorting is structural canonicalization,
+  remains non-constant-time in the scaffold, and must not be used for
+  authorization decisions.
 - Masked policy-proof input counts to zero for rejected and redacted decisions
   while preserving counts for allowed plans.
 - Preserved the trusted-code distinction between rejected and redacted

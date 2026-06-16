@@ -170,6 +170,7 @@ fn debug_redacts_security_labels_policy_tokens_and_values() -> Result<()> {
 
     assert!(!token_set_debug.contains("EU-COMMAND"));
     assert!(!token_set_debug.contains("\"EU\""));
+    assert!(!token_set_debug.contains("len: 1"));
     assert!(!label_debug.contains("EU-COMMAND"));
     assert!(!label_debug.contains("\"EU\""));
     assert!(!label_debug.contains("TopSecret"));

@@ -175,6 +175,29 @@ if grep -E "\\.field\\(\"(classification|compartment_count|releasable_to_count)\
     exit 1
 fi
 
+if awk '
+    /^[[:space:]]*impl[[:space:]]+fmt::Debug[[:space:]]+for[[:space:]]+PolicyTokenSet[[:space:]]*\{/ {
+        in_impl = 1
+    }
+    in_impl && /^[[:space:]]*impl[[:space:]]+/ && $0 !~ "PolicyTokenSet" {
+        in_impl = 0
+    }
+    in_impl && /\.field\("len",[[:space:]]*&self\.len\)/ {
+        found = 1
+    }
+    END {
+        exit found ? 0 : 1
+    }
+' crates/skrifheim-core/src/policy_token.rs; then
+    echo "PolicyTokenSet Debug must redact exact token counts" >&2
+    exit 1
+fi
+
+if grep -E "\\.field\\(\"classification\",[[:space:]]*&self\\.label\\.classification\\(\\)\\)" crates/skrifheim-fact/src/lib.rs >/dev/null; then
+    echo "Fact Debug must redact label classification" >&2
+    exit 1
+fi
+
 if grep -E "\\.field\\(\"(algorithm|epoch|key_id|signature_bytes)\",[[:space:]]*&self\\.(algorithm|epoch|key_id|signature\\.len\\(\\))\\)" crates/skrifheim-crypto/src/lib.rs >/dev/null; then
     echo "SignatureEnvelope Debug must redact key, algorithm, epoch, and signature length" >&2
     exit 1

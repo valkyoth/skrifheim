@@ -118,9 +118,9 @@ fn debug_redacts_fact_payload_and_label_tokens() -> Result<()> {
     assert!(!builder_debug.contains("EU-COMMAND"));
     assert!(!fact_debug.contains("classified payload"));
     assert!(!fact_debug.contains("EU-COMMAND"));
+    assert!(!fact_debug.contains("Restricted"));
     assert!(builder_debug.contains("<redacted>"));
     assert!(fact_debug.contains("<redacted>"));
-    assert!(fact_debug.contains("Restricted"));
     Ok(())
 }
 

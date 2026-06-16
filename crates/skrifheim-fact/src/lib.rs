@@ -84,7 +84,7 @@ impl fmt::Debug for Fact {
             .field("supersedes_count", &self.supersedes.len())
             .field("invalidates_count", &self.invalidates.len())
             .field("policy_id", &self.policy_id)
-            .field("classification", &self.label.classification())
+            .field("classification", &"<redacted>")
             .field("signature_count", &self.signatures.envelopes().len())
             .finish()
     }
