@@ -29,6 +29,8 @@
 - Resolved the third `0.11.0` pentest pass by making projection-surface
   structural comparison depend on an exhaustive internal tag match, forcing
   future projection-surface variants through an explicit compile-time update.
+- Prepared `0.11.0` for signed tag creation after pentest and GitHub
+  verification passed.
 - Bumped workspace and internal crate dependency versions to `0.11.0`.
 - Added `0.11.0` release metadata and gate script.
 

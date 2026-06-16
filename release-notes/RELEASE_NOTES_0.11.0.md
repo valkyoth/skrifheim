@@ -1,6 +1,7 @@
 # skrifheim 0.11.0 Release Notes
 
-Status: implementation complete, pending pentest.
+Status: release-prep complete; local release gate, submitted pentest handoffs,
+and GitHub verification passed; pending signed tag creation.
 
 ## Scope
 
@@ -70,6 +71,6 @@ policy contract that those future systems must satisfy.
 
 ## Pentest Status
 
-The first three `0.11.0` pentest passes have been resolved locally. Root
-`PENTEST.md` remains the temporary findings handoff file and must be removed
-after findings are resolved.
+The first three `0.11.0` pentest passes have been resolved locally and the
+submitted pentest handoff is green. Root `PENTEST.md` remains the temporary
+findings handoff file and must be removed after findings are resolved.
