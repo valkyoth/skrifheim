@@ -26,6 +26,8 @@
 - Reconfirmed documented scaffold gaps for production constant-time evidence,
   real cryptographic operations, `SecretBytes::from_slice` source ownership,
   and 128-bit `WorldId` storage uniqueness enforcement.
+- Prepared `0.14.0` for signed tag creation after pentest passed; GitHub
+  verification remains the final pre-tag gate.
 - Bumped workspace and internal crate dependency versions to `0.14.0`.
 - Added `0.14.0` release metadata and gate script.
 
