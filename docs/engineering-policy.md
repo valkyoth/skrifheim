@@ -93,7 +93,8 @@ Current external dependency exceptions:
   admitted local unsafe boundary is approved.
 - Crate: `blake3` `1.8.5`
   Used by: `skrifheim-world`
-  Scope: deterministic tenant-scoped world identity derivation.
+  Scope: deterministic tenant-scoped world identity derivation for scaffold
+  compact handles.
   Reason: world identity must use collision-resistant domain-separated
   derivation before it can safely scope fact sets, world diffs, projection
   metadata, or future storage keys.
@@ -101,6 +102,11 @@ Current external dependency exceptions:
   must not be used as a signature algorithm, encryption algorithm, password
   hash, or authorization token. `skrifheim-crypto` rejects `AlgorithmId::Blake3`
   in signature-envelope contexts.
+  Production direction: before `WorldId` or derived storage addresses become
+  durable trust roots, add an admitted SHA-3/SHAKE digest boundary with
+  configurable `Sha3_256`, `Sha3_384`, `Sha3_512`, `Shake256_256`, and
+  `Shake256_512` profiles. Compact IDs remain handles; full-width digests carry
+  storage authority.
   Why not local: implementing a cryptographic hash locally would be higher
   risk than admitting a reviewed hash crate. The previous local polynomial hash
   was suitable only as scaffold metadata and was not collision-resistant.

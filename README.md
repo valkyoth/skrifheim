@@ -82,6 +82,7 @@ engine.
 | Capability | Status | Target |
 | --- | --- | --- |
 | WAL writer and recovery | Planned | `v0.15.0` through `v0.16.0`. |
+| Quantum-aware digest policy | Planned | SHA-3/SHAKE digest-strength profiles and full-width world/content/manifest digests before compact IDs become durable storage authority. |
 | Immutable segment persistence | Planned | `v0.17.0` through `v0.20.0`. |
 | Strict serializable transactions | Planned | `v0.21.0` through `v0.23.0`. |
 | Native query parser and execution | Planned | `v0.25.0` through `v0.28.0`. |

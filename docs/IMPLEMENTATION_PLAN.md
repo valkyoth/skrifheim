@@ -27,6 +27,10 @@ from truth.
 - Normal `.rs` files should stay under 300 lines and must stay under 500 lines unless documented.
 - Every subsystem must be testable without a production cluster.
 - Security, provenance, and policy checks are part of the planner, not application-side decoration.
+- Cryptographic hash policy is production-critical. Scaffold hashes may be used
+  only for non-secret identifiers until the production digest boundary lands.
+  Durable storage authority must use admitted SHA-3/SHAKE full-width digests
+  with a configurable strength profile.
 
 ## Workspace Shape
 
@@ -83,11 +87,23 @@ Required operations:
 
 World kinds include production, staging, user-local, agent scratchpad, simulation, legal/audit, and mission capsule.
 
-Deterministic world ID derivation is length-separated, tenant-scoped, non-secret,
-and backed by admitted BLAKE3 domain-separated hashing. `WorldId` must not
-become a bearer capability or sole authorization input. Storage must still
-reject creation when a `WorldId` already exists for a different
-`(tenant_id, kind, depth, parent, name)` tuple.
+Deterministic world ID derivation is length-separated, tenant-scoped, and
+non-secret. The current BLAKE3 derivation is scaffold-only and must not become
+the long-term storage trust root. Before world identity becomes durable storage
+authority, `skrifheim` must introduce admitted SHA-3/SHAKE digest primitives,
+configurable digest strength, and full-width world identity digests.
+
+`WorldId` is a compact handle, not a bearer capability or sole authorization
+input. Storage must still reject creation when a compact `WorldId` already
+exists for a different `(tenant_id, kind, depth, parent, name)` tuple, but
+future storage authority must key and verify the full `WorldIdentityDigest`.
+Planned digest strength profiles are:
+
+- `Sha3_256` for normal high-security deployments,
+- `Sha3_384` for conservative long-horizon deployments,
+- `Sha3_512` for military or post-quantum cautious deployments,
+- `Shake256_256` and `Shake256_512` where extendable-output hashing is the
+  better fit for manifests or protocol transcript binding.
 
 Storage and orchestration must enforce tenant-level aggregate world budgets,
 including maximum world count and total tracked fact references across all
@@ -102,6 +118,9 @@ Implement:
 - strict recovery state machine,
 - immutable policy-scoped segments,
 - manifest snapshots,
+- admitted SHA-3/SHAKE digest strength policy before durable storage keys,
+- full-width `WorldIdentityDigest`, `ContentDigest`, and `ManifestDigest`
+  primitives,
 - checksums,
 - content-addressed blocks,
 - policy and encryption boundary metadata,

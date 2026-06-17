@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Updated the implementation and version plans so BLAKE3 remains scaffold-only
+  for compact non-secret world handles, while production storage authority
+  moves to configurable SHA-3/SHAKE full-width digests before durable storage
+  keys are trusted.
+
 ## 0.14.0
 
 - Added fixed-size WAL frame header metadata and parser validation in

@@ -117,10 +117,14 @@ Deliverables:
 - added and hidden fact sets,
 - deterministic world identity rules where `(tenant_id, kind, depth, parent,
   name)` is the idempotent uniqueness key,
-- admitted BLAKE3-based collision-resistant world-id derivation,
+- admitted BLAKE3-based collision-resistant scaffold world-id derivation for
+  non-secret compact handles only,
 - documented requirement that durable storage reject existing `WorldId` values
   for different `(tenant_id, kind, depth, parent, name)` tuples before world IDs
   become authoritative durable storage keys,
+- documented requirement that production storage authority move to admitted
+  SHA-3/SHAKE full-width world identity digests before durable storage keys are
+  trusted,
 - tests for branch isolation.
 
 ## v0.6.0 - World Diff And Promotion Preflight
@@ -261,6 +265,13 @@ Goal: write and read WAL frames through portable file I/O.
 
 Deliverables:
 
+- digest strength policy model with `Sha3_256`, `Sha3_384`, `Sha3_512`,
+  `Shake256_256`, and `Shake256_512` planned profiles,
+- full-width digest type skeletons for world identity, content, and manifests,
+- documentation that BLAKE3 remains scaffold-only for compact non-secret
+  `WorldId` derivation,
+- release-gate checks that prevent durable storage authority from keying only
+  on compact `WorldId`,
 - append-only writer,
 - sequential reader,
 - encrypted frame metadata checks,
@@ -318,11 +329,15 @@ Deliverables:
 - manifest structure,
 - checkpoint LSN,
 - segment list,
+- digest strength profile field,
+- full-width world identity, content, and manifest digest fields,
 - policy epoch field,
 - crypto epoch field,
 - encryption domain inventory,
 - world-id collision detection that rejects an existing `WorldId` for a
   different `(tenant_id, kind, depth, parent, name)` tuple,
+- rejection of manifests whose full-width digest profile does not match the
+  active deployment policy,
 - manifest validation tests.
 
 ## v0.20.0 - Startup Recovery Integration
