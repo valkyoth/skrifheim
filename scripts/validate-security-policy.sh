@@ -123,6 +123,8 @@ done
 
 check_no_sensitive_derive crates/skrifheim-storage/src/lib.rs SegmentHeader Debug
 check_no_sensitive_derive crates/skrifheim-storage/src/lib.rs SegmentHeaderInput Debug
+check_no_sensitive_derive crates/skrifheim-storage/src/wal.rs WalFrameHeader Debug
+check_no_sensitive_derive crates/skrifheim-storage/src/wal.rs WalFrameHeaderInput Debug
 check_no_sensitive_derive crates/skrifheim-world/src/lib.rs WorldMetadata Debug
 check_no_sensitive_derive crates/skrifheim-world/src/lib.rs World Debug
 
@@ -137,6 +139,8 @@ for derive_name in PartialEq Eq; do
     check_no_sensitive_derive crates/skrifheim-policy/src/result.rs ResultClassification "$derive_name"
     check_no_sensitive_derive crates/skrifheim-query/src/lib.rs QueryRequest "$derive_name"
     check_no_sensitive_derive crates/skrifheim-query/src/lib.rs QueryPlan "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-storage/src/wal.rs WalFrameHeader "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-storage/src/wal.rs WalFrameHeaderInput "$derive_name"
 done
 
 for derive_name in Debug; do
@@ -265,6 +269,11 @@ fi
 
 if grep -E "\\.field\\(\"(magic|tenant_id|tx_range|policy_id|encryption_key_id|body_crc64|content_hash)\",[[:space:]]*&self\\." crates/skrifheim-storage/src/lib.rs >/dev/null; then
     echo "SegmentHeader Debug must redact identifiers, keys, checksums, and hashes" >&2
+    exit 1
+fi
+
+if grep -E "\\.field\\(\"(magic|tenant_id|tx_id|encryption_key_id|crypto_epoch|encryption_domain|body_crc64)\",[[:space:]]*&self\\." crates/skrifheim-storage/src/wal.rs >/dev/null; then
+    echo "WalFrameHeader Debug must redact identifiers, keys, domains, epochs, and checksums" >&2
     exit 1
 fi
 

@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+## 0.14.0
+
+- Added fixed-size WAL frame header metadata and parser validation in
+  `skrifheim-storage`.
+- Added WAL record kinds for transaction begin, fact batch, transaction commit,
+  transaction abort, and checkpoint records.
+- Added encrypted-body length, body CRC, encryption key, crypto epoch, and WAL
+  encryption-domain metadata to WAL frame headers.
+- Added malformed parser tests for bad magic, unknown record kind, non-zero
+  reserved bytes, and truncated headers.
+- Added redacted diagnostics and release-gate checks for WAL frame metadata.
+- Added `InvalidWalFrame` with generic trust-boundary public messaging.
+- Bumped workspace and internal crate dependency versions to `0.14.0`.
+- Added `0.14.0` release metadata and gate script.
+
 ## 0.13.0
 
 - Added `skrifheim-audit` for typed identity and audit-event metadata.

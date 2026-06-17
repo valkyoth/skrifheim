@@ -8,6 +8,13 @@ use core::fmt;
 use skrifheim_core::{PolicyId, Result, SkrifheimError, TenantId, TxId};
 use skrifheim_crypto::KeyId;
 
+mod wal;
+
+pub use wal::{
+    WAL_FRAME_BODY_MAX_BYTES, WAL_FRAME_HEADER_BYTES, WAL_FRAME_MAGIC, WAL_FRAME_VERSION_MAX,
+    WalFrameHeader, WalFrameHeaderInput, WalRecordKind,
+};
+
 pub const SEGMENT_MAGIC: [u8; 8] = *b"SKRIFSEG";
 pub const SEGMENT_VERSION_MAX: u16 = 1;
 pub const SEGMENT_BODY_MAX_BYTES: u64 = 1024 * 1024 * 1024;

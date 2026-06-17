@@ -31,8 +31,8 @@ provenance; classification-aware planning; tamper-evident storage; and CMS
 integration through typed facts, atomic releases, sanitized projections, and AI
 artifacts with provenance.
 
-The project is currently at the `v0.13.0` release-prep stop after pentest and
-GitHub verification passed. It is not a usable database engine.
+The project is currently at the `v0.14.0` implementation stop, pending
+pentest. It is not a usable database engine.
 
 `skrifheim` is licensed under the European Union Public Licence 1.2.
 
@@ -47,7 +47,7 @@ GitHub verification passed. It is not a usable database engine.
 | `no_std` core policy | Active | Library crates under `crates/` use `#![no_std]` and `#![forbid(unsafe_code)]`. |
 | Dependency policy | Active | `cargo deny` policy denies wildcard external dependencies and unknown sources. |
 | Security reporting | Active | Private-first vulnerability process in `SECURITY.md`. |
-| Release notes | Active | `release-notes/RELEASE_NOTES_0.13.0.md` records scope, verification, and non-claims. |
+| Release notes | Active | `release-notes/RELEASE_NOTES_0.14.0.md` records scope, verification, and non-claims. |
 
 ### Initial Models
 
@@ -62,7 +62,7 @@ GitHub verification passed. It is not a usable database engine.
 | Memory secrecy boundary | Scaffolded | Secret material enters crypto APIs through bounded non-clone redacted `SecretBytes` wrappers backed by admitted `sanitization` clear-on-drop storage. |
 | Identity and audit events | Scaffolded | Typed identities, attestation evidence references, break-glass event shape, signed/encrypted audit-log metadata, and actor-attribution checks. |
 | Crypto-agile envelopes | Scaffolded | Algorithm IDs, crypto epochs, bounded signature sets, key hierarchy metadata, key lifecycle metadata, and encryption-domain metadata exist without locking the database to one permanent algorithm. |
-| Storage metadata | Scaffolded | Immutable segment headers validate magic, version, transaction range, and body length. |
+| Storage metadata | Scaffolded | Immutable segment headers validate magic, version, transaction range, and body length; WAL frame headers validate fixed append-only encrypted-frame metadata before file I/O exists. |
 | Query planning primitives | Scaffolded | Query requests become policy decision plans for early read, causality, simulation, and context intents. |
 
 ### Tooling And Verification
@@ -70,7 +70,7 @@ GitHub verification passed. It is not a usable database engine.
 | Capability | Status | Notes |
 | --- | --- | --- |
 | Local gate | Active | `scripts/checks.sh` runs formatting, shell syntax, doc links, release metadata, engineering policy, modularity, security policy, clippy, and tests. |
-| `v0.13.0` release gate | Active | `scripts/release_0_13_gate.sh` runs local checks, dependency policy, RustSec audit, CLI startup, and rootless Podman smoke. |
+| `v0.14.0` release gate | Active | `scripts/release_0_14_gate.sh` runs local checks, dependency policy, RustSec audit, CLI startup, and rootless Podman smoke. |
 | Rootless Podman | Active | `Containerfile` builds and runs the current CLI in a non-root runtime image. |
 | Pentest stop rule | Active | Every version has a clean implementation stop before tagging. Root `PENTEST.md` is temporary findings input and must be removed after resolution. |
 | Modularity gate | Active | Non-generated Rust files over 500 lines fail the local gate. |
@@ -80,7 +80,7 @@ GitHub verification passed. It is not a usable database engine.
 
 | Capability | Status | Target |
 | --- | --- | --- |
-| Durable WAL | Planned | `v0.14.0` through `v0.16.0`. |
+| WAL writer and recovery | Planned | `v0.15.0` through `v0.16.0`. |
 | Immutable segment persistence | Planned | `v0.17.0` through `v0.20.0`. |
 | Strict serializable transactions | Planned | `v0.21.0` through `v0.23.0`. |
 | Native query parser and execution | Planned | `v0.25.0` through `v0.28.0`. |
@@ -137,7 +137,7 @@ cargo run -p skrifheim
 Expected output:
 
 ```text
-skrifheim 0.13.0
+skrifheim 0.14.0
 ```
 
 Run the normal local checks:
@@ -146,16 +146,16 @@ Run the normal local checks:
 scripts/checks.sh
 ```
 
-Run the `v0.13.0` release gate:
+Run the `v0.14.0` release gate:
 
 ```bash
-scripts/release_0_13_gate.sh
+scripts/release_0_14_gate.sh
 ```
 
 Skip the rootless Podman part only when the host cannot run containers:
 
 ```bash
-SKRIFHEIM_SKIP_PODMAN=1 scripts/release_0_13_gate.sh
+SKRIFHEIM_SKIP_PODMAN=1 scripts/release_0_14_gate.sh
 ```
 
 ## Rootless Podman
