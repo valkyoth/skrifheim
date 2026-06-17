@@ -97,6 +97,10 @@ Current external dependency exceptions:
   Reason: world identity must use collision-resistant domain-separated
   derivation before it can safely scope fact sets, world diffs, projection
   metadata, or future storage keys.
+  Boundary: this is a non-secret identifier derivation boundary only. BLAKE3
+  must not be used as a signature algorithm, encryption algorithm, password
+  hash, or authorization token. `skrifheim-crypto` rejects `AlgorithmId::Blake3`
+  in signature-envelope contexts.
   Why not local: implementing a cryptographic hash locally would be higher
   risk than admitting a reviewed hash crate. The previous local polynomial hash
   was suitable only as scaffold metadata and was not collision-resistant.

@@ -39,6 +39,14 @@ checksum metadata.
   bind parsed region/world metadata to the expected WAL segment location.
 - Added `AuditEvent::new_at` for trusted callers that can provide a clock
   reference and reject future-dated audit events.
+- Made `AuditEvent::new` require a trusted clock reference too, so the shortest
+  audit-event constructor is also the clock-aware constructor.
+- Added an audit-event maximum lookback window to reject excessively backdated
+  events.
+- Removed the misleading unreachable `BodyChecksum::Missing` encoding arm from
+  WAL frame header encoding.
+- Reconfirmed BLAKE3 is admitted only for deterministic, non-secret world ID
+  derivation and remains rejected in signature-envelope contexts.
 - Confirmed production constant-time evidence, real cryptographic operations,
   `SecretBytes::from_slice` source cleanup, and `WorldId` storage uniqueness
   enforcement remain documented scaffold or future-service-boundary items.
@@ -64,6 +72,6 @@ reader, and replay milestones must use.
 
 ## Pentest Status
 
-The first `0.14.0` pentest pass has been resolved locally. Root `PENTEST.md`
-remains the temporary findings handoff file and must be removed after findings
-are resolved.
+The first and second `0.14.0` pentest passes have been resolved locally. Root
+`PENTEST.md` remains the temporary findings handoff file and must be removed
+after findings are resolved.

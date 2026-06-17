@@ -19,6 +19,10 @@
   rotating keys from returning to active, rejecting zero WAL CRC sentinels,
   adding expected-domain WAL validation, adding clock-aware audit-event
   construction, and correcting empty-signature error classification.
+- Resolved the second `0.14.0` pentest pass by making `AuditEvent::new`
+  require a trusted clock reference, bounding audit-event backdating, preserving
+  `AuditEvent::new_at` as the clock-aware compatibility path, and removing the
+  misleading unreachable WAL checksum encoding arm.
 - Reconfirmed documented scaffold gaps for production constant-time evidence,
   real cryptographic operations, `SecretBytes::from_slice` source ownership,
   and 128-bit `WorldId` storage uniqueness enforcement.

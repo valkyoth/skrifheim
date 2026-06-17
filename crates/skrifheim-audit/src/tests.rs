@@ -68,7 +68,7 @@ fn audit_event_requires_actor_attribution() -> Result<()> {
     input.actor = None;
 
     assert!(matches!(
-        AuditEvent::new(input),
+        AuditEvent::new(input, Timestamp::new(11)),
         Err(SkrifheimError::MissingAuditActor)
     ));
     Ok(())
@@ -76,7 +76,7 @@ fn audit_event_requires_actor_attribution() -> Result<()> {
 
 #[test]
 fn audit_event_tracks_actor_and_attestation_presence() -> Result<()> {
-    let event = AuditEvent::new(event_input()?)?;
+    let event = AuditEvent::new(event_input()?, Timestamp::new(11))?;
 
     assert_eq!(event.actor_kind(), IdentityKind::Actor);
     assert!(event.has_device_attestation());
@@ -108,7 +108,7 @@ fn break_glass_requires_device_and_workload_context() -> Result<()> {
     input.device = None;
 
     assert!(matches!(
-        AuditEvent::new(input),
+        AuditEvent::new(input, Timestamp::new(11)),
         Err(SkrifheimError::InvalidAuditEvent)
     ));
     Ok(())
@@ -121,7 +121,7 @@ fn break_glass_requires_attested_device_and_workload_context() -> Result<()> {
     input.device = Some(DeviceAuditContext::new(id(DeviceId::from_u128(5))?, None));
 
     assert!(matches!(
-        AuditEvent::new(input),
+        AuditEvent::new(input, Timestamp::new(11)),
         Err(SkrifheimError::InvalidAuditEvent)
     ));
 
@@ -133,7 +133,7 @@ fn break_glass_requires_attested_device_and_workload_context() -> Result<()> {
     ));
 
     assert!(matches!(
-        AuditEvent::new(input),
+        AuditEvent::new(input, Timestamp::new(11)),
         Err(SkrifheimError::InvalidAuditEvent)
     ));
     Ok(())
@@ -144,14 +144,14 @@ fn audit_event_rejects_stale_or_future_attestation() -> Result<()> {
     let mut stale = event_input()?;
     stale.occurred_at = Timestamp::new(30);
     assert!(matches!(
-        AuditEvent::new(stale),
+        AuditEvent::new(stale, Timestamp::new(30)),
         Err(SkrifheimError::InvalidAttestationEvidence)
     ));
 
     let mut future = event_input()?;
     future.occurred_at = Timestamp::new(9);
     assert!(matches!(
-        AuditEvent::new(future),
+        AuditEvent::new(future, Timestamp::new(9)),
         Err(SkrifheimError::InvalidAttestationEvidence)
     ));
     Ok(())
@@ -173,6 +173,21 @@ fn audit_event_clock_aware_constructor_rejects_future_events() -> Result<()> {
 }
 
 #[test]
+fn audit_event_clock_aware_constructor_rejects_backdated_events() -> Result<()> {
+    let mut input = event_input()?;
+    input.occurred_at = Timestamp::new(11);
+
+    assert!(matches!(
+        AuditEvent::new(input, Timestamp::new(3_612)),
+        Err(SkrifheimError::InvalidAuditEvent)
+    ));
+
+    let input = event_input()?;
+    assert!(AuditEvent::new(input, Timestamp::new(3_611)).is_ok());
+    Ok(())
+}
+
+#[test]
 fn audit_log_protection_requires_audit_log_domain() -> Result<()> {
     let domain = EncryptionDomain::tenant(tenant()?);
 
@@ -185,7 +200,7 @@ fn audit_log_protection_requires_audit_log_domain() -> Result<()> {
 
 #[test]
 fn audit_record_requires_matching_tenant() -> Result<()> {
-    let event = AuditEvent::new(event_input()?)?;
+    let event = AuditEvent::new(event_input()?, Timestamp::new(11))?;
     let other_tenant = id(TenantId::from_u128(8))?;
     let protection = AuditLogProtection::new(
         EncryptionDomain::audit_log(other_tenant, None),
@@ -202,7 +217,7 @@ fn audit_record_requires_matching_tenant() -> Result<()> {
 
 #[test]
 fn audit_record_accepts_signed_encrypted_metadata() -> Result<()> {
-    let event = AuditEvent::new(event_input()?)?;
+    let event = AuditEvent::new(event_input()?, Timestamp::new(11))?;
     let protection = AuditLogProtection::new(
         EncryptionDomain::audit_log(tenant()?, None),
         signatures()?,
@@ -217,7 +232,7 @@ fn audit_record_accepts_signed_encrypted_metadata() -> Result<()> {
 
 #[test]
 fn debug_output_redacts_ids_targets_and_crypto_metadata() -> Result<()> {
-    let event = AuditEvent::new(event_input()?)?;
+    let event = AuditEvent::new(event_input()?, Timestamp::new(11))?;
     let protection = AuditLogProtection::new(
         EncryptionDomain::audit_log(tenant()?, None),
         signatures()?,
@@ -240,7 +255,7 @@ fn debug_output_redacts_ids_targets_and_crypto_metadata() -> Result<()> {
 fn debug_output_redacts_break_glass_kind() -> Result<()> {
     let mut input = event_input()?;
     input.kind = AuditEventKind::BreakGlass(BreakGlassJustification::LifeSafety);
-    let debug = format!("{:?}", AuditEvent::new(input)?);
+    let debug = format!("{:?}", AuditEvent::new(input, Timestamp::new(11))?);
 
     assert!(debug.contains("kind: \"<redacted>\""));
     assert!(!debug.contains("BreakGlass"));

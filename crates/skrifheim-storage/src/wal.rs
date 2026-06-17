@@ -207,9 +207,9 @@ impl WalFrameHeader {
             .copy_from_slice(&self.encryption_key_id.get().to_le_bytes());
         bytes[BODY_LEN_OFFSET..BODY_CRC_OFFSET]
             .copy_from_slice(&self.encrypted_body_len.to_le_bytes());
-        let body_crc64 = match self.body_crc64 {
-            BodyChecksum::Present(value) => value,
-            BodyChecksum::Missing => 0,
+        let BodyChecksum::Present(body_crc64) = self.body_crc64 else {
+            debug_assert!(false, "validated WAL frame headers always carry body CRC64");
+            return [0; WAL_FRAME_HEADER_BYTES];
         };
         bytes[BODY_CRC_OFFSET..WAL_FRAME_HEADER_BYTES].copy_from_slice(&body_crc64.to_le_bytes());
         bytes

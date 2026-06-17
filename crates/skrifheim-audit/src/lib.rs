@@ -258,16 +258,26 @@ pub struct AuditEvent {
     crypto_epoch: CryptoEpoch,
 }
 
+pub const AUDIT_EVENT_MAX_LOOKBACK: u64 = 3_600;
+
 impl AuditEvent {
-    pub fn new(input: AuditEventInput) -> Result<Self> {
+    pub fn new(input: AuditEventInput, now: Timestamp) -> Result<Self> {
+        Self::validate_event_time(input.occurred_at, now)?;
         Self::validate_input(input)
     }
 
     pub fn new_at(input: AuditEventInput, now: Timestamp) -> Result<Self> {
-        if input.occurred_at.get() > now.get() {
+        Self::new(input, now)
+    }
+
+    fn validate_event_time(occurred_at: Timestamp, now: Timestamp) -> Result<()> {
+        if occurred_at.get() > now.get() {
             return Err(SkrifheimError::InvalidAuditEvent);
         }
-        Self::validate_input(input)
+        if now.get().saturating_sub(occurred_at.get()) > AUDIT_EVENT_MAX_LOOKBACK {
+            return Err(SkrifheimError::InvalidAuditEvent);
+        }
+        Ok(())
     }
 
     fn validate_input(input: AuditEventInput) -> Result<Self> {
