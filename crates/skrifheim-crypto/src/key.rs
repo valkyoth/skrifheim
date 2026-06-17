@@ -261,7 +261,7 @@ impl KeyMetadata {
         next_epoch: CryptoEpoch,
     ) -> Result<Self> {
         if !is_valid_lifecycle_transition(self.lifecycle, next_lifecycle)
-            || next_epoch.get() < self.epoch.get()
+            || next_epoch.get() <= self.epoch.get()
         {
             return Err(SkrifheimError::InvalidKeyLifecycle);
         }
@@ -336,7 +336,6 @@ fn is_valid_lifecycle_transition(current: KeyLifecycleState, next: KeyLifecycleS
             | (KeyLifecycleState::Active, KeyLifecycleState::Compromised)
             | (KeyLifecycleState::Active, KeyLifecycleState::Quarantined)
             | (KeyLifecycleState::Active, KeyLifecycleState::Destroyed)
-            | (KeyLifecycleState::Rotating, KeyLifecycleState::Active)
             | (KeyLifecycleState::Rotating, KeyLifecycleState::Retired)
             | (KeyLifecycleState::Rotating, KeyLifecycleState::Compromised)
             | (KeyLifecycleState::Rotating, KeyLifecycleState::Quarantined)

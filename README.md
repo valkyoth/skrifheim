@@ -62,7 +62,7 @@ pentest. It is not a usable database engine.
 | Memory secrecy boundary | Scaffolded | Secret material enters crypto APIs through bounded non-clone redacted `SecretBytes` wrappers backed by admitted `sanitization` clear-on-drop storage. |
 | Identity and audit events | Scaffolded | Typed identities, attestation evidence references, break-glass event shape, signed/encrypted audit-log metadata, and actor-attribution checks. |
 | Crypto-agile envelopes | Scaffolded | Algorithm IDs, crypto epochs, bounded signature sets, key hierarchy metadata, key lifecycle metadata, and encryption-domain metadata exist without locking the database to one permanent algorithm. |
-| Storage metadata | Scaffolded | Immutable segment headers validate magic, version, transaction range, and body length; WAL frame headers validate fixed append-only encrypted-frame metadata before file I/O exists. |
+| Storage metadata | Scaffolded | Immutable segment headers validate magic, version, transaction range, and body length; WAL frame headers validate fixed append-only encrypted-frame metadata, non-zero CRC presence, and expected-domain binding before file I/O exists. |
 | Query planning primitives | Scaffolded | Query requests become policy decision plans for early read, causality, simulation, and context intents. |
 
 ### Tooling And Verification

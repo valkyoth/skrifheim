@@ -100,6 +100,18 @@ fn wal_frame_parser_rejects_malformed_headers() -> Result<()> {
 }
 
 #[test]
+fn wal_frame_parser_rejects_zero_crc_sentinel() -> Result<()> {
+    let mut bytes = header()?.encode();
+    bytes[BODY_CRC_OFFSET..WAL_FRAME_HEADER_BYTES].copy_from_slice(&0_u64.to_le_bytes());
+
+    assert!(matches!(
+        WalFrameHeader::parse(&bytes),
+        Err(SkrifheimError::InvalidWalFrame(_))
+    ));
+    Ok(())
+}
+
+#[test]
 fn wal_frame_validation_rejects_unencrypted_or_unbounded_body_metadata() -> Result<()> {
     let mut input = header_input()?;
     input.encrypted_body_len = 0;
@@ -117,6 +129,13 @@ fn wal_frame_validation_rejects_unencrypted_or_unbounded_body_metadata() -> Resu
 
     let mut input = header_input()?;
     input.body_crc64 = BodyChecksum::Missing;
+    assert!(matches!(
+        WalFrameHeader::new(input),
+        Err(SkrifheimError::InvalidWalFrame(_))
+    ));
+
+    let mut input = header_input()?;
+    input.body_crc64 = BodyChecksum::Present(0);
     assert!(matches!(
         WalFrameHeader::new(input),
         Err(SkrifheimError::InvalidWalFrame(_))
@@ -139,6 +158,24 @@ fn wal_frame_validation_rejects_non_wal_or_cross_tenant_domain() -> Result<()> {
         WalFrameHeader::new(input),
         Err(SkrifheimError::InvalidWalFrame(_))
     ));
+    Ok(())
+}
+
+#[test]
+fn wal_frame_validation_rejects_unexpected_domain() -> Result<()> {
+    let header = header()?;
+    let bytes = header.encode();
+    let expected = EncryptionDomain::wal(tenant()?, None, None);
+
+    assert!(matches!(
+        WalFrameHeader::parse_for_domain(&bytes, expected),
+        Err(SkrifheimError::InvalidWalFrame(_))
+    ));
+    assert!(
+        header
+            .validate_for_domain(header.encryption_domain())
+            .is_ok()
+    );
     Ok(())
 }
 

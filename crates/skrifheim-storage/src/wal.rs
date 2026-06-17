@@ -133,6 +133,18 @@ impl WalFrameHeader {
     }
 
     pub fn parse(bytes: &[u8]) -> Result<Self> {
+        let header = Self::parse_unchecked_domain(bytes)?;
+        header.validate()?;
+        Ok(header)
+    }
+
+    pub fn parse_for_domain(bytes: &[u8], expected_domain: EncryptionDomain) -> Result<Self> {
+        let header = Self::parse_unchecked_domain(bytes)?;
+        header.validate_for_domain(expected_domain)?;
+        Ok(header)
+    }
+
+    fn parse_unchecked_domain(bytes: &[u8]) -> Result<Self> {
         if bytes.len() != WAL_FRAME_HEADER_BYTES {
             return Err(invalid_frame("WAL frame header length mismatch"));
         }
@@ -156,10 +168,13 @@ impl WalFrameHeader {
         let encryption_key_id = KeyId::from_u128(read_u128(bytes, KEY_OFFSET)?)
             .ok_or_else(|| invalid_frame("WAL frame encryption key identifier must be non-zero"))?;
         let encrypted_body_len = u64::from_le_bytes(read_array(bytes, BODY_LEN_OFFSET)?);
-        let body_crc64 =
-            BodyChecksum::Present(u64::from_le_bytes(read_array(bytes, BODY_CRC_OFFSET)?));
+        let body_crc64_raw = u64::from_le_bytes(read_array(bytes, BODY_CRC_OFFSET)?);
+        if body_crc64_raw == 0 {
+            return Err(invalid_frame("WAL frame body CRC must not be zero"));
+        }
+        let body_crc64 = BodyChecksum::Present(body_crc64_raw);
         let encryption_domain = EncryptionDomain::wal(tenant_id, region_id, world_id);
-        let header = Self {
+        Ok(Self {
             magic,
             version,
             record_kind,
@@ -170,9 +185,7 @@ impl WalFrameHeader {
             encryption_domain,
             encrypted_body_len,
             body_crc64,
-        };
-        header.validate()?;
-        Ok(header)
+        })
     }
 
     pub fn encode(&self) -> [u8; WAL_FRAME_HEADER_BYTES] {
@@ -273,11 +286,22 @@ impl WalFrameHeader {
         if self.body_crc64 == BodyChecksum::Missing {
             return Err(invalid_frame("WAL frame body CRC missing"));
         }
+        if matches!(self.body_crc64, BodyChecksum::Present(0)) {
+            return Err(invalid_frame("WAL frame body CRC must not be zero"));
+        }
         if self.encryption_domain.purpose() != EncryptionDomainPurpose::Wal {
             return Err(invalid_frame("WAL frame encryption domain must be WAL"));
         }
         if self.encryption_domain.tenant_id().get() != self.tenant_id.get() {
             return Err(invalid_frame("WAL frame tenant/domain mismatch"));
+        }
+        Ok(())
+    }
+
+    pub fn validate_for_domain(&self, expected_domain: EncryptionDomain) -> Result<()> {
+        self.validate()?;
+        if !self.encryption_domain.structurally_equal(&expected_domain) {
+            return Err(invalid_frame("WAL frame encryption domain mismatch"));
         }
         Ok(())
     }

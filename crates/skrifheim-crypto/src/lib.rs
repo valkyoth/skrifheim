@@ -252,7 +252,7 @@ impl SignatureSet {
 fn validate_signature_envelope_parts(algorithm: &AlgorithmId, signature: &[u8]) -> Result<()> {
     algorithm.validate_signature_context()?;
     if signature.is_empty() {
-        return Err(SkrifheimError::EmptySignatureSet);
+        return Err(SkrifheimError::InvalidSignatureLength);
     }
     if signature.len() > MAX_VARIABLE_SIGNATURE_BYTES {
         return Err(SkrifheimError::InvalidSignatureLength);

@@ -164,12 +164,11 @@ impl PolicyTokenSlot {
         // Private constructor: callers must pass `canonical_policy_token`
         // output, which enforces the fixed slot size before copying.
         let mut bytes = [0; POLICY_TOKEN_MAX_BYTES];
-        for (index, byte) in value.bytes().enumerate() {
-            bytes[index] = byte;
-        }
+        let len = value.len().min(POLICY_TOKEN_MAX_BYTES);
+        bytes[..len].copy_from_slice(&value.as_bytes()[..len]);
         Self {
             bytes,
-            len: value.len(),
+            len,
             present: 1,
         }
     }

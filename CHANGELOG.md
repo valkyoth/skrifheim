@@ -14,6 +14,14 @@
   reserved bytes, and truncated headers.
 - Added redacted diagnostics and release-gate checks for WAL frame metadata.
 - Added `InvalidWalFrame` with generic trust-boundary public messaging.
+- Resolved the first `0.14.0` pentest pass by hardening policy-token slot
+  copying, requiring strictly advancing key lifecycle epochs, preventing
+  rotating keys from returning to active, rejecting zero WAL CRC sentinels,
+  adding expected-domain WAL validation, adding clock-aware audit-event
+  construction, and correcting empty-signature error classification.
+- Reconfirmed documented scaffold gaps for production constant-time evidence,
+  real cryptographic operations, `SecretBytes::from_slice` source ownership,
+  and 128-bit `WorldId` storage uniqueness enforcement.
 - Bumped workspace and internal crate dependency versions to `0.14.0`.
 - Added `0.14.0` release metadata and gate script.
 

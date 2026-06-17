@@ -26,6 +26,22 @@ checksum metadata.
   reserved bytes, and truncated headers.
 - Added redacted diagnostics for WAL frame headers and inputs.
 - Added `InvalidWalFrame` with a generic trust-boundary public message.
+- Hardened policy-token slot construction so an invariant violation cannot
+  panic through out-of-bounds indexing.
+- Required key lifecycle transitions to advance crypto epochs strictly.
+- Removed the `Rotating` to `Active` key lifecycle transition so a rotating key
+  cannot re-enter active state and create a second-active-key ambiguity.
+- Changed empty signature bytes to return `InvalidSignatureLength` instead of
+  `EmptySignatureSet`.
+- Rejected zero WAL frame body CRC values and zero CRC values decoded from WAL
+  frame bytes.
+- Added `parse_for_domain` and `validate_for_domain` so future WAL readers can
+  bind parsed region/world metadata to the expected WAL segment location.
+- Added `AuditEvent::new_at` for trusted callers that can provide a clock
+  reference and reject future-dated audit events.
+- Confirmed production constant-time evidence, real cryptographic operations,
+  `SecretBytes::from_slice` source cleanup, and `WorldId` storage uniqueness
+  enforcement remain documented scaffold or future-service-boundary items.
 - Bumped workspace and internal crate dependency versions to `0.14.0`.
 - Added `scripts/release_0_14_gate.sh`.
 
@@ -39,12 +55,15 @@ checksum metadata.
 
 This release does not write WAL files, read WAL files from disk, encrypt or
 decrypt frame bodies, compute or verify body checksums, fsync data, detect
-partial writes, replay transactions, or recover database state. It only defines
-and validates the fixed frame metadata that later WAL writer, reader, and
-replay milestones must use.
+partial writes, replay transactions, or recover database state. It also does
+not provide production constant-time evidence for policy-token comparison or
+real signature verification, key derivation, encryption, decryption, HSM/KMS
+binding, segment content-hash verification, or WAL body-CRC recomputation. It
+only defines and validates the fixed frame metadata that later WAL writer,
+reader, and replay milestones must use.
 
 ## Pentest Status
 
-`0.14.0` is at an implementation stop and is ready for pentest. Root
-`PENTEST.md` remains the temporary findings handoff file and must be removed
-after findings are resolved.
+The first `0.14.0` pentest pass has been resolved locally. Root `PENTEST.md`
+remains the temporary findings handoff file and must be removed after findings
+are resolved.

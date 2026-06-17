@@ -158,6 +158,21 @@ fn audit_event_rejects_stale_or_future_attestation() -> Result<()> {
 }
 
 #[test]
+fn audit_event_clock_aware_constructor_rejects_future_events() -> Result<()> {
+    let mut input = event_input()?;
+    input.occurred_at = Timestamp::new(12);
+
+    assert!(matches!(
+        AuditEvent::new_at(input, Timestamp::new(11)),
+        Err(SkrifheimError::InvalidAuditEvent)
+    ));
+
+    let input = event_input()?;
+    assert!(AuditEvent::new_at(input, Timestamp::new(11)).is_ok());
+    Ok(())
+}
+
+#[test]
 fn audit_log_protection_requires_audit_log_domain() -> Result<()> {
     let domain = EncryptionDomain::tenant(tenant()?);
 

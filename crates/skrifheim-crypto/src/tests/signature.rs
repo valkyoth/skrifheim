@@ -80,7 +80,7 @@ fn debug_redacts_signature_bytes_and_set_contents() -> Result<()> {
 fn empty_signature_bytes_are_rejected() {
     assert!(matches!(
         SignatureEnvelope::new(AlgorithmId::Ed25519, CryptoEpoch::new(1), "k", Vec::new()),
-        Err(SkrifheimError::EmptySignatureSet)
+        Err(SkrifheimError::InvalidSignatureLength)
     ));
 }
 

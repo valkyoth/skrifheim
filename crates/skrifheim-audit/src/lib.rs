@@ -260,6 +260,17 @@ pub struct AuditEvent {
 
 impl AuditEvent {
     pub fn new(input: AuditEventInput) -> Result<Self> {
+        Self::validate_input(input)
+    }
+
+    pub fn new_at(input: AuditEventInput, now: Timestamp) -> Result<Self> {
+        if input.occurred_at.get() > now.get() {
+            return Err(SkrifheimError::InvalidAuditEvent);
+        }
+        Self::validate_input(input)
+    }
+
+    fn validate_input(input: AuditEventInput) -> Result<Self> {
         let actor = input.actor.ok_or(SkrifheimError::MissingAuditActor)?;
         validate_attestation_at(
             input.device.and_then(DeviceAuditContext::attestation),
