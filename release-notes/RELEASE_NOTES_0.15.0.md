@@ -34,6 +34,15 @@ or recover after a crash.
 - Added release-gate checks that require the phrase "BLAKE3 remains
   scaffold-only" in release notes and
   require the full-width digest skeletons before durable storage authority.
+- Admitted `subtle` `2.6.1` with default features disabled for policy-token
+  equality in authorization paths.
+- Redacted `FactBuilder` actor attribution and policy identifiers in Debug
+  output.
+- Created Unix WAL files with owner-only `0o600` mode.
+- Removed the impossible missing-CRC state from `WalFrameHeader` storage so
+  encoding cannot silently emit a zeroed header for `BodyChecksum::Missing`.
+- Reaffirmed that signature envelopes and audit/fact signature sets are still
+  format-validated only, not cryptographically verified.
 - Bumped workspace and internal crate dependency versions to `0.15.0`.
 - Added `scripts/release_0_15_gate.sh`.
 
@@ -50,8 +59,12 @@ This release does not implement real SHA-3/SHAKE hashing, admit a SHA-3/SHAKE
 crate, compute content digests, replace existing scaffold BLAKE3 world ID
 derivation, write durable manifests, replay WAL files, recover database state,
 encrypt or decrypt WAL bodies, recompute WAL body CRCs, or enforce transaction
-commit semantics. The new host WAL crate validates and moves already-encrypted
-frame bytes; it does not make those bytes cryptographically trustworthy.
+commit semantics. It does not provide dudect-style statistical timing evidence
+or codegen proof for authorization paths, even though policy-token equality now
+uses an admitted constant-time primitive. It also does not cryptographically
+verify fact or audit signatures. The new host WAL crate validates and moves
+already-encrypted frame bytes; it does not make those bytes cryptographically
+trustworthy.
 
 ## Pentest Status
 

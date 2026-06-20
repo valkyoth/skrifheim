@@ -38,13 +38,13 @@ impl fmt::Debug for FactBuilder {
             .field("object", &self.object.as_ref().map(|_| "<redacted>"))
             .field("valid_time", &self.valid_time)
             .field("committed_at", &self.committed_at)
-            .field("asserted_by", &self.asserted_by)
+            .field("asserted_by", &self.asserted_by.map(|_| "<redacted>"))
             .field("evidence_count", &self.evidence.len())
             .field("confidence", &self.confidence)
             .field("caused_by_count", &self.caused_by.len())
             .field("supersedes_count", &self.supersedes.len())
             .field("invalidates_count", &self.invalidates.len())
-            .field("policy_id", &self.policy_id)
+            .field("policy_id", &self.policy_id.map(|_| "<redacted>"))
             .field("classification", &self.label.as_ref().map(|_| "<redacted>"))
             .field(
                 "signature_count",

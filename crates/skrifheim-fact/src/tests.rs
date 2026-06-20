@@ -117,6 +117,8 @@ fn debug_redacts_fact_payload_and_label_tokens() -> Result<()> {
     assert!(!builder_debug.contains("classified payload"));
     assert!(!builder_debug.contains("EU-COMMAND"));
     assert!(!builder_debug.contains("Restricted"));
+    assert!(!builder_debug.contains("ActorId"));
+    assert!(!builder_debug.contains("PolicyId"));
     assert!(!fact_debug.contains("classified payload"));
     assert!(!fact_debug.contains("EU-COMMAND"));
     assert!(!fact_debug.contains("Restricted"));
@@ -124,6 +126,8 @@ fn debug_redacts_fact_payload_and_label_tokens() -> Result<()> {
     assert!(!fact_debug.contains("PolicyId"));
     assert!(fact_debug.contains("asserted_by: \"<redacted>\""));
     assert!(fact_debug.contains("policy_id: \"<redacted>\""));
+    assert!(builder_debug.contains("asserted_by: Some(\"<redacted>\")"));
+    assert!(builder_debug.contains("policy_id: Some(\"<redacted>\")"));
     assert!(builder_debug.contains("<redacted>"));
     assert!(fact_debug.contains("<redacted>"));
     Ok(())

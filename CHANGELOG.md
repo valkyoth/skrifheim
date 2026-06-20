@@ -15,6 +15,11 @@
 - Added WAL host-file tests for appending encrypted frame bodies, sequential
   reads, expected-domain rejection, body-length mismatch rejection, and partial
   header/body detection.
+- Resolved the first `0.15.0` pentest pass by admitting `subtle` for
+  policy-token equality, redacting `FactBuilder` actor and policy identifiers,
+  creating Unix WAL files with owner-only permissions, removing the WAL encoder
+  missing-CRC state at the type level, and reaffirming cryptographic
+  verification as a documented non-claim.
 - Bumped workspace and internal crate dependency versions to `0.15.0`.
 - Added `0.15.0` release metadata and gate script.
 

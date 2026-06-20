@@ -7,6 +7,9 @@ use std::{
     path::Path,
 };
 
+#[cfg(unix)]
+use std::os::unix::fs::OpenOptionsExt;
+
 use skrifheim_core::{Result as SkrifheimResult, SkrifheimError};
 use skrifheim_crypto::EncryptionDomain;
 use skrifheim_storage::{WAL_FRAME_HEADER_BYTES, WalFrameHeader};
@@ -74,7 +77,11 @@ pub struct WalFileWriter {
 
 impl WalFileWriter {
     pub fn open_append(path: impl AsRef<Path>, options: WalAppendOptions) -> Result<Self> {
-        let file = OpenOptions::new().create(true).append(true).open(path)?;
+        let mut open_options = OpenOptions::new();
+        open_options.create(true).append(true);
+        #[cfg(unix)]
+        open_options.mode(0o600);
+        let file = open_options.open(path)?;
         Ok(Self { file, options })
     }
 

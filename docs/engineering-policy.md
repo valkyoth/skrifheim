@@ -124,6 +124,22 @@ Current external dependency exceptions:
   Removal condition: replace if the crate loses no-std support, requires an
   incompatible license, pulls mandatory broad transitive dependencies, or an
   admitted project-owned cryptographic hash boundary supersedes it.
+- Crate: `subtle` `2.6.1`
+  Used by: `skrifheim-core`
+  Scope: policy-token equality in authorization paths.
+  Reason: compartment and releasability checks must not rely on hand-rolled
+  source-level branchlessness when an admitted no-std constant-time primitive is
+  available.
+  Unsafe review: `skrifheim` uses the safe API with `default-features = false`.
+  No unsafe Rust is added to `skrifheim` core crates.
+  Transitive dependency review: selected no-default feature graph has no
+  transitive runtime dependencies.
+  License: `BSD-3-Clause`, allowed by `deny.toml`.
+  Review deadline: revisit before any production constant-time claim or before
+  `v0.20.0`, whichever comes first.
+  Removal condition: remove or replace if the crate loses no-std support,
+  changes license posture, adds mandatory transitive dependencies, or if a
+  narrower verified local constant-time boundary is approved.
 
 ## Specific Crate Rules
 
@@ -136,10 +152,10 @@ Source-level branchless code is not enough evidence for production
 constant-time behavior. Rust does not provide a language-level guarantee that
 ordinary codegen preserves constant-time properties.
 
-The current scaffold may use local, reviewed, no-dependency helpers for
-bounded token comparison. Before any production claim for timing-sensitive
-policy, key, signature, authentication, or secret comparison paths, `skrifheim`
-must either:
+The current scaffold may use admitted no-std constant-time helper crates or
+local reviewed helpers for bounded token comparison. Before any production
+claim for timing-sensitive policy, key, signature, authentication, or secret
+comparison paths, `skrifheim` must either:
 
 - admit a reviewed constant-time primitive crate such as `subtle` or an
   equivalent under the external dependency admission process, or

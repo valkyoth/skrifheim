@@ -1,8 +1,8 @@
 use alloc::{string::String, vec::Vec};
-use core::hint::black_box;
 use core::{array, fmt};
 
 use crate::{Result, SkrifheimError};
+use subtle::ConstantTimeEq;
 
 pub const POLICY_TOKEN_MAX_BYTES: usize = 128;
 pub const POLICY_TOKEN_SET_MAX_ITEMS: usize = 64;
@@ -241,15 +241,9 @@ fn is_valid_policy_token(value: &str) -> bool {
 }
 
 fn policy_token_eq_ct(left: PolicyTokenSlot, right: PolicyTokenSlot) -> u8 {
-    let left = black_box(left);
-    let right = black_box(right);
-    let mut diff = black_box(left.len ^ right.len);
-    let mut index = 0;
-    while index < POLICY_TOKEN_MAX_BYTES {
-        diff |= usize::from(black_box(left.bytes[index] ^ right.bytes[index]));
-        index += 1;
-    }
-    black_box(usize_is_zero(black_box(diff)))
+    let left_len = left.len.to_le_bytes();
+    let right_len = right.len.to_le_bytes();
+    (left_len.ct_eq(&right_len) & left.bytes.ct_eq(&right.bytes)).unwrap_u8()
 }
 
 fn slot_sorts_after(left: PolicyTokenSlot, right: PolicyTokenSlot) -> bool {
@@ -265,12 +259,6 @@ fn slot_sorts_after(left: PolicyTokenSlot, right: PolicyTokenSlot) -> bool {
         index += 1;
     }
     left.len > right.len
-}
-
-fn usize_is_zero(value: usize) -> u8 {
-    let folded = value | value.wrapping_neg();
-    let top_bit = folded >> (usize::BITS - 1);
-    (top_bit ^ 1) as u8
 }
 
 impl Default for PolicyTokenSet {

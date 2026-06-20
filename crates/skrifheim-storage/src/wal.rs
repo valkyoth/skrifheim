@@ -67,7 +67,7 @@ pub struct WalFrameHeader {
     crypto_epoch: CryptoEpoch,
     encryption_domain: EncryptionDomain,
     encrypted_body_len: u64,
-    body_crc64: BodyChecksum,
+    body_crc64: u64,
 }
 
 impl fmt::Debug for WalFrameHeader {
@@ -126,7 +126,7 @@ impl WalFrameHeader {
             crypto_epoch: input.crypto_epoch,
             encryption_domain: input.encryption_domain,
             encrypted_body_len: input.encrypted_body_len,
-            body_crc64: input.body_crc64,
+            body_crc64: require_body_crc64(input.body_crc64)?,
         };
         header.validate()?;
         Ok(header)
@@ -172,7 +172,7 @@ impl WalFrameHeader {
         if body_crc64_raw == 0 {
             return Err(invalid_frame("WAL frame body CRC must not be zero"));
         }
-        let body_crc64 = BodyChecksum::Present(body_crc64_raw);
+        let body_crc64 = body_crc64_raw;
         let encryption_domain = EncryptionDomain::wal(tenant_id, region_id, world_id);
         Ok(Self {
             magic,
@@ -207,11 +207,8 @@ impl WalFrameHeader {
             .copy_from_slice(&self.encryption_key_id.get().to_le_bytes());
         bytes[BODY_LEN_OFFSET..BODY_CRC_OFFSET]
             .copy_from_slice(&self.encrypted_body_len.to_le_bytes());
-        let BodyChecksum::Present(body_crc64) = self.body_crc64 else {
-            debug_assert!(false, "validated WAL frame headers always carry body CRC64");
-            return [0; WAL_FRAME_HEADER_BYTES];
-        };
-        bytes[BODY_CRC_OFFSET..WAL_FRAME_HEADER_BYTES].copy_from_slice(&body_crc64.to_le_bytes());
+        bytes[BODY_CRC_OFFSET..WAL_FRAME_HEADER_BYTES]
+            .copy_from_slice(&self.body_crc64.to_le_bytes());
         bytes
     }
 
@@ -262,7 +259,7 @@ impl WalFrameHeader {
 
     #[must_use]
     pub const fn body_crc64(&self) -> BodyChecksum {
-        self.body_crc64
+        BodyChecksum::Present(self.body_crc64)
     }
 
     pub fn validate(&self) -> Result<()> {
@@ -283,10 +280,7 @@ impl WalFrameHeader {
                 "WAL frame encrypted body exceeds maximum size",
             ));
         }
-        if self.body_crc64 == BodyChecksum::Missing {
-            return Err(invalid_frame("WAL frame body CRC missing"));
-        }
-        if matches!(self.body_crc64, BodyChecksum::Present(0)) {
+        if self.body_crc64 == 0 {
             return Err(invalid_frame("WAL frame body CRC must not be zero"));
         }
         if self.encryption_domain.purpose() != EncryptionDomainPurpose::Wal {
@@ -345,6 +339,14 @@ fn optional_world(value: u128) -> Result<Option<WorldId>> {
 
 fn invalid_frame(reason: &'static str) -> SkrifheimError {
     SkrifheimError::InvalidWalFrame(String::from(reason))
+}
+
+fn require_body_crc64(body_crc64: BodyChecksum) -> Result<u64> {
+    match body_crc64 {
+        BodyChecksum::Present(value) if value != 0 => Ok(value),
+        BodyChecksum::Present(_) => Err(invalid_frame("WAL frame body CRC must not be zero")),
+        BodyChecksum::Missing => Err(invalid_frame("WAL frame body CRC missing")),
+    }
 }
 
 #[cfg(test)]

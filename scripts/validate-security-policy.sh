@@ -242,6 +242,11 @@ if grep -E "\\.field\\(\"(asserted_by|policy_id)\",[[:space:]]*&self\\.(asserted
     exit 1
 fi
 
+if grep -E "\\.field\\(\"(asserted_by|policy_id)\",[[:space:]]*&self\\.(asserted_by|policy_id)\\)" crates/skrifheim-fact/src/builder.rs >/dev/null; then
+    echo "FactBuilder Debug must redact asserted_by actor attribution and policy identifiers" >&2
+    exit 1
+fi
+
 if grep -E "SecurityLabel::classification|\\.classification\\(\\)" crates/skrifheim-fact/src/builder.rs >/dev/null; then
     echo "FactBuilder Debug must redact label classification" >&2
     exit 1

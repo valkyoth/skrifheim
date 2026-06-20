@@ -5,6 +5,9 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
+
 use skrifheim_core::{Result as SkrifheimResult, SkrifheimError, TenantId, TxId, WorldId};
 use skrifheim_crypto::{CryptoEpoch, EncryptionDomain, KeyId, RegionKeyId};
 use skrifheim_storage::{BodyChecksum, WalFrameHeader, WalFrameHeaderInput, WalRecordKind};
@@ -88,6 +91,20 @@ fn wal_writer_rejects_body_length_mismatch() -> Result<()> {
             _
         )))
     ));
+    fs::remove_file(path)?;
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn wal_writer_creates_owner_only_files() -> Result<()> {
+    let path = temp_path("permissions")?;
+    {
+        let _writer = WalFileWriter::open_append(&path, WalAppendOptions::new(false))?;
+    }
+    let mode = fs::metadata(&path)?.permissions().mode() & 0o777;
+
+    assert_eq!(mode, 0o600);
     fs::remove_file(path)?;
     Ok(())
 }
