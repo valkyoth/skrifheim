@@ -41,6 +41,8 @@ from truth.
 - `skrifheim-crypto`: crypto-agile envelopes, epochs, algorithm identifiers, future threshold signatures.
 - `skrifheim-audit`: identities, attestation evidence references, audit events, and audit-log protection metadata.
 - `skrifheim-storage`: WAL, immutable segment metadata, Merkle manifests, content-addressed blobs.
+- `skrifheim-storage-host`: host-file WAL helpers that use `std` outside the
+  `no_std` core crates.
 - `skrifheim-query`: query intent, policy-aware planning, context-pack planning.
 - `skrifheim-compliance`: future legal/compliance passports, law-pack metadata, and legal transfer decisions.
 - `skrifheim-cluster`: future cell, control-plane, tunnel, placement, and failover planning primitives.

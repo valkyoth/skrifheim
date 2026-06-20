@@ -1,6 +1,7 @@
 use super::*;
 use skrifheim_core::{Result, TenantId};
 
+mod digest;
 mod domain;
 mod key_lifecycle;
 mod secret;

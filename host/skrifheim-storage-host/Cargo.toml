@@ -1,0 +1,16 @@
+[package]
+name = "skrifheim-storage-host"
+description = "Host-file WAL I/O helpers for skrifheim storage tests and future runtime integration."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+skrifheim-core = { version = "0.15.0", path = "../../crates/skrifheim-core" }
+skrifheim-crypto = { version = "0.15.0", path = "../../crates/skrifheim-crypto" }
+skrifheim-storage = { version = "0.15.0", path = "../../crates/skrifheim-storage" }
+
+[lints]
+workspace = true

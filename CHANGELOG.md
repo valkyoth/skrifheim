@@ -2,10 +2,21 @@
 
 ## Unreleased
 
+## 0.15.0
+
 - Updated the implementation and version plans so BLAKE3 remains scaffold-only
   for compact non-secret world handles, while production storage authority
   moves to configurable SHA-3/SHAKE full-width digests before durable storage
   keys are trusted.
+- Added `DigestStrength`, `DigestPolicy`, `WorldIdentityDigest`,
+  `ContentDigest`, and `ManifestDigest` skeletons in `skrifheim-crypto`.
+- Added `skrifheim-storage-host` for host-file WAL append/read helpers outside
+  the `no_std` core crates.
+- Added WAL host-file tests for appending encrypted frame bodies, sequential
+  reads, expected-domain rejection, body-length mismatch rejection, and partial
+  header/body detection.
+- Bumped workspace and internal crate dependency versions to `0.15.0`.
+- Added `0.15.0` release metadata and gate script.
 
 ## 0.14.0
 

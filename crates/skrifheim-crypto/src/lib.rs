@@ -7,6 +7,7 @@ use alloc::{string::String, vec::Vec};
 use core::fmt;
 use skrifheim_core::{Result, SkrifheimError};
 
+mod digest;
 mod domain;
 mod key;
 mod projection;
@@ -15,6 +16,11 @@ mod secret;
 #[cfg(test)]
 mod tests;
 
+pub use digest::{
+    ContentDigest, DigestPolicy, DigestStrength, DigestValue, ManifestDigest,
+    SHA3_256_DIGEST_BYTES, SHA3_384_DIGEST_BYTES, SHA3_512_DIGEST_BYTES, SHAKE256_256_DIGEST_BYTES,
+    SHAKE256_512_DIGEST_BYTES, WorldIdentityDigest,
+};
 pub use domain::{EncryptionDomain, EncryptionDomainPurpose};
 pub use key::{
     CompartmentKeyId, DeploymentKeyId, KeyErasureMetadata, KeyErasureReason, KeyId,

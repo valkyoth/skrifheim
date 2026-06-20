@@ -10,11 +10,12 @@ members = [
     "crates/skrifheim-audit",
     "crates/skrifheim-storage",
     "crates/skrifheim-query",
+    "host/skrifheim-storage-host",
     "tools/xtask",
 ]
 
 [workspace.package]
-version = "0.14.0"
+version = "0.15.0"
 edition = "2024"
 license = "EUPL-1.2"
 repository = "https://github.com/valkyoth/skrifheim"
