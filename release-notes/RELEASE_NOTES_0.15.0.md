@@ -1,6 +1,6 @@
 # skrifheim 0.15.0 Release Notes
 
-Status: implementation stop, pending pentest.
+Status: implementation stop, pentest passed, GitHub verification passed.
 
 ## Scope
 
@@ -80,5 +80,5 @@ trustworthy.
 ## Pentest Status
 
 The first, second, and third `0.15.0` pentest passes have been resolved locally.
-Root `PENTEST.md` remains the temporary findings handoff file and must be
-removed after findings are resolved.
+Root `PENTEST.md` has been removed. GitHub verification passed; this release is
+ready for signed tag creation.

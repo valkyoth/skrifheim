@@ -30,6 +30,8 @@
   comparison expansion use a fixed 64-byte loop with documented scaffold timing
   limits, and by narrowing policy-token length comparison to a guarded `u8`
   representation.
+- Prepared `0.15.0` for signed tag creation after pentest and GitHub
+  verification passed.
 - Bumped workspace and internal crate dependency versions to `0.15.0`.
 - Added `0.15.0` release metadata and gate script.
 
