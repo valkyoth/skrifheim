@@ -121,6 +121,13 @@ for derive_name in Debug PartialEq Eq; do
     check_no_sensitive_derive crates/skrifheim-audit/src/lib.rs AuditRecord "$derive_name"
 done
 
+for derive_name in PartialEq Eq; do
+    check_no_sensitive_derive crates/skrifheim-crypto/src/digest.rs DigestValue "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-crypto/src/digest.rs WorldIdentityDigest "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-crypto/src/digest.rs ContentDigest "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-crypto/src/digest.rs ManifestDigest "$derive_name"
+done
+
 check_no_sensitive_derive crates/skrifheim-storage/src/lib.rs SegmentHeader Debug
 check_no_sensitive_derive crates/skrifheim-storage/src/lib.rs SegmentHeaderInput Debug
 check_no_sensitive_derive crates/skrifheim-storage/src/wal.rs WalFrameHeader Debug

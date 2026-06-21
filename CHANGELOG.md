@@ -20,6 +20,12 @@
   creating Unix WAL files with owner-only permissions, removing the WAL encoder
   missing-CRC state at the type level, and reaffirming cryptographic
   verification as a documented non-claim.
+- Resolved the second `0.15.0` pentest pass by adding explicit
+  `subtle`-backed digest equality helpers, documenting structural digest
+  comparison as non-authentication-only, tightening permissions on pre-existing
+  Unix WAL files, removing redundant file flushes before `sync_all`, making
+  policy-token length comparison fixed-width, and returning raw WAL CRC values
+  now that missing WAL CRCs are structurally impossible.
 - Bumped workspace and internal crate dependency versions to `0.15.0`.
 - Added `0.15.0` release metadata and gate script.
 

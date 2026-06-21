@@ -8,7 +8,10 @@ use std::{
 };
 
 #[cfg(unix)]
-use std::os::unix::fs::OpenOptionsExt;
+use std::{
+    fs::Permissions,
+    os::unix::fs::{OpenOptionsExt, PermissionsExt},
+};
 
 use skrifheim_core::{Result as SkrifheimResult, SkrifheimError};
 use skrifheim_crypto::EncryptionDomain;
@@ -82,6 +85,8 @@ impl WalFileWriter {
         #[cfg(unix)]
         open_options.mode(0o600);
         let file = open_options.open(path)?;
+        #[cfg(unix)]
+        file.set_permissions(Permissions::from_mode(0o600))?;
         Ok(Self { file, options })
     }
 
@@ -90,7 +95,6 @@ impl WalFileWriter {
         header.validate()?;
         self.file.write_all(&header.encode())?;
         self.file.write_all(encrypted_body)?;
-        self.file.flush()?;
         if self.options.sync_on_append() {
             self.file.sync_all()?;
         }

@@ -43,6 +43,14 @@ or recover after a crash.
   encoding cannot silently emit a zeroed header for `BodyChecksum::Missing`.
 - Reaffirmed that signature envelopes and audit/fact signature sets are still
   format-validated only, not cryptographically verified.
+- Added explicit `subtle`-backed digest equality helpers and documented
+  structural digest comparison as non-authentication-only.
+- Tightened permissions on pre-existing Unix WAL files when opened for append.
+- Removed redundant host-file flushes before `sync_all`.
+- Made policy-token length comparison use a fixed-width integer before
+  constant-time comparison.
+- Simplified the WAL body CRC getter to return the guaranteed-present raw CRC
+  value.
 - Bumped workspace and internal crate dependency versions to `0.15.0`.
 - Added `scripts/release_0_15_gate.sh`.
 
@@ -68,4 +76,6 @@ trustworthy.
 
 ## Pentest Status
 
-`0.15.0` is at an implementation stop and is ready for pentest.
+The first and second `0.15.0` pentest passes have been resolved locally. Root
+`PENTEST.md` remains the temporary findings handoff file and must be removed
+after findings are resolved.

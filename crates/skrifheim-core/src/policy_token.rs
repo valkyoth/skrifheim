@@ -241,8 +241,8 @@ fn is_valid_policy_token(value: &str) -> bool {
 }
 
 fn policy_token_eq_ct(left: PolicyTokenSlot, right: PolicyTokenSlot) -> u8 {
-    let left_len = left.len.to_le_bytes();
-    let right_len = right.len.to_le_bytes();
+    let left_len = (left.len as u16).to_le_bytes();
+    let right_len = (right.len as u16).to_le_bytes();
     (left_len.ct_eq(&right_len) & left.bytes.ct_eq(&right.bytes)).unwrap_u8()
 }
 

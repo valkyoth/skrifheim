@@ -1,6 +1,7 @@
 use core::fmt;
 
 use skrifheim_core::{Result, SkrifheimError};
+use subtle::ConstantTimeEq;
 
 pub const SHA3_256_DIGEST_BYTES: usize = 32;
 pub const SHA3_384_DIGEST_BYTES: usize = 48;
@@ -76,7 +77,7 @@ impl DigestPolicy {
     }
 }
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone)]
 pub enum DigestValue {
     Bytes32 {
         strength: DigestStrength,
@@ -152,9 +153,40 @@ impl DigestValue {
         }
     }
 
+    /// Non-constant-time structural comparison for tests and data-model checks.
+    ///
+    /// This must not be used for authentication, authorization, manifest-root
+    /// acceptance, or any other trust-boundary decision. Use
+    /// [`Self::structurally_equal_ct`] for timing-sensitive equality.
     #[must_use]
     pub fn structurally_equal(&self, other: &Self) -> bool {
         self.strength() == other.strength() && self.as_bytes() == other.as_bytes()
+    }
+
+    #[must_use]
+    pub fn structurally_equal_ct(&self, other: &Self) -> bool {
+        let left_strength = [self.strength_tag()];
+        let right_strength = [other.strength_tag()];
+        let left = self.fixed_bytes();
+        let right = other.fixed_bytes();
+
+        (left_strength.ct_eq(&right_strength) & left.ct_eq(&right)).unwrap_u8() == 1
+    }
+
+    const fn strength_tag(&self) -> u8 {
+        match self.strength() {
+            DigestStrength::Sha3_256 => 1,
+            DigestStrength::Sha3_384 => 2,
+            DigestStrength::Sha3_512 => 3,
+            DigestStrength::Shake256_256 => 4,
+            DigestStrength::Shake256_512 => 5,
+        }
+    }
+
+    fn fixed_bytes(&self) -> [u8; SHA3_512_DIGEST_BYTES] {
+        let mut fixed = [0_u8; SHA3_512_DIGEST_BYTES];
+        fixed[..self.as_bytes().len()].copy_from_slice(self.as_bytes());
+        fixed
     }
 }
 
@@ -185,9 +217,20 @@ macro_rules! digest_wrapper {
                 self.0.as_bytes()
             }
 
+            /// Non-constant-time structural comparison for tests and metadata
+            /// checks only.
+            ///
+            /// This must not be used for authentication, authorization,
+            /// manifest-root acceptance, or other trust-boundary decisions. Use
+            /// [`Self::structurally_equal_ct`] for timing-sensitive equality.
             #[must_use]
             pub fn structurally_equal(&self, other: &Self) -> bool {
                 self.0.structurally_equal(&other.0)
+            }
+
+            #[must_use]
+            pub fn structurally_equal_ct(&self, other: &Self) -> bool {
+                self.0.structurally_equal_ct(&other.0)
             }
         }
 

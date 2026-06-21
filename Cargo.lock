@@ -118,6 +118,7 @@ version = "0.15.0"
 dependencies = [
  "sanitization",
  "skrifheim-core",
+ "subtle",
 ]
 
 [[package]]

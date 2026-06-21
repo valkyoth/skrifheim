@@ -46,7 +46,7 @@ fn wal_frame_header_accepts_valid_metadata() -> Result<()> {
     assert_eq!(header.encryption_key_id().get(), 3);
     assert_eq!(header.crypto_epoch().get(), 4);
     assert_eq!(header.encrypted_body_len(), 7);
-    assert_eq!(header.body_crc64(), BodyChecksum::Present(8));
+    assert_eq!(header.body_crc64(), 8);
     Ok(())
 }
 

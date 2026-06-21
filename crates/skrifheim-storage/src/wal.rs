@@ -258,8 +258,8 @@ impl WalFrameHeader {
     }
 
     #[must_use]
-    pub const fn body_crc64(&self) -> BodyChecksum {
-        BodyChecksum::Present(self.body_crc64)
+    pub const fn body_crc64(&self) -> u64 {
+        self.body_crc64
     }
 
     pub fn validate(&self) -> Result<()> {

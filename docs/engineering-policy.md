@@ -125,11 +125,13 @@ Current external dependency exceptions:
   incompatible license, pulls mandatory broad transitive dependencies, or an
   admitted project-owned cryptographic hash boundary supersedes it.
 - Crate: `subtle` `2.6.1`
-  Used by: `skrifheim-core`
-  Scope: policy-token equality in authorization paths.
+  Used by: `skrifheim-core`, `skrifheim-crypto`
+  Scope: policy-token equality in authorization paths and explicit digest
+  equality helpers for future identity and manifest checks.
   Reason: compartment and releasability checks must not rely on hand-rolled
   source-level branchlessness when an admitted no-std constant-time primitive is
-  available.
+  available. Digest identity checks need an explicit timing-sensitive equality
+  path before full-width digest values become storage authority.
   Unsafe review: `skrifheim` uses the safe API with `default-features = false`.
   No unsafe Rust is added to `skrifheim` core crates.
   Transitive dependency review: selected no-default feature graph has no

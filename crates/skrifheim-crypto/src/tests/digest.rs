@@ -58,6 +58,20 @@ fn digest_policy_mismatch_is_rejected() -> Result<()> {
 }
 
 #[test]
+fn digest_constant_time_comparison_checks_strength_and_bytes() -> Result<()> {
+    let left = WorldIdentityDigest::new(DigestPolicy::HIGH_SECURITY, &[7; 32])?;
+    let same = WorldIdentityDigest::new(DigestPolicy::HIGH_SECURITY, &[7; 32])?;
+    let different_bytes = WorldIdentityDigest::new(DigestPolicy::HIGH_SECURITY, &[8; 32])?;
+    let different_strength =
+        WorldIdentityDigest::new(DigestPolicy::new(DigestStrength::Shake256_256), &[7; 32])?;
+
+    assert!(left.structurally_equal_ct(&same));
+    assert!(!left.structurally_equal_ct(&different_bytes));
+    assert!(!left.structurally_equal_ct(&different_strength));
+    Ok(())
+}
+
+#[test]
 fn digest_debug_redacts_digest_bytes() -> Result<()> {
     let digest = WorldIdentityDigest::new(DigestPolicy::HIGH_SECURITY, &[7; 32])?;
     let debug = format!("{digest:?}");

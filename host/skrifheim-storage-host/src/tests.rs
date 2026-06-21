@@ -109,6 +109,22 @@ fn wal_writer_creates_owner_only_files() -> Result<()> {
     Ok(())
 }
 
+#[cfg(unix)]
+#[test]
+fn wal_writer_tightens_existing_file_permissions() -> Result<()> {
+    let path = temp_path("existing-permissions")?;
+    fs::write(&path, [])?;
+    fs::set_permissions(&path, fs::Permissions::from_mode(0o644))?;
+    {
+        let _writer = WalFileWriter::open_append(&path, WalAppendOptions::new(false))?;
+    }
+    let mode = fs::metadata(&path)?.permissions().mode() & 0o777;
+
+    assert_eq!(mode, 0o600);
+    fs::remove_file(path)?;
+    Ok(())
+}
+
 #[test]
 fn wal_reader_rejects_unexpected_domain() -> Result<()> {
     let path = temp_path("domain")?;
