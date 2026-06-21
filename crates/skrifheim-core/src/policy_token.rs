@@ -6,6 +6,7 @@ use subtle::ConstantTimeEq;
 
 pub const POLICY_TOKEN_MAX_BYTES: usize = 128;
 pub const POLICY_TOKEN_SET_MAX_ITEMS: usize = 64;
+const _: () = assert!(POLICY_TOKEN_MAX_BYTES <= u8::MAX as usize);
 const NOOP_POLICY_TOKEN: PolicyTokenSlot = PolicyTokenSlot::empty();
 const INVALID_POLICY_TOKEN_NEEDLE: PolicyTokenSlot = PolicyTokenSlot::invalid_needle();
 
@@ -241,8 +242,8 @@ fn is_valid_policy_token(value: &str) -> bool {
 }
 
 fn policy_token_eq_ct(left: PolicyTokenSlot, right: PolicyTokenSlot) -> u8 {
-    let left_len = (left.len as u16).to_le_bytes();
-    let right_len = (right.len as u16).to_le_bytes();
+    let left_len = [left.len as u8];
+    let right_len = [right.len as u8];
     (left_len.ct_eq(&right_len) & left.bytes.ct_eq(&right.bytes)).unwrap_u8()
 }
 

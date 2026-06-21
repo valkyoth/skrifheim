@@ -164,6 +164,13 @@ impl DigestValue {
     }
 
     #[must_use]
+    /// Compares digest strength and bytes using fixed-width `subtle`
+    /// comparisons.
+    ///
+    /// The comparison always expands the digest value into a 64-byte local
+    /// buffer. It protects digest-byte equality from ordinary short-circuit
+    /// comparison. It is still scaffold code and does not replace the
+    /// project's planned statistical timing evidence gate for production.
     pub fn structurally_equal_ct(&self, other: &Self) -> bool {
         let left_strength = [self.strength_tag()];
         let right_strength = [other.strength_tag()];
@@ -185,7 +192,16 @@ impl DigestValue {
 
     fn fixed_bytes(&self) -> [u8; SHA3_512_DIGEST_BYTES] {
         let mut fixed = [0_u8; SHA3_512_DIGEST_BYTES];
-        fixed[..self.as_bytes().len()].copy_from_slice(self.as_bytes());
+        let source = self.as_bytes();
+        let mut index = 0;
+        while index < SHA3_512_DIGEST_BYTES {
+            fixed[index] = if index < source.len() {
+                source[index]
+            } else {
+                0
+            };
+            index += 1;
+        }
         fixed
     }
 }
@@ -229,6 +245,13 @@ macro_rules! digest_wrapper {
             }
 
             #[must_use]
+            /// Compares digest strength and bytes using fixed-width `subtle`
+            /// comparisons.
+            ///
+            /// This protects digest-byte equality from ordinary short-circuit
+            /// comparison. It is still scaffold code and does not replace the
+            /// project's planned statistical timing evidence gate for
+            /// production.
             pub fn structurally_equal_ct(&self, other: &Self) -> bool {
                 self.0.structurally_equal_ct(&other.0)
             }

@@ -26,6 +26,10 @@
   Unix WAL files, removing redundant file flushes before `sync_all`, making
   policy-token length comparison fixed-width, and returning raw WAL CRC values
   now that missing WAL CRCs are structurally impossible.
+- Resolved the third `0.15.0` pentest pass by making digest constant-time
+  comparison expansion use a fixed 64-byte loop with documented scaffold timing
+  limits, and by narrowing policy-token length comparison to a guarded `u8`
+  representation.
 - Bumped workspace and internal crate dependency versions to `0.15.0`.
 - Added `0.15.0` release metadata and gate script.
 

@@ -51,6 +51,9 @@ or recover after a crash.
   constant-time comparison.
 - Simplified the WAL body CRC getter to return the guaranteed-present raw CRC
   value.
+- Made digest constant-time comparison expansion use a fixed 64-byte loop and
+  documented that production still requires statistical timing evidence.
+- Narrowed policy-token length comparison to a guarded `u8` representation.
 - Bumped workspace and internal crate dependency versions to `0.15.0`.
 - Added `scripts/release_0_15_gate.sh`.
 
@@ -76,6 +79,6 @@ trustworthy.
 
 ## Pentest Status
 
-The first and second `0.15.0` pentest passes have been resolved locally. Root
-`PENTEST.md` remains the temporary findings handoff file and must be removed
-after findings are resolved.
+The first, second, and third `0.15.0` pentest passes have been resolved locally.
+Root `PENTEST.md` remains the temporary findings handoff file and must be
+removed after findings are resolved.
