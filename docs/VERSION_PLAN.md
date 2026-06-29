@@ -256,6 +256,7 @@ Deliverables:
 - record kind model,
 - length and checksum fields,
 - key epoch and encryption domain fields,
+- non-zero epoch and CRC sentinel rejection,
 - frame validation,
 - parser tests for malformed frames.
 
@@ -274,7 +275,9 @@ Deliverables:
   on compact `WorldId`,
 - append-only writer,
 - sequential reader,
+- CRC64-ECMA encrypted-body verification on write and read,
 - encrypted frame metadata checks,
+- Unix symlink rejection for WAL append paths,
 - fsync boundary option,
 - partial-write detection,
 - tests using temporary host files.
@@ -289,6 +292,8 @@ Deliverables:
 - committed/uncommitted transaction handling,
 - truncated-frame handling,
 - key epoch mismatch handling,
+- bounded replay transaction summaries,
+- fixed-width replay domain comparison,
 - recovery report,
 - crash matrix tests for WAL-only storage.
 
@@ -300,9 +305,9 @@ Deliverables:
 
 - segment header,
 - footer,
-- content hash field,
-- explicit checksum presence representation where CRC64 value `0` remains a
-  valid present checksum,
+- algorithm-agile content digest field,
+- explicit checksum presence representation where CRC64 value `0` is rejected
+  as a missing-integrity sentinel,
 - policy and encryption metadata,
 - key epoch and encryption domain fields,
 - segment validation tests.

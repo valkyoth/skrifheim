@@ -15,7 +15,20 @@ use std::{
 
 use skrifheim_core::{Result as SkrifheimResult, SkrifheimError};
 use skrifheim_crypto::EncryptionDomain;
-use skrifheim_storage::{WAL_FRAME_HEADER_BYTES, WalFrameHeader};
+use skrifheim_storage::{WAL_FRAME_HEADER_BYTES, WalFrameHeader, wal_body_crc64};
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+const O_NOFOLLOW_FLAG: i32 = 0o400000;
+
+#[cfg(any(
+    target_os = "macos",
+    target_os = "ios",
+    target_os = "freebsd",
+    target_os = "openbsd",
+    target_os = "netbsd",
+    target_os = "dragonfly"
+))]
+const O_NOFOLLOW_FLAG: i32 = 0x0100;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct WalAppendOptions {
@@ -83,8 +96,16 @@ impl WalFileWriter {
         let mut open_options = OpenOptions::new();
         open_options.create(true).append(true);
         #[cfg(unix)]
-        open_options.mode(0o600);
+        {
+            open_options.custom_flags(O_NOFOLLOW_FLAG);
+            open_options.mode(0o600);
+        }
         let file = open_options.open(path)?;
+        if !file.metadata()?.is_file() {
+            return Err(WalFileError::Io(io::Error::other(
+                "WAL path must be a regular file",
+            )));
+        }
         #[cfg(unix)]
         file.set_permissions(Permissions::from_mode(0o600))?;
         Ok(Self { file, options })
@@ -93,6 +114,7 @@ impl WalFileWriter {
     pub fn append_frame(&mut self, header: &WalFrameHeader, encrypted_body: &[u8]) -> Result<()> {
         validate_body_len(header, encrypted_body)?;
         header.validate()?;
+        verify_body_crc(header, encrypted_body)?;
         self.file.write_all(&header.encode())?;
         self.file.write_all(encrypted_body)?;
         if self.options.sync_on_append() {
@@ -127,6 +149,7 @@ impl WalFileReader {
         self.file
             .read_exact(&mut encrypted_body)
             .map_err(map_partial_read)?;
+        verify_body_crc(&header, &encrypted_body)?;
         Ok(Some(WalFileFrame {
             header,
             encrypted_body,
@@ -158,6 +181,15 @@ fn validate_body_len(header: &WalFrameHeader, encrypted_body: &[u8]) -> Skrifhei
     if encrypted_body.len() as u64 != header.encrypted_body_len() {
         return Err(SkrifheimError::InvalidWalFrame(
             "WAL frame body length mismatch".into(),
+        ));
+    }
+    Ok(())
+}
+
+fn verify_body_crc(header: &WalFrameHeader, encrypted_body: &[u8]) -> SkrifheimResult<()> {
+    if wal_body_crc64(encrypted_body) != header.body_crc64() {
+        return Err(SkrifheimError::InvalidWalFrame(
+            "WAL frame body CRC mismatch".into(),
         ));
     }
     Ok(())

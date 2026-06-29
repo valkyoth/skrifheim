@@ -6,6 +6,8 @@ use skrifheim_crypto::{CryptoEpoch, EncryptionDomain, KeyId};
 
 use super::{WalFrameHeader, WalRecordKind};
 
+pub const WAL_REPLAY_MAX_TRANSACTIONS: usize = 1_000_000;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum WalReplayStop {
     CleanEof,
@@ -167,14 +169,20 @@ impl WalRecoveryReport {
     }
 }
 
-#[derive(Default)]
 pub struct WalReplay {
     active: Option<ActiveTransaction>,
     last_closed_tx: Option<TxId>,
     replayed_frame_count: u64,
     checkpoint_count: u64,
+    transaction_limit: usize,
     committed_transactions: Vec<WalRecoveredTransaction>,
     rolled_back_transactions: Vec<WalRolledBackTransaction>,
+}
+
+impl Default for WalReplay {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl fmt::Debug for WalReplay {
@@ -193,11 +201,17 @@ impl fmt::Debug for WalReplay {
 impl WalReplay {
     #[must_use]
     pub const fn new() -> Self {
+        Self::new_with_transaction_limit(WAL_REPLAY_MAX_TRANSACTIONS)
+    }
+
+    #[must_use]
+    pub const fn new_with_transaction_limit(transaction_limit: usize) -> Self {
         Self {
             active: None,
             last_closed_tx: None,
             replayed_frame_count: 0,
             checkpoint_count: 0,
+            transaction_limit,
             committed_transactions: Vec::new(),
             rolled_back_transactions: Vec::new(),
         }
@@ -226,6 +240,7 @@ impl WalReplay {
         }
         let mut outcome = WalRecoveryOutcome::Clean;
         if let Some(active) = self.active.take() {
+            self.require_transaction_capacity()?;
             outcome = WalRecoveryOutcome::RecoveredUncommittedTail;
             self.rolled_back_transactions
                 .push(active.into_rollback(WalRollbackReason::UncommittedTail));
@@ -263,6 +278,7 @@ impl WalReplay {
             .take()
             .ok_or_else(|| invalid_replay("WAL commit is outside transaction"))?;
         active.require_matching_header(header)?;
+        self.require_transaction_capacity()?;
         self.last_closed_tx = Some(active.tx_id);
         self.committed_transactions.push(active.into_commit()?);
         Ok(())
@@ -274,6 +290,7 @@ impl WalReplay {
             .take()
             .ok_or_else(|| invalid_replay("WAL abort is outside transaction"))?;
         active.require_matching_header(header)?;
+        self.require_transaction_capacity()?;
         self.last_closed_tx = Some(active.tx_id);
         self.rolled_back_transactions
             .push(active.into_rollback(WalRollbackReason::AbortRecord));
@@ -296,6 +313,18 @@ impl WalReplay {
             && tx_id.get() <= last_closed.get()
         {
             return Err(invalid_replay("WAL transaction identifier did not advance"));
+        }
+        Ok(())
+    }
+
+    fn require_transaction_capacity(&self) -> Result<()> {
+        let closed_transactions = self
+            .committed_transactions
+            .len()
+            .checked_add(self.rolled_back_transactions.len())
+            .ok_or_else(|| invalid_replay("WAL replay transaction count overflow"))?;
+        if closed_transactions >= self.transaction_limit {
+            return Err(invalid_replay("WAL replay transaction limit exceeded"));
         }
         Ok(())
     }
@@ -334,7 +363,7 @@ impl ActiveTransaction {
         }
         if !header
             .encryption_domain()
-            .structurally_equal(&self.encryption_domain)
+            .structurally_equal_ct(&self.encryption_domain)
         {
             return Err(invalid_replay("WAL transaction encryption domain mismatch"));
         }

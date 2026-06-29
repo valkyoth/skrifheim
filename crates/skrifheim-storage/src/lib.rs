@@ -6,15 +6,15 @@ extern crate alloc;
 use alloc::string::String;
 use core::fmt;
 use skrifheim_core::{PolicyId, Result, SkrifheimError, TenantId, TxId};
-use skrifheim_crypto::KeyId;
+use skrifheim_crypto::{ContentDigest, KeyId};
 
 mod wal;
 
 pub use wal::{
-    WAL_FRAME_BODY_MAX_BYTES, WAL_FRAME_HEADER_BYTES, WAL_FRAME_MAGIC, WAL_FRAME_VERSION_MAX,
-    WalFrameHeader, WalFrameHeaderInput, WalRecordKind, WalRecoveredTransaction,
-    WalRecoveryOutcome, WalRecoveryReport, WalReplay, WalReplayStop, WalRollbackReason,
-    WalRolledBackTransaction,
+    WAL_BODY_CRC64_ECMA_POLY, WAL_FRAME_BODY_MAX_BYTES, WAL_FRAME_HEADER_BYTES, WAL_FRAME_MAGIC,
+    WAL_FRAME_VERSION_MAX, WAL_REPLAY_MAX_TRANSACTIONS, WalFrameHeader, WalFrameHeaderInput,
+    WalRecordKind, WalRecoveredTransaction, WalRecoveryOutcome, WalRecoveryReport, WalReplay,
+    WalReplayStop, WalRollbackReason, WalRolledBackTransaction, wal_body_crc64,
 };
 
 pub const SEGMENT_MAGIC: [u8; 8] = *b"SKRIFSEG";
@@ -35,7 +35,7 @@ pub enum BodyChecksum {
     Present(u64),
 }
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone)]
 pub struct SegmentHeader {
     magic: [u8; 8],
     version: u16,
@@ -47,7 +47,7 @@ pub struct SegmentHeader {
     encryption_key_id: KeyId,
     body_len: u64,
     body_crc64: BodyChecksum,
-    content_hash: Option<[u8; 32]>,
+    content_digest: Option<ContentDigest>,
 }
 
 impl fmt::Debug for SegmentHeader {
@@ -62,12 +62,12 @@ impl fmt::Debug for SegmentHeader {
             .field("encryption_key_id", &"<redacted>")
             .field("body_len", &self.body_len)
             .field("body_crc64", &"<redacted>")
-            .field("content_hash", &"<redacted>")
+            .field("content_digest", &"<redacted>")
             .finish()
     }
 }
 
-#[derive(Clone, Eq, PartialEq)]
+#[derive(Clone)]
 pub struct SegmentHeaderInput {
     pub segment_kind: SegmentKind,
     pub tenant_id: TenantId,
@@ -77,7 +77,7 @@ pub struct SegmentHeaderInput {
     pub encryption_key_id: KeyId,
     pub body_len: u64,
     pub body_crc64: BodyChecksum,
-    pub content_hash: [u8; 32],
+    pub content_digest: ContentDigest,
 }
 
 impl fmt::Debug for SegmentHeaderInput {
@@ -90,7 +90,7 @@ impl fmt::Debug for SegmentHeaderInput {
             .field("encryption_key_id", &"<redacted>")
             .field("body_len", &self.body_len)
             .field("body_crc64", &"<redacted>")
-            .field("content_hash", &"<redacted>")
+            .field("content_digest", &"<redacted>")
             .finish()
     }
 }
@@ -108,7 +108,7 @@ impl SegmentHeader {
             encryption_key_id: input.encryption_key_id,
             body_len: input.body_len,
             body_crc64: input.body_crc64,
-            content_hash: Some(input.content_hash),
+            content_digest: Some(input.content_digest),
         };
         header.validate()?;
         Ok(header)
@@ -165,8 +165,8 @@ impl SegmentHeader {
     }
 
     #[must_use]
-    pub const fn content_hash(&self) -> Option<[u8; 32]> {
-        self.content_hash
+    pub const fn content_digest(&self) -> Option<&ContentDigest> {
+        self.content_digest.as_ref()
     }
 
     /// Validates only the segment header's structural metadata.
@@ -205,15 +205,31 @@ impl SegmentHeader {
                 "segment body exceeds maximum size",
             )));
         }
-        if self.body_crc64 == BodyChecksum::Missing {
-            return Err(SkrifheimError::InvalidStorageHeader(String::from(
-                "body CRC missing",
-            )));
+        match self.body_crc64 {
+            BodyChecksum::Missing => {
+                return Err(SkrifheimError::InvalidStorageHeader(String::from(
+                    "body CRC missing",
+                )));
+            }
+            BodyChecksum::Present(0) => {
+                return Err(SkrifheimError::InvalidStorageHeader(String::from(
+                    "body CRC must not be zero",
+                )));
+            }
+            BodyChecksum::Present(_) => {}
         }
-        if self.content_hash.is_none() {
-            return Err(SkrifheimError::InvalidStorageHeader(String::from(
-                "content hash missing",
-            )));
+        match &self.content_digest {
+            None => {
+                return Err(SkrifheimError::InvalidStorageHeader(String::from(
+                    "content digest missing",
+                )));
+            }
+            Some(digest) if digest.digest_bytes().iter().all(|byte| *byte == 0) => {
+                return Err(SkrifheimError::InvalidStorageHeader(String::from(
+                    "content digest must not be all-zero",
+                )));
+            }
+            Some(_) => {}
         }
         Ok(())
     }
@@ -222,6 +238,7 @@ impl SegmentHeader {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use skrifheim_crypto::DigestPolicy;
 
     fn id<T>(id: Option<T>) -> Result<T> {
         id.ok_or(SkrifheimError::InvalidIdentifier)
@@ -241,7 +258,7 @@ mod tests {
             encryption_key_id: id(KeyId::from_u128(4))?,
             body_len: 5,
             body_crc64: BodyChecksum::Present(6),
-            content_hash: [7; 32],
+            content_digest: ContentDigest::new(DigestPolicy::HIGH_SECURITY, &[7; 32])?,
         })
     }
 
@@ -264,7 +281,11 @@ mod tests {
         assert_eq!(header.policy_id().get(), 3);
         assert_eq!(header.body_len(), 5);
         assert_eq!(header.body_crc64(), BodyChecksum::Present(6));
-        assert_eq!(header.content_hash(), Some([7; 32]));
+        assert!(
+            header
+                .content_digest()
+                .is_some_and(|digest| digest.digest_bytes() == [7; 32])
+        );
         Ok(())
     }
 
@@ -314,20 +335,25 @@ mod tests {
     }
 
     #[test]
-    fn header_accepts_explicit_zero_content_hash() -> Result<()> {
+    fn header_rejects_all_zero_content_digest() -> Result<()> {
         let mut input = header_input()?;
-        input.content_hash = [0; 32];
-        let header = SegmentHeader::new(input)?;
-        assert_eq!(header.validate(), Ok(()));
+        input.content_digest = ContentDigest::new(DigestPolicy::HIGH_SECURITY, &[0; 32])?;
+
+        assert!(matches!(
+            SegmentHeader::new(input),
+            Err(SkrifheimError::InvalidStorageHeader(_))
+        ));
         Ok(())
     }
 
     #[test]
-    fn header_accepts_explicit_zero_body_crc() -> Result<()> {
+    fn header_rejects_explicit_zero_body_crc() -> Result<()> {
         let mut input = header_input()?;
         input.body_crc64 = BodyChecksum::Present(0);
-        let header = SegmentHeader::new(input)?;
-        assert_eq!(header.validate(), Ok(()));
+        assert!(matches!(
+            SegmentHeader::new(input),
+            Err(SkrifheimError::InvalidStorageHeader(_))
+        ));
         Ok(())
     }
 
@@ -338,9 +364,9 @@ mod tests {
         let header_debug = alloc::format!("{:?}", SegmentHeader::new(input)?);
 
         assert!(input_debug.contains("encryption_key_id: \"<redacted>\""));
-        assert!(input_debug.contains("content_hash: \"<redacted>\""));
+        assert!(input_debug.contains("content_digest: \"<redacted>\""));
         assert!(header_debug.contains("encryption_key_id: \"<redacted>\""));
-        assert!(header_debug.contains("content_hash: \"<redacted>\""));
+        assert!(header_debug.contains("content_digest: \"<redacted>\""));
         assert!(!input_debug.contains("KeyId"));
         assert!(!input_debug.contains("[7, 7"));
         assert!(!header_debug.contains("KeyId"));

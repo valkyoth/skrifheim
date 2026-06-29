@@ -249,8 +249,18 @@ if grep -E "\\.field\\(\"(asserted_by|policy_id)\",[[:space:]]*&self\\.(asserted
     exit 1
 fi
 
+if grep -E "\\.field\\(\"(id|world_id|subject|predicate|valid_time|committed_at|confidence|asserted_by|policy_id)\",[[:space:]]*&self\\." crates/skrifheim-fact/src/lib.rs >/dev/null; then
+    echo "Fact Debug must redact structural identifiers, time, confidence, actor attribution, and policy identifiers" >&2
+    exit 1
+fi
+
 if grep -E "\\.field\\(\"(asserted_by|policy_id)\",[[:space:]]*&self\\.(asserted_by|policy_id)\\)" crates/skrifheim-fact/src/builder.rs >/dev/null; then
     echo "FactBuilder Debug must redact asserted_by actor attribution and policy identifiers" >&2
+    exit 1
+fi
+
+if grep -E "\\.field\\(\"(id|world_id|subject|predicate|valid_time|committed_at|confidence)\",[[:space:]]*&self\\." crates/skrifheim-fact/src/builder.rs >/dev/null; then
+    echo "FactBuilder Debug must redact structural identifiers, time, and confidence" >&2
     exit 1
 fi
 
@@ -279,7 +289,7 @@ if grep -E "\\.field\\(\"(surface|domain)\",[[:space:]]*&self\\.(surface|domain)
     exit 1
 fi
 
-if grep -E "\\.field\\(\"(magic|tenant_id|tx_range|policy_id|encryption_key_id|body_crc64|content_hash)\",[[:space:]]*&self\\." crates/skrifheim-storage/src/lib.rs >/dev/null; then
+if grep -E "\\.field\\(\"(magic|tenant_id|tx_range|policy_id|encryption_key_id|body_crc64|content_hash|content_digest)\",[[:space:]]*&self\\." crates/skrifheim-storage/src/lib.rs >/dev/null; then
     echo "SegmentHeader Debug must redact identifiers, keys, checksums, and hashes" >&2
     exit 1
 fi

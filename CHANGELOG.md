@@ -14,6 +14,12 @@
   non-advancing transaction identifiers, transaction identifier mismatch, and
   key/crypto-epoch/domain mismatch inside a transaction.
 - Added crash-matrix style WAL replay tests and redacted replay diagnostics.
+- Resolved the first `0.16.0` pentest pass by adding CRC64-ECMA encrypted-body
+  verification on WAL write/read paths, rejecting Unix symlink WAL paths,
+  rejecting zero segment integrity sentinels and WAL crypto epoch zero,
+  bounding replay transaction summaries, redacting fact structural identifiers,
+  moving segment integrity metadata to `ContentDigest`, and using fixed-width
+  domain comparison in WAL replay.
 - Bumped workspace and internal crate dependency versions to `0.16.0`.
 - Added `0.16.0` release metadata and gate script.
 

@@ -5,10 +5,9 @@ Status: implementation stop, pending pentest.
 ## Scope
 
 `0.16.0` adds the first WAL replay and recovery-state scaffold. Replay is still
-header-driven and does not decrypt WAL bodies, verify body CRCs, rebuild fact
-state, or perform durable startup recovery. It establishes the transaction
-shape rules the future recovery loader must obey before accepting committed WAL
-state.
+header-driven and does not decrypt WAL bodies, rebuild fact state, or perform
+durable startup recovery. It establishes the transaction shape rules the future
+recovery loader must obey before accepting committed WAL state.
 
 This release also updates CI checkout tooling to the `actions/checkout` `v7`
 series and updates the admitted `sanitization` dependency to `1.2.2`.
@@ -43,27 +42,38 @@ series and updates the admitted `sanitization` dependency to `1.2.2`.
   mismatch.
 - Added redacted Debug output for replay state and recovery transaction
   summaries.
+- Resolved the first `0.16.0` pentest pass by adding CRC64-ECMA encrypted-body
+  verification on WAL write/read paths, rejecting Unix symlink WAL paths with
+  `O_NOFOLLOW`, rejecting all-zero segment content digests and zero segment
+  CRC sentinels, rejecting WAL crypto epoch zero, bounding replay transaction
+  summaries, redacting fact structural identifiers, moving segment integrity
+  metadata to `ContentDigest`, and using fixed-width domain comparison in WAL
+  replay.
 - Bumped workspace and internal crate dependency versions to `0.16.0`.
 - Added `scripts/release_0_16_gate.sh`.
 
 ## Verification
 
 - `cargo info sanitization`
+- `cargo test -p skrifheim-crypto`
+- `cargo test -p skrifheim-fact`
 - `cargo test -p skrifheim-storage`
+- `cargo test -p skrifheim-storage-host`
 - `scripts/checks.sh`
 - `scripts/release_0_16_gate.sh`
 
 ## Non-Claims
 
-This release does not decrypt WAL bodies, verify encrypted-body CRCs against
-body bytes, replay fact payloads into database state, restore from immutable
+This release does not decrypt WAL bodies, cryptographically authenticate WAL
+bodies, replay fact payloads into database state, restore from immutable
 segments, load manifests, perform checkpoint recovery, or execute startup
 recovery. It also does not add a production digest implementation. WAL replay
-reports are transaction-shape metadata for the current scaffold, not proof that
-the encrypted bodies are authentic or semantically valid.
+reports are transaction-shape metadata for the current scaffold; CRC64 catches
+accidental corruption and simple body/header mismatch but is not a security
+MAC, signature, or encryption authenticity proof.
 
 ## Pentest Status
 
-This is the `0.16.0` implementation stop and is ready for pentest. Root
-`PENTEST.md` remains the temporary findings handoff file and must be removed
-after findings are resolved.
+The first `0.16.0` pentest pass has been resolved locally. Root `PENTEST.md`
+has been removed after findings were resolved. This stop is ready for pentest
+re-test.

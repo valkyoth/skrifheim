@@ -11,14 +11,15 @@ use crate::BodyChecksum;
 mod replay;
 
 pub use replay::{
-    WalRecoveredTransaction, WalRecoveryOutcome, WalRecoveryReport, WalReplay, WalReplayStop,
-    WalRollbackReason, WalRolledBackTransaction,
+    WAL_REPLAY_MAX_TRANSACTIONS, WalRecoveredTransaction, WalRecoveryOutcome, WalRecoveryReport,
+    WalReplay, WalReplayStop, WalRollbackReason, WalRolledBackTransaction,
 };
 
 pub const WAL_FRAME_MAGIC: [u8; 8] = *b"SKRIFWAL";
 pub const WAL_FRAME_VERSION_MAX: u16 = 1;
 pub const WAL_FRAME_HEADER_BYTES: usize = 120;
 pub const WAL_FRAME_BODY_MAX_BYTES: u64 = 64 * 1024 * 1024;
+pub const WAL_BODY_CRC64_ECMA_POLY: u64 = 0x42F0_E1EB_A9EA_3693;
 
 const KIND_OFFSET: usize = 10;
 const RESERVED_OFFSET: usize = 11;
@@ -290,6 +291,9 @@ impl WalFrameHeader {
         if self.body_crc64 == 0 {
             return Err(invalid_frame("WAL frame body CRC must not be zero"));
         }
+        if self.crypto_epoch.get() == 0 {
+            return Err(invalid_frame("WAL frame crypto epoch must be non-zero"));
+        }
         if self.encryption_domain.purpose() != EncryptionDomainPurpose::Wal {
             return Err(invalid_frame("WAL frame encryption domain must be WAL"));
         }
@@ -354,6 +358,26 @@ fn require_body_crc64(body_crc64: BodyChecksum) -> Result<u64> {
         BodyChecksum::Present(_) => Err(invalid_frame("WAL frame body CRC must not be zero")),
         BodyChecksum::Missing => Err(invalid_frame("WAL frame body CRC missing")),
     }
+}
+
+#[must_use]
+pub fn wal_body_crc64(bytes: &[u8]) -> u64 {
+    let mut crc = 0_u64;
+    let mut byte_index = 0;
+    while byte_index < bytes.len() {
+        crc ^= (bytes[byte_index] as u64) << 56;
+        let mut bit_index = 0;
+        while bit_index < 8 {
+            crc = if crc & 0x8000_0000_0000_0000 != 0 {
+                (crc << 1) ^ WAL_BODY_CRC64_ECMA_POLY
+            } else {
+                crc << 1
+            };
+            bit_index += 1;
+        }
+        byte_index += 1;
+    }
+    crc
 }
 
 #[cfg(test)]

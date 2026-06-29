@@ -140,7 +140,19 @@ fn wal_frame_validation_rejects_unencrypted_or_unbounded_body_metadata() -> Resu
         WalFrameHeader::new(input),
         Err(SkrifheimError::InvalidWalFrame(_))
     ));
+
+    let mut input = header_input()?;
+    input.crypto_epoch = CryptoEpoch::new(0);
+    assert!(matches!(
+        WalFrameHeader::new(input),
+        Err(SkrifheimError::InvalidWalFrame(_))
+    ));
     Ok(())
+}
+
+#[test]
+fn wal_body_crc64_uses_ecma_182_vector() {
+    assert_eq!(wal_body_crc64(b"123456789"), 0x6C40_DF5F_0B49_7347);
 }
 
 #[test]

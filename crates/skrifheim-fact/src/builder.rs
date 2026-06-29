@@ -30,29 +30,36 @@ pub struct FactBuilder {
 
 impl fmt::Debug for FactBuilder {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let id = self.id.map(|_| "<redacted>");
+        let world_id = self.world_id.map(|_| "<redacted>");
+        let subject = self.subject.map(|_| "<redacted>");
+        let predicate = self.predicate.map(|_| "<redacted>");
+        let object = self.object.as_ref().map(|_| "<redacted>");
+        let valid_time = self.valid_time.map(|_| "<redacted>");
+        let committed_at = self.committed_at.map(|_| "<redacted>");
+        let asserted_by = self.asserted_by.map(|_| "<redacted>");
+        let policy_id = self.policy_id.map(|_| "<redacted>");
+        let classification = self.label.as_ref().map(|_| "<redacted>");
+        let signature_count = self
+            .signatures
+            .as_ref()
+            .map(|signatures| signatures.envelopes().len());
+
         f.debug_struct("FactBuilder")
-            .field("id", &self.id)
-            .field("world_id", &self.world_id)
-            .field("subject", &self.subject)
-            .field("predicate", &self.predicate)
-            .field("object", &self.object.as_ref().map(|_| "<redacted>"))
-            .field("valid_time", &self.valid_time)
-            .field("committed_at", &self.committed_at)
-            .field("asserted_by", &self.asserted_by.map(|_| "<redacted>"))
+            .field("id", &id)
+            .field("world_id", &world_id)
+            .field("subject", &subject)
+            .field("predicate", &predicate)
+            .field("object", &object)
+            .field("valid_time", &valid_time)
+            .field("committed_at", &committed_at)
+            .field("asserted_by", &asserted_by)
             .field("evidence_count", &self.evidence.len())
-            .field("confidence", &self.confidence)
-            .field("caused_by_count", &self.caused_by.len())
-            .field("supersedes_count", &self.supersedes.len())
-            .field("invalidates_count", &self.invalidates.len())
-            .field("policy_id", &self.policy_id.map(|_| "<redacted>"))
-            .field("classification", &self.label.as_ref().map(|_| "<redacted>"))
-            .field(
-                "signature_count",
-                &self
-                    .signatures
-                    .as_ref()
-                    .map(|signatures| signatures.envelopes().len()),
-            )
+            .field("confidence", &"<redacted>")
+            .field("causal_link_sets", &"<redacted>")
+            .field("policy_id", &policy_id)
+            .field("classification", &classification)
+            .field("signature_count", &signature_count)
             .finish()
     }
 }

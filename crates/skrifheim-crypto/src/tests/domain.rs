@@ -116,6 +116,21 @@ fn segment_domains_include_segment_identity() -> Result<()> {
 }
 
 #[test]
+fn domain_constant_time_structural_comparison_matches_structural_equality() -> Result<()> {
+    let left = EncryptionDomain::wal(tenant()?, Some(region(1)?), Some(world(31)?));
+    let same = EncryptionDomain::wal(tenant()?, Some(region(1)?), Some(world(31)?));
+    let different = EncryptionDomain::wal(tenant()?, Some(region(2)?), Some(world(31)?));
+
+    assert!(left.structurally_equal_ct(&same));
+    assert!(!left.structurally_equal_ct(&different));
+    assert_eq!(
+        left.structurally_equal(&same),
+        left.structurally_equal_ct(&same)
+    );
+    Ok(())
+}
+
+#[test]
 fn special_purpose_domains_do_not_merge_with_data_domains() -> Result<()> {
     let tenant_id = tenant()?;
     let region_id = Some(region(1)?);

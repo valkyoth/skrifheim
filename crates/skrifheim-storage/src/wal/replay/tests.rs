@@ -166,6 +166,20 @@ fn replay_rejects_non_advancing_transaction_ids() -> Result<()> {
 }
 
 #[test]
+fn replay_rejects_transaction_summary_limit() -> Result<()> {
+    let mut replay = WalReplay::new_with_transaction_limit(1);
+    replay.process_header(&header(WalRecordKind::TransactionBegin, 22)?)?;
+    replay.process_header(&header(WalRecordKind::TransactionCommit, 22)?)?;
+    replay.process_header(&header(WalRecordKind::TransactionBegin, 23)?)?;
+
+    assert!(matches!(
+        replay.process_header(&header(WalRecordKind::TransactionCommit, 23)?),
+        Err(SkrifheimError::InvalidWalFrame(_))
+    ));
+    Ok(())
+}
+
+#[test]
 fn replay_debug_redacts_transaction_metadata() -> Result<()> {
     let mut replay = WalReplay::new();
     replay.process_header(&header(WalRecordKind::TransactionBegin, 21)?)?;

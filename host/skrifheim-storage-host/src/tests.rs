@@ -6,11 +6,13 @@ use std::{
 };
 
 #[cfg(unix)]
-use std::os::unix::fs::PermissionsExt;
+use std::os::unix::fs::{PermissionsExt, symlink};
 
 use skrifheim_core::{Result as SkrifheimResult, SkrifheimError, TenantId, TxId, WorldId};
 use skrifheim_crypto::{CryptoEpoch, EncryptionDomain, KeyId, RegionKeyId};
-use skrifheim_storage::{BodyChecksum, WalFrameHeader, WalFrameHeaderInput, WalRecordKind};
+use skrifheim_storage::{
+    BodyChecksum, WalFrameHeader, WalFrameHeaderInput, WalRecordKind, wal_body_crc64,
+};
 
 use super::*;
 
@@ -30,7 +32,7 @@ fn wal_domain() -> SkrifheimResult<EncryptionDomain> {
     ))
 }
 
-fn header(tx: u128, body_len: u64) -> SkrifheimResult<WalFrameHeader> {
+fn header(tx: u128, body: &[u8]) -> SkrifheimResult<WalFrameHeader> {
     WalFrameHeader::new(WalFrameHeaderInput {
         record_kind: WalRecordKind::FactBatch,
         tenant_id: tenant()?,
@@ -38,8 +40,8 @@ fn header(tx: u128, body_len: u64) -> SkrifheimResult<WalFrameHeader> {
         encryption_key_id: id(KeyId::from_u128(4))?,
         crypto_epoch: CryptoEpoch::new(5),
         encryption_domain: wal_domain()?,
-        encrypted_body_len: body_len,
-        body_crc64: BodyChecksum::Present(tx as u64 + 10),
+        encrypted_body_len: body.len() as u64,
+        body_crc64: BodyChecksum::Present(wal_body_crc64(body)),
     })
 }
 
@@ -62,8 +64,8 @@ fn wal_writer_and_reader_round_trip_encrypted_frames() -> Result<()> {
     let second_body = [12_u8; 5];
     {
         let mut writer = WalFileWriter::open_append(&path, WalAppendOptions::new(false))?;
-        writer.append_frame(&header(10, first_body.len() as u64)?, &first_body)?;
-        writer.append_frame(&header(11, second_body.len() as u64)?, &second_body)?;
+        writer.append_frame(&header(10, &first_body)?, &first_body)?;
+        writer.append_frame(&header(11, &second_body)?, &second_body)?;
     }
 
     let mut reader = WalFileReader::open(&path, wal_domain()?)?;
@@ -83,10 +85,34 @@ fn wal_writer_and_reader_round_trip_encrypted_frames() -> Result<()> {
 fn wal_writer_rejects_body_length_mismatch() -> Result<()> {
     let path = temp_path("length-mismatch")?;
     let mut writer = WalFileWriter::open_append(&path, WalAppendOptions::new(false))?;
-    let result = writer.append_frame(&header(12, 4)?, &[1, 2, 3]);
+    let result = writer.append_frame(&header(12, &[1, 2, 3, 4])?, &[1, 2, 3]);
 
     assert!(matches!(
         result,
+        Err(WalFileError::InvalidFrame(SkrifheimError::InvalidWalFrame(
+            _
+        )))
+    ));
+    fs::remove_file(path)?;
+    Ok(())
+}
+
+#[test]
+fn wal_reader_rejects_body_crc_mismatch() -> Result<()> {
+    let path = temp_path("crc-mismatch")?;
+    let original_body = [1_u8, 2, 3, 4];
+    let tampered_body = [1_u8, 2, 3, 5];
+    let header = header(15, &original_body)?;
+    {
+        let mut file = OpenOptions::new().create(true).append(true).open(&path)?;
+        file.write_all(&header.encode())?;
+        file.write_all(&tampered_body)?;
+        file.flush()?;
+    }
+    let mut reader = WalFileReader::open(&path, wal_domain()?)?;
+
+    assert!(matches!(
+        reader.next_frame(),
         Err(WalFileError::InvalidFrame(SkrifheimError::InvalidWalFrame(
             _
         )))
@@ -125,13 +151,31 @@ fn wal_writer_tightens_existing_file_permissions() -> Result<()> {
     Ok(())
 }
 
+#[cfg(unix)]
+#[test]
+fn wal_writer_rejects_symlink_paths() -> Result<()> {
+    let target = temp_path("symlink-target")?;
+    let link = temp_path("symlink-link")?;
+    fs::write(&target, [])?;
+    symlink(&target, &link)?;
+
+    assert!(matches!(
+        WalFileWriter::open_append(&link, WalAppendOptions::new(false)),
+        Err(WalFileError::Io(_))
+    ));
+
+    fs::remove_file(link)?;
+    fs::remove_file(target)?;
+    Ok(())
+}
+
 #[test]
 fn wal_reader_rejects_unexpected_domain() -> Result<()> {
     let path = temp_path("domain")?;
     let body = [21_u8; 4];
     {
         let mut writer = WalFileWriter::open_append(&path, WalAppendOptions::new(false))?;
-        writer.append_frame(&header(13, body.len() as u64)?, &body)?;
+        writer.append_frame(&header(13, &body)?, &body)?;
     }
     let other_domain = EncryptionDomain::wal(tenant()?, None, None);
     let mut reader = WalFileReader::open(&path, other_domain)?;
@@ -158,7 +202,7 @@ fn wal_reader_detects_partial_header_and_body() -> Result<()> {
     fs::remove_file(header_path)?;
 
     let body_path = temp_path("partial-body")?;
-    let header = header(14, 4)?;
+    let header = header(14, &[1_u8; 4])?;
     {
         let mut file = OpenOptions::new()
             .create(true)
