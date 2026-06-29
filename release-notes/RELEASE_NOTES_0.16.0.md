@@ -1,6 +1,6 @@
 # skrifheim 0.16.0 Release Notes
 
-Status: implementation stop, pending pentest.
+Status: implementation stop, pentest passed, GitHub verification pending.
 
 ## Scope
 
@@ -79,6 +79,7 @@ MAC, signature, or encryption authenticity proof.
 
 ## Pentest Status
 
-The first and second `0.16.0` pentest passes have been resolved locally. Root
-`PENTEST.md` has been removed after findings were resolved. This stop is ready
-for pentest re-test.
+The first and second `0.16.0` pentest passes have been resolved locally. The
+follow-up pentest reported no remaining findings. Root `PENTEST.md` has been
+removed after findings were resolved. This release is waiting for GitHub
+verification before signed tag creation.

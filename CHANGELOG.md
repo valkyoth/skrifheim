@@ -23,6 +23,8 @@
 - Resolved the second `0.16.0` pentest pass by applying Unix symlink and
   regular-file checks to the WAL read path and adding a portable Unix fallback
   for unlisted `O_NOFOLLOW` targets.
+- Prepared `0.16.0` for signed tag creation after pentest passed; GitHub
+  verification remains the final pre-tag gate.
 - Bumped workspace and internal crate dependency versions to `0.16.0`.
 - Added `0.16.0` release metadata and gate script.
 
