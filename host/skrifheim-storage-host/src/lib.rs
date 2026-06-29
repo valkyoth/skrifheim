@@ -20,6 +20,9 @@ use skrifheim_storage::{WAL_FRAME_HEADER_BYTES, WalFrameHeader, wal_body_crc64};
 #[cfg(any(target_os = "linux", target_os = "android"))]
 const O_NOFOLLOW_FLAG: i32 = 0o400000;
 
+#[cfg(any(target_os = "illumos", target_os = "solaris"))]
+const O_NOFOLLOW_FLAG: i32 = 0x20000;
+
 #[cfg(any(
     target_os = "macos",
     target_os = "ios",
@@ -29,6 +32,23 @@ const O_NOFOLLOW_FLAG: i32 = 0o400000;
     target_os = "dragonfly"
 ))]
 const O_NOFOLLOW_FLAG: i32 = 0x0100;
+
+#[cfg(all(
+    unix,
+    not(any(
+        target_os = "linux",
+        target_os = "android",
+        target_os = "illumos",
+        target_os = "solaris",
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "freebsd",
+        target_os = "openbsd",
+        target_os = "netbsd",
+        target_os = "dragonfly"
+    ))
+))]
+const O_NOFOLLOW_FLAG: i32 = 0;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct WalAppendOptions {
@@ -131,7 +151,16 @@ pub struct WalFileReader {
 
 impl WalFileReader {
     pub fn open(path: impl AsRef<Path>, expected_domain: EncryptionDomain) -> Result<Self> {
-        let file = OpenOptions::new().read(true).open(path)?;
+        let mut open_options = OpenOptions::new();
+        open_options.read(true);
+        #[cfg(unix)]
+        open_options.custom_flags(O_NOFOLLOW_FLAG);
+        let file = open_options.open(path)?;
+        if !file.metadata()?.is_file() {
+            return Err(WalFileError::Io(io::Error::other(
+                "WAL path must be a regular file",
+            )));
+        }
         Ok(Self {
             file,
             expected_domain,

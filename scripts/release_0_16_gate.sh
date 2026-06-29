@@ -33,6 +33,11 @@ if ! grep -R "O_NOFOLLOW" host/skrifheim-storage-host/src >/dev/null; then
     exit 1
 fi
 
+if ! grep -R "wal_reader_rejects_symlink_paths" host/skrifheim-storage-host/src >/dev/null; then
+    echo "0.16 requires WAL reader symlink rejection coverage" >&2
+    exit 1
+fi
+
 if ! grep -R "ContentDigest" crates/skrifheim-storage/src >/dev/null; then
     echo "0.16 requires segment integrity metadata to use ContentDigest" >&2
     exit 1

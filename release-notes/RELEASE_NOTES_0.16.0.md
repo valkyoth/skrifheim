@@ -49,6 +49,11 @@ series and updates the admitted `sanitization` dependency to `1.2.2`.
   summaries, redacting fact structural identifiers, moving segment integrity
   metadata to `ContentDigest`, and using fixed-width domain comparison in WAL
   replay.
+- Resolved the second `0.16.0` pentest pass by applying the same Unix symlink
+  and regular-file guard to WAL reads, adding reader symlink rejection tests,
+  and defining a no-op fallback `O_NOFOLLOW` value for unlisted Unix targets so
+  they compile without weakening supported Linux, Android, macOS, iOS, BSD,
+  illumos, or Solaris behavior.
 - Bumped workspace and internal crate dependency versions to `0.16.0`.
 - Added `scripts/release_0_16_gate.sh`.
 
@@ -74,6 +79,6 @@ MAC, signature, or encryption authenticity proof.
 
 ## Pentest Status
 
-The first `0.16.0` pentest pass has been resolved locally. Root `PENTEST.md`
-has been removed after findings were resolved. This stop is ready for pentest
-re-test.
+The first and second `0.16.0` pentest passes have been resolved locally. Root
+`PENTEST.md` has been removed after findings were resolved. This stop is ready
+for pentest re-test.

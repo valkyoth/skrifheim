@@ -20,6 +20,9 @@
   bounding replay transaction summaries, redacting fact structural identifiers,
   moving segment integrity metadata to `ContentDigest`, and using fixed-width
   domain comparison in WAL replay.
+- Resolved the second `0.16.0` pentest pass by applying Unix symlink and
+  regular-file checks to the WAL read path and adding a portable Unix fallback
+  for unlisted `O_NOFOLLOW` targets.
 - Bumped workspace and internal crate dependency versions to `0.16.0`.
 - Added `0.16.0` release metadata and gate script.
 

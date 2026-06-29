@@ -169,6 +169,24 @@ fn wal_writer_rejects_symlink_paths() -> Result<()> {
     Ok(())
 }
 
+#[cfg(unix)]
+#[test]
+fn wal_reader_rejects_symlink_paths() -> Result<()> {
+    let target = temp_path("read-symlink-target")?;
+    let link = temp_path("read-symlink-link")?;
+    fs::write(&target, [])?;
+    symlink(&target, &link)?;
+
+    assert!(matches!(
+        WalFileReader::open(&link, wal_domain()?),
+        Err(WalFileError::Io(_))
+    ));
+
+    fs::remove_file(link)?;
+    fs::remove_file(target)?;
+    Ok(())
+}
+
 #[test]
 fn wal_reader_rejects_unexpected_domain() -> Result<()> {
     let path = temp_path("domain")?;
