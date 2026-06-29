@@ -8,8 +8,8 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-skrifheim-core = { version = "0.15.0", path = "../skrifheim-core" }
-sanitization = { version = "1.1.0", default-features = false, features = ["alloc"] }
+skrifheim-core = { version = "0.16.0", path = "../skrifheim-core" }
+sanitization = { version = "1.2.2", default-features = false, features = ["alloc"] }
 subtle = { version = "2.6.1", default-features = false }
 
 [lints]

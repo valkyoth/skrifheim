@@ -12,7 +12,9 @@ mod wal;
 
 pub use wal::{
     WAL_FRAME_BODY_MAX_BYTES, WAL_FRAME_HEADER_BYTES, WAL_FRAME_MAGIC, WAL_FRAME_VERSION_MAX,
-    WalFrameHeader, WalFrameHeaderInput, WalRecordKind,
+    WalFrameHeader, WalFrameHeaderInput, WalRecordKind, WalRecoveredTransaction,
+    WalRecoveryOutcome, WalRecoveryReport, WalReplay, WalReplayStop, WalRollbackReason,
+    WalRolledBackTransaction,
 };
 
 pub const SEGMENT_MAGIC: [u8; 8] = *b"SKRIFSEG";

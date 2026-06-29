@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+## 0.16.0
+
+- Updated CI to `actions/checkout@v7`.
+- Updated the admitted `sanitization` dependency from `1.1.0` to `1.2.2`.
+- Added header-driven WAL replay state machine primitives in
+  `skrifheim-storage`.
+- Added recovery reports for clean replay, committed transactions, aborted
+  transactions, and clean-EOF uncommitted tails.
+- Added rejection paths for truncated-frame stops, transaction shape errors,
+  non-advancing transaction identifiers, transaction identifier mismatch, and
+  key/crypto-epoch/domain mismatch inside a transaction.
+- Added crash-matrix style WAL replay tests and redacted replay diagnostics.
+- Bumped workspace and internal crate dependency versions to `0.16.0`.
+- Added `0.16.0` release metadata and gate script.
+
 ## 0.15.0
 
 - Updated the implementation and version plans so BLAKE3 remains scaffold-only

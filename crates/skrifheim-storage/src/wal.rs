@@ -8,6 +8,13 @@ use skrifheim_crypto::{
 
 use crate::BodyChecksum;
 
+mod replay;
+
+pub use replay::{
+    WalRecoveredTransaction, WalRecoveryOutcome, WalRecoveryReport, WalReplay, WalReplayStop,
+    WalRollbackReason, WalRolledBackTransaction,
+};
+
 pub const WAL_FRAME_MAGIC: [u8; 8] = *b"SKRIFWAL";
 pub const WAL_FRAME_VERSION_MAX: u16 = 1;
 pub const WAL_FRAME_HEADER_BYTES: usize = 120;
