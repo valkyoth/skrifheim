@@ -16,6 +16,7 @@ docs/VERSION_PLAN.md
 docs/memory-secrecy.md
 docs/security-controls.md
 docs/threat-model.md
+scripts/validate-release-readiness.sh
 release-notes/RELEASE_NOTES_0.1.0.md
 release-notes/RELEASE_NOTES_0.2.0.md
 release-notes/RELEASE_NOTES_0.3.0.md
@@ -35,6 +36,7 @@ release-notes/RELEASE_NOTES_0.16.0.md
 release-notes/RELEASE_NOTES_0.17.0.md
 security/pentest/v0.5.0.md
 security/pentest/v0.6.0.md
+security/pentest/v0.17.0.md
 "
 
 for path in $required; do

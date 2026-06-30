@@ -41,6 +41,8 @@ must use.
   their internal fields private.
 - Bumped workspace and internal crate dependency versions to `0.17.0`.
 - Added `scripts/release_0_17_gate.sh`.
+- Added mandatory permanent pentest-report release readiness validation for
+  `security/pentest/v0.17.0.md`.
 - Resolved the first `0.17.0` pentest pass by failing closed on unknown Unix
   `O_NOFOLLOW` WAL file targets, using constant-time encryption-domain
   comparison in `WalFrameHeader::validate_for_domain`, checking host WAL body
@@ -82,4 +84,5 @@ Retest reported no new issues. Two residuals remain intentionally tracked:
   ancestry traversal is implemented.
 
 The local release gate passed after this retest update. This release is waiting
-for GitHub verification before signed tag creation.
+for the permanent pentest digest commit and GitHub verification before signed
+tag creation.

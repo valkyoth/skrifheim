@@ -23,6 +23,8 @@
   epoch ordering, audit timestamp validity, and timing-evidence planning.
 - Prepared `0.17.0` for signed tag creation after pentest retest and the local
   release gate passed; GitHub verification remains the final pre-tag gate.
+- Added permanent pentest-report release readiness validation for
+  `security/pentest/v0.17.0.md`.
 - Bumped workspace and internal crate dependency versions to `0.17.0`.
 - Added `0.17.0` release metadata and gate script.
 

@@ -38,8 +38,11 @@ Do not tag at this stop.
 
 ## Tag Readiness
 
-1. Write the permanent report at `security/pentest/<tag>.md`.
-2. Confirm the report names the exact commit and has `Status: PASS`.
-3. Run final local gates.
-4. Tag only when explicitly instructed.
-5. Push only normal commits unless explicitly instructed to push tags.
+1. Finish all release metadata, docs, and gates first.
+2. Commit that release-prep state.
+3. Write the permanent report at `security/pentest/<tag>.md`.
+4. Commit only that report as the final tag-candidate commit.
+5. Run final local gates. The release gate must verify the report's
+   `Reviewed-Commit:` against the final commit's first parent.
+6. Tag only when explicitly instructed.
+7. Push only normal commits unless explicitly instructed to push tags.

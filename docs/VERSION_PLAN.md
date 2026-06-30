@@ -43,9 +43,12 @@ Pentest flow:
 4. The findings are reviewed and fixed.
 5. `PENTEST.md` is removed after the findings are handled.
 6. Local gates are run again.
-7. A permanent report is written at `security/pentest/<tag>.md` only when the
-   exact commit is ready to tag and the result is `Status: PASS`.
-8. Tagging and pushing tags happen only when explicitly requested.
+7. A permanent report is written at `security/pentest/<tag>.md` only after the
+   release-prep commit is complete and the result is `Status: PASS`.
+8. The permanent report commit changes only that report and records
+   `Reviewed-Commit:` as its first parent, so the tag candidate contains both
+   the reviewed code and committed pentest digest.
+9. Tagging and pushing tags happen only when explicitly requested.
 
 Root `PENTEST.md` is temporary scratch input. It must not be committed, and the
 release metadata validator fails while it exists.

@@ -91,6 +91,7 @@ fi
 cargo deny check
 cargo audit
 cargo run --quiet -p skrifheim
+scripts/validate-release-readiness.sh v0.17.0
 
 if [ "${SKRIFHEIM_SKIP_PODMAN:-0}" = "1" ]; then
     echo "SKRIFHEIM_SKIP_PODMAN=1 set; skipping rootless Podman smoke"
