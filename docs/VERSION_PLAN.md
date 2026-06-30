@@ -323,6 +323,8 @@ Deliverables:
 - checksum verification,
 - content-hash verification,
 - encryption metadata verification,
+- cryptographic signature-verification boundary for any deserialized facts
+  before they can be treated as committed,
 - corruption rejection tests.
 
 ## v0.19.0 - Manifest And Checkpoint Format
@@ -354,9 +356,24 @@ Deliverables:
 - recovery loader,
 - manifest selection,
 - WAL replay from checkpoint,
+- storage-backed world ancestry verification before promotion or rollback
+  execution can be authorized,
 - corrupted manifest rejection,
 - missing-key and compromised-key rejection,
 - deterministic recovery fixtures.
+
+## v0.20.1 - Production Timing Evidence Gate
+
+Goal: add statistical timing evidence before any production constant-time
+claim.
+
+Deliverables:
+
+- dudect-style or equivalent timing harness for policy-token equality,
+- digest equality timing evidence,
+- encryption-domain equality timing evidence,
+- release-gate integration for timing-sensitive authorization and storage-root
+  comparisons.
 
 ## v0.21.0 - In-Memory Transaction Model
 

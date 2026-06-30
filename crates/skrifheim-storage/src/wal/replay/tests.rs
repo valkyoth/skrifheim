@@ -166,6 +166,19 @@ fn replay_rejects_non_advancing_transaction_ids() -> Result<()> {
 }
 
 #[test]
+fn replay_rejects_crypto_epoch_regression_between_transactions() -> Result<()> {
+    let mut replay = WalReplay::new();
+    replay.process_header(&header_with_epoch(WalRecordKind::TransactionBegin, 24, 5)?)?;
+    replay.process_header(&header_with_epoch(WalRecordKind::TransactionCommit, 24, 5)?)?;
+
+    assert!(matches!(
+        replay.process_header(&header_with_epoch(WalRecordKind::TransactionBegin, 25, 4)?),
+        Err(SkrifheimError::InvalidWalFrame(_))
+    ));
+    Ok(())
+}
+
+#[test]
 fn replay_rejects_transaction_summary_limit() -> Result<()> {
     let mut replay = WalReplay::new_with_transaction_limit(1);
     replay.process_header(&header(WalRecordKind::TransactionBegin, 22)?)?;

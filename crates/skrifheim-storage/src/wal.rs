@@ -20,6 +20,7 @@ pub const WAL_FRAME_VERSION_MAX: u16 = 1;
 pub const WAL_FRAME_HEADER_BYTES: usize = 120;
 pub const WAL_FRAME_BODY_MAX_BYTES: u64 = 64 * 1024 * 1024;
 pub const WAL_BODY_CRC64_ECMA_POLY: u64 = 0x42F0_E1EB_A9EA_3693;
+const WAL_BODY_CRC64_TABLE: [u64; 256] = crc64_ecma_table();
 
 const KIND_OFFSET: usize = 10;
 const RESERVED_OFFSET: usize = 11;
@@ -305,7 +306,10 @@ impl WalFrameHeader {
 
     pub fn validate_for_domain(&self, expected_domain: EncryptionDomain) -> Result<()> {
         self.validate()?;
-        if !self.encryption_domain.structurally_equal(&expected_domain) {
+        if !self
+            .encryption_domain
+            .structurally_equal_ct(&expected_domain)
+        {
             return Err(invalid_frame("WAL frame encryption domain mismatch"));
         }
         Ok(())
@@ -363,21 +367,31 @@ fn require_body_crc64(body_crc64: BodyChecksum) -> Result<u64> {
 #[must_use]
 pub fn wal_body_crc64(bytes: &[u8]) -> u64 {
     let mut crc = 0_u64;
-    let mut byte_index = 0;
-    while byte_index < bytes.len() {
-        crc ^= (bytes[byte_index] as u64) << 56;
-        let mut bit_index = 0;
-        while bit_index < 8 {
-            crc = if crc & 0x8000_0000_0000_0000 != 0 {
-                (crc << 1) ^ WAL_BODY_CRC64_ECMA_POLY
-            } else {
-                crc << 1
-            };
-            bit_index += 1;
-        }
-        byte_index += 1;
+    for byte in bytes {
+        let index = ((crc >> 56) as u8 ^ *byte) as usize;
+        crc = WAL_BODY_CRC64_TABLE[index] ^ (crc << 8);
     }
     crc
+}
+
+const fn crc64_ecma_table() -> [u64; 256] {
+    let mut table = [0_u64; 256];
+    let mut value = 0;
+    while value < table.len() {
+        let mut crc = (value as u64) << 56;
+        let mut bit_index = 0;
+        while bit_index < 8 {
+            if crc & 0x8000_0000_0000_0000 != 0 {
+                crc = (crc << 1) ^ WAL_BODY_CRC64_ECMA_POLY;
+            } else {
+                crc <<= 1;
+            }
+            bit_index += 1;
+        }
+        table[value] = crc;
+        value += 1;
+    }
+    table
 }
 
 #[cfg(test)]

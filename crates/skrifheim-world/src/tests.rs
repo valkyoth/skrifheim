@@ -212,6 +212,11 @@ fn promotion_preflight_allows_clean_child() -> Result<()> {
 
     let preflight = production.promotion_preflight(&child)?;
     assert!(preflight.can_promote());
+    assert!(!preflight.is_storage_validated());
+    assert_eq!(
+        preflight.require_storage_validated(),
+        Err(SkrifheimError::InvalidWorldDiff)
+    );
     assert_eq!(preflight.diff.added, vec![id(FactId::from_u128(8))?]);
     assert_eq!(preflight.diff.hidden, vec![id(FactId::from_u128(7))?]);
     Ok(())
@@ -277,6 +282,11 @@ fn rollback_preflight_reports_inverse_delta() -> Result<()> {
 
     let preflight = production.rollback_preflight(&child)?;
     assert!(preflight.can_rollback());
+    assert!(!preflight.is_storage_validated());
+    assert_eq!(
+        preflight.require_storage_validated(),
+        Err(SkrifheimError::InvalidWorldDiff)
+    );
     assert_eq!(preflight.from, child.id());
     assert_eq!(preflight.to, production.id());
     assert_eq!(preflight.reverts_added, vec![id(FactId::from_u128(8))?]);

@@ -43,6 +43,7 @@ impl WorldDiff {
 pub struct PromotionPreflight {
     pub diff: WorldDiff,
     pub conflicts: Vec<WorldConflict>,
+    storage_validated: bool,
 }
 
 impl PromotionPreflight {
@@ -54,12 +55,30 @@ impl PromotionPreflight {
         Ok(Self {
             diff: WorldDiff::between(parent, candidate)?,
             conflicts: collect_conflicts(parent, candidate),
+            storage_validated: false,
         })
     }
 
     #[must_use]
     pub fn can_promote(&self) -> bool {
         self.conflicts.is_empty()
+    }
+
+    /// Returns whether this preflight's ancestry chain was validated against
+    /// durable storage.
+    ///
+    /// In-memory scaffold preflights are useful for conflict discovery but must
+    /// not authorize merge execution.
+    #[must_use]
+    pub const fn is_storage_validated(&self) -> bool {
+        self.storage_validated
+    }
+
+    pub fn require_storage_validated(&self) -> Result<()> {
+        if !self.storage_validated {
+            return Err(SkrifheimError::InvalidWorldDiff);
+        }
+        Ok(())
     }
 }
 
@@ -70,6 +89,7 @@ pub struct RollbackPreflight {
     pub reverts_added: Vec<FactId>,
     pub restores_hidden: Vec<FactId>,
     pub conflicts: Vec<WorldConflict>,
+    storage_validated: bool,
 }
 
 impl RollbackPreflight {
@@ -86,12 +106,30 @@ impl RollbackPreflight {
             reverts_added: diff.added,
             restores_hidden: diff.hidden,
             conflicts: collect_conflicts(parent, child),
+            storage_validated: false,
         })
     }
 
     #[must_use]
     pub fn can_rollback(&self) -> bool {
         self.conflicts.is_empty()
+    }
+
+    /// Returns whether this preflight's ancestry chain was validated against
+    /// durable storage.
+    ///
+    /// In-memory scaffold preflights are useful for conflict discovery but must
+    /// not authorize rollback execution.
+    #[must_use]
+    pub const fn is_storage_validated(&self) -> bool {
+        self.storage_validated
+    }
+
+    pub fn require_storage_validated(&self) -> Result<()> {
+        if !self.storage_validated {
+            return Err(SkrifheimError::InvalidWorldDiff);
+        }
+        Ok(())
     }
 }
 

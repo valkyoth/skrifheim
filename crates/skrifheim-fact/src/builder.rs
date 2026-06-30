@@ -226,7 +226,7 @@ impl FactBuilder {
             label: self.label.ok_or(missing_field("label"))?,
             signatures: self.signatures.ok_or(missing_field("signatures"))?,
         };
-        fact.validate()?;
+        fact.validate_structure()?;
         Ok(fact)
     }
 }

@@ -48,7 +48,14 @@ const O_NOFOLLOW_FLAG: i32 = 0x0100;
         target_os = "dragonfly"
     ))
 ))]
-const O_NOFOLLOW_FLAG: i32 = 0;
+compile_error!(
+    "O_NOFOLLOW is not defined for this Unix platform; add an explicit constant or disable WAL file I/O for this target"
+);
+
+const _: () = assert!(
+    usize::BITS >= 32,
+    "skrifheim-storage-host requires at least a 32-bit address space"
+);
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct WalAppendOptions {
@@ -174,7 +181,10 @@ impl WalFileReader {
             ReadState::Complete => {}
         }
         let header = WalFrameHeader::parse_for_domain(&header_bytes, self.expected_domain)?;
-        let mut encrypted_body = vec![0_u8; header.encrypted_body_len() as usize];
+        let body_len = usize::try_from(header.encrypted_body_len()).map_err(|_| {
+            WalFileError::Io(io::Error::other("WAL body length exceeds address space"))
+        })?;
+        let mut encrypted_body = vec![0_u8; body_len];
         self.file
             .read_exact(&mut encrypted_body)
             .map_err(map_partial_read)?;

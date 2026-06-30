@@ -17,6 +17,10 @@
   encryption-domain matching.
 - Added redacted Debug output and security-policy gate coverage for segment
   headers, footers, and their inputs.
+- Resolved the first `0.17.0` pentest pass by hardening WAL symlink handling,
+  WAL domain comparison, WAL body allocation, structural fact validation
+  wording, world preflight execution guards, WAL CRC64 performance, WAL crypto
+  epoch ordering, audit timestamp validity, and timing-evidence planning.
 - Bumped workspace and internal crate dependency versions to `0.17.0`.
 - Added `0.17.0` release metadata and gate script.
 

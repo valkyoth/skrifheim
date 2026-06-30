@@ -173,6 +173,12 @@ include statistical timing evidence, such as a dudect-style harness or
 equivalent codegen review, for policy-token comparison and other
 timing-sensitive authorization helpers.
 
+Before digest values, encryption-domain values, or manifest roots are accepted
+as production trust-boundary decisions, the same timing-evidence requirement
+applies to their constant-time equality helpers. `subtle`-backed helpers are
+the scaffold baseline; they are not a production constant-time claim without a
+dudect-style or equivalent evidence gate.
+
 Structural canonicalization helpers, such as policy-token union sorting, may
 use ordinary ordering comparisons while the scaffold is not operating as a
 remote timing oracle. They must be documented as non-constant-time, must not be

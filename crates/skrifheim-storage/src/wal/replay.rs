@@ -172,6 +172,7 @@ impl WalRecoveryReport {
 pub struct WalReplay {
     active: Option<ActiveTransaction>,
     last_closed_tx: Option<TxId>,
+    max_observed_epoch: Option<CryptoEpoch>,
     replayed_frame_count: u64,
     checkpoint_count: u64,
     transaction_limit: usize,
@@ -209,6 +210,7 @@ impl WalReplay {
         Self {
             active: None,
             last_closed_tx: None,
+            max_observed_epoch: None,
             replayed_frame_count: 0,
             checkpoint_count: 0,
             transaction_limit,
@@ -259,6 +261,8 @@ impl WalReplay {
             return Err(invalid_replay("WAL transaction began before prior close"));
         }
         self.require_advancing_tx(header.tx_id())?;
+        self.require_non_regressing_epoch(header.crypto_epoch())?;
+        self.max_observed_epoch = Some(header.crypto_epoch());
         self.active = Some(ActiveTransaction::new(header));
         Ok(())
     }
@@ -313,6 +317,15 @@ impl WalReplay {
             && tx_id.get() <= last_closed.get()
         {
             return Err(invalid_replay("WAL transaction identifier did not advance"));
+        }
+        Ok(())
+    }
+
+    fn require_non_regressing_epoch(&self, crypto_epoch: CryptoEpoch) -> Result<()> {
+        if let Some(max_observed_epoch) = self.max_observed_epoch
+            && crypto_epoch.get() < max_observed_epoch.get()
+        {
+            return Err(invalid_replay("WAL crypto epoch regressed"));
         }
         Ok(())
     }

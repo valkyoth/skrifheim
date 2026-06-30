@@ -94,12 +94,13 @@ impl Fact {
         FactBuilder::new()
     }
 
-    /// Authoritative validation gate for every fact construction path.
+    /// Validates structural invariants only; this is not cryptographic
+    /// authenticity verification.
     ///
-    /// `FactBuilder` enforces these invariants today, but future storage or
-    /// segment deserialization paths that bypass the builder must still call
-    /// this before treating a fact as committed.
-    pub fn validate(&self) -> Result<()> {
+    /// Callers that accept facts from untrusted sources, such as future segment
+    /// deserialization or network ingestion paths, must separately verify
+    /// signatures against the key registry before treating a fact as committed.
+    pub fn validate_structure(&self) -> Result<()> {
         validate_object_size(&self.object)?;
         if self.evidence.is_empty() {
             return Err(SkrifheimError::EmptyEvidence);

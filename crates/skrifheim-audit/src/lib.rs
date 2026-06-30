@@ -10,8 +10,11 @@ use skrifheim_core::{
     FactId, NodeId, PluginId, PolicyId, ReplicaId, Result, ServiceId, SkrifheimError, TenantId,
     Timestamp, TxId, UserId, WorkloadId, WorldId,
 };
-use skrifheim_crypto::{CryptoEpoch, EncryptionDomain, EncryptionDomainPurpose, SignatureSet};
+use skrifheim_crypto::CryptoEpoch;
 
+mod protection;
+
+pub use protection::{AuditLogProtection, AuditRecord};
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum IdentityKind {
     Actor,
@@ -259,6 +262,7 @@ pub struct AuditEvent {
 }
 
 pub const AUDIT_EVENT_MAX_LOOKBACK: u64 = 3_600;
+pub const AUDIT_MIN_VALID_TIMESTAMP: u64 = 1_577_836_800;
 
 impl AuditEvent {
     pub fn new(input: AuditEventInput, now: Timestamp) -> Result<Self> {
@@ -271,6 +275,12 @@ impl AuditEvent {
     }
 
     fn validate_event_time(occurred_at: Timestamp, now: Timestamp) -> Result<()> {
+        if now.get() < AUDIT_MIN_VALID_TIMESTAMP {
+            return Err(SkrifheimError::InvalidAuditEvent);
+        }
+        if occurred_at.get() < AUDIT_MIN_VALID_TIMESTAMP {
+            return Err(SkrifheimError::InvalidAuditEvent);
+        }
         if occurred_at.get() > now.get() {
             return Err(SkrifheimError::InvalidAuditEvent);
         }
@@ -396,87 +406,6 @@ impl fmt::Debug for AuditEvent {
             .field("kind", &"<redacted>")
             .field("targets", &"<redacted>")
             .field("crypto_epoch", &"<redacted>")
-            .finish()
-    }
-}
-
-pub struct AuditLogProtection {
-    domain: EncryptionDomain,
-    signatures: SignatureSet,
-    crypto_epoch: CryptoEpoch,
-}
-
-impl AuditLogProtection {
-    pub fn new(
-        domain: EncryptionDomain,
-        signatures: SignatureSet,
-        crypto_epoch: CryptoEpoch,
-    ) -> Result<Self> {
-        if domain.purpose() != EncryptionDomainPurpose::AuditLog {
-            return Err(SkrifheimError::InvalidAuditProtection);
-        }
-        Ok(Self {
-            domain,
-            signatures,
-            crypto_epoch,
-        })
-    }
-
-    #[must_use]
-    pub const fn tenant_id(&self) -> TenantId {
-        self.domain.tenant_id()
-    }
-
-    #[must_use]
-    pub fn signature_count(&self) -> usize {
-        self.signatures.envelopes().len()
-    }
-
-    #[must_use]
-    pub const fn crypto_epoch(&self) -> CryptoEpoch {
-        self.crypto_epoch
-    }
-}
-
-impl fmt::Debug for AuditLogProtection {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("AuditLogProtection")
-            .field("domain", &"<redacted>")
-            .field("signature_count", &"<redacted>")
-            .field("crypto_epoch", &"<redacted>")
-            .finish()
-    }
-}
-
-pub struct AuditRecord {
-    event: AuditEvent,
-    protection: AuditLogProtection,
-}
-
-impl AuditRecord {
-    pub fn new(event: AuditEvent, protection: AuditLogProtection) -> Result<Self> {
-        if event.tenant_id().get() != protection.tenant_id().get() {
-            return Err(SkrifheimError::InvalidAuditProtection);
-        }
-        Ok(Self { event, protection })
-    }
-
-    #[must_use]
-    pub const fn event(&self) -> &AuditEvent {
-        &self.event
-    }
-
-    #[must_use]
-    pub const fn protection(&self) -> &AuditLogProtection {
-        &self.protection
-    }
-}
-
-impl fmt::Debug for AuditRecord {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("AuditRecord")
-            .field("event", &self.event)
-            .field("protection", &self.protection)
             .finish()
     }
 }

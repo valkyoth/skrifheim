@@ -1,6 +1,6 @@
 # skrifheim 0.17.0 Release Notes
 
-Status: implementation stop, ready for pentest.
+Status: implementation stop, first pentest pass resolved.
 
 ## Scope
 
@@ -41,6 +41,15 @@ must use.
   their internal fields private.
 - Bumped workspace and internal crate dependency versions to `0.17.0`.
 - Added `scripts/release_0_17_gate.sh`.
+- Resolved the first `0.17.0` pentest pass by failing closed on unknown Unix
+  `O_NOFOLLOW` WAL file targets, using constant-time encryption-domain
+  comparison in `WalFrameHeader::validate_for_domain`, checking host WAL body
+  length conversion before allocation, renaming fact validation to explicit
+  structural validation, adding storage-validation guards to world promotion
+  and rollback preflights, switching WAL CRC64 to a compile-time table-based
+  ECMA-182 implementation, rejecting WAL crypto epoch regressions across
+  transaction boundaries, rejecting unsynchronized audit timestamps, and
+  tracking production timing evidence as a planned release gate.
 
 ## Verification
 
@@ -59,6 +68,5 @@ segment bytes before accepting stored facts.
 
 ## Pentest Status
 
-No `0.17.0` pentest has been run yet. This implementation stop is ready for
-pentest, and any root `PENTEST.md` findings must be resolved and removed
-before tagging.
+The first `0.17.0` pentest pass has been resolved locally. Root `PENTEST.md`
+has been removed after findings were resolved. This stop is ready for retest.

@@ -94,7 +94,7 @@ fn base_builder_without_evidence() -> Result<FactBuilder> {
 
 #[test]
 fn valid_fact_passes_validation() -> Result<()> {
-    assert_eq!(fact()?.validate(), Ok(()));
+    assert_eq!(fact()?.validate_structure(), Ok(()));
     Ok(())
 }
 
@@ -171,7 +171,10 @@ fn builder_requires_evidence() -> Result<()> {
 #[test]
 fn fact_validation_requires_evidence() -> Result<()> {
     let fact = invalid_fact_without_evidence()?;
-    assert_eq!(fact.validate(), Err(SkrifheimError::EmptyEvidence));
+    assert_eq!(
+        fact.validate_structure(),
+        Err(SkrifheimError::EmptyEvidence)
+    );
     Ok(())
 }
 
