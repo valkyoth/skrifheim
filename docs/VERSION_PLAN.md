@@ -792,6 +792,33 @@ Deliverables:
 - diagnostics command,
 - invalid config tests.
 
+## v0.38.1 - Collaborative Text Convergence Model
+
+Goal: choose the collaborative text model before CMS release primitives and
+local-first world metadata depend on merge semantics.
+
+Deliverables:
+
+- choose Operational Transform, a CRDT family such as RGA, LOGOOT, YATA, or a
+  documented custom model,
+- document why the selected model fits `skrifheim` worlds, facts, policy
+  labels, offline edits, and signed release workflows,
+- define the canonical operation or state format for collaborative text fields,
+- define stable actor/device identifiers, causal clocks, tombstones, deletion
+  semantics, and compaction rules,
+- define how collaborative text state is represented as facts without making
+  every keystroke a permanent high-blast-radius fact unless explicitly chosen,
+- define deterministic merge/convergence guarantees and conflict review
+  behavior,
+- define policy behavior for collaborative edits that cross classification,
+  compartment, sovereignty, or legal boundaries,
+- define whether public releases store materialized text, operation history,
+  compacted CRDT state, or a signed projection,
+- add fixtures for concurrent insert/delete, offline edit replay, actor
+  ordering, tombstone retention, and malicious operation rejection,
+- update CMS and local-first milestones to use the selected model rather than
+  generic "CRDT fields" language.
+
 ## v0.39.0 - CMS World And Release Primitives
 
 Goal: support the first CMS-style atomic publishing model.
@@ -799,6 +826,7 @@ Goal: support the first CMS-style atomic publishing model.
 Deliverables:
 
 - public/private world split,
+- CMS content field model follows the `v0.38.1` collaborative text decision,
 - release object,
 - publish preflight,
 - atomic promote/rollback,
@@ -840,7 +868,8 @@ Deliverables:
 - device-bound world metadata,
 - sync cursor model,
 - encrypted sync envelope metadata,
-- CRDT field metadata for future CMS editor support,
+- collaborative text field metadata using the selected `v0.38.1` convergence
+  model,
 - policy-filtered sync tests.
 
 ## v0.43.0 - Mission Capsule And Cross-Domain Export Skeleton

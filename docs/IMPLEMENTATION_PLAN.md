@@ -351,6 +351,14 @@ Support offline and collaborative worlds:
 - device-bound local replicas,
 - conflict review.
 
+The collaborative text model must be selected before CMS publish/release
+primitives depend on it. `skrifheim` must choose between Operational Transform,
+an established CRDT family such as RGA, LOGOOT, or YATA, or a documented custom
+model. The decision must define operation/state representation, actor and
+device identity, causal clocks, tombstones, compaction, policy boundaries, and
+whether releases store materialized text, operation history, compacted state, or
+signed projections.
+
 CMS publishing uses world promotion, not mutable published flags.
 
 ## Phase 10: Rootless Podman And Production Runtime
