@@ -213,31 +213,9 @@ Deliverables:
 
 Follow-up:
 
-- `v0.10.1` is reserved for the sovereignty overflow fix.
-
-## v0.10.1 - Sovereignty Scope Overflow Sentinel
-
-Goal: make sovereignty propagation fail restrictive without failing as an
-invalid query when a result spans more jurisdictions than the exact bounded set
-can represent.
-
-Deliverables:
-
-- replace raw result-sovereignty `PolicyTokenSet` storage with a typed
-  sovereignty scope,
-- exact bounded sovereignty set for up to `POLICY_TOKEN_SET_MAX_ITEMS`
-  jurisdictions,
-- saturated multi-jurisdiction sentinel for overflow,
-- most-restrictive handling for the saturated state in policy proofs and query
-  plans,
-- redacted debug output for the new sovereignty scope,
-- tests that more than 64 distinct sovereignty tokens produces a
-  multi-jurisdiction result instead of `InvalidSecurityToken`,
-- tests that non-allow query plans continue to expose only public sentinel
-  metadata,
-- documentation that the sentinel is not a grantable clearance token and must
-  be handled as approval-required or deny by export, placement, indexing,
-  backup, AI processing, and legal/compliance decisions.
+- `v0.18.1` is reserved for the sovereignty overflow fix. The design gap
+  originated in the `v0.10.0` result-classification scaffold, but the repair
+  must use a future monotonic release number.
 
 ## v0.11.0 - Index And Projection Encryption Policy
 
@@ -357,6 +335,30 @@ Deliverables:
 - cryptographic signature-verification boundary for any deserialized facts
   before they can be treated as committed,
 - corruption rejection tests.
+
+## v0.18.1 - Sovereignty Scope Overflow Sentinel
+
+Goal: make sovereignty propagation fail restrictive without failing as an
+invalid query when a result spans more jurisdictions than the exact bounded set
+can represent.
+
+Deliverables:
+
+- replace raw result-sovereignty `PolicyTokenSet` storage with a typed
+  sovereignty scope,
+- exact bounded sovereignty set for up to `POLICY_TOKEN_SET_MAX_ITEMS`
+  jurisdictions,
+- saturated multi-jurisdiction sentinel for overflow,
+- most-restrictive handling for the saturated state in policy proofs and query
+  plans,
+- redacted debug output for the new sovereignty scope,
+- tests that more than 64 distinct sovereignty tokens produces a
+  multi-jurisdiction result instead of `InvalidSecurityToken`,
+- tests that non-allow query plans continue to expose only public sentinel
+  metadata,
+- documentation that the sentinel is not a grantable clearance token and must
+  be handled as approval-required or deny by export, placement, indexing,
+  backup, AI processing, and legal/compliance decisions.
 
 ## v0.19.0 - Manifest And Checkpoint Format
 
