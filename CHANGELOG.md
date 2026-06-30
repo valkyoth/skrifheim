@@ -2,6 +2,25 @@
 
 ## Unreleased
 
+## 0.18.0
+
+- Added fixed-size immutable segment header and footer byte encoding/parsing in
+  `skrifheim-storage`.
+- Kept the mirrored 256-byte segment footer layout for stronger tail
+  validation and documented the overhead decision.
+- Split segment wire-format mechanics into a dedicated encoding module.
+- Added parser tests for fixed byte round trips, malformed metadata rejection,
+  expected-domain rejection, and footer/header mismatch rejection.
+- Added `SegmentFileWriter` and `SegmentFileReader` in
+  `skrifheim-storage-host` for immutable segment file persistence.
+- Required body length checks, body CRC verification, exact file-length checks,
+  footer/header binding, expected encryption-domain validation, owner-only Unix
+  permissions, and Unix symlink rejection for host segment files.
+- Added a mandatory `SegmentContentVerifier` boundary on both segment writes
+  and reads until the production SHA-3/SHAKE digest engine is admitted.
+- Added host-file tests for segment round trips and corruption rejection.
+- Bumped workspace and internal crate dependency versions to `0.18.0`.
+
 ## 0.17.0
 
 - Moved immutable segment metadata from the storage crate root into a dedicated

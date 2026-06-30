@@ -9,9 +9,13 @@ use std::{
 use std::os::unix::fs::{PermissionsExt, symlink};
 
 use skrifheim_core::{Result as SkrifheimResult, SkrifheimError, TenantId, TxId, WorldId};
-use skrifheim_crypto::{CryptoEpoch, EncryptionDomain, KeyId, RegionKeyId};
+use skrifheim_crypto::{
+    CompartmentKeyId, ContentDigest, CryptoEpoch, DigestPolicy, EncryptionDomain, KeyId,
+    RegionKeyId, SegmentKeyId,
+};
 use skrifheim_storage::{
-    BodyChecksum, WalFrameHeader, WalFrameHeaderInput, WalRecordKind, wal_body_crc64,
+    BodyChecksum, SegmentFooter, SegmentHeader, SegmentHeaderInput, SegmentKind, WalFrameHeader,
+    WalFrameHeaderInput, WalRecordKind, wal_body_crc64,
 };
 
 use super::*;
@@ -32,6 +36,16 @@ fn wal_domain() -> SkrifheimResult<EncryptionDomain> {
     ))
 }
 
+fn segment_domain() -> SkrifheimResult<EncryptionDomain> {
+    Ok(EncryptionDomain::segment(
+        tenant()?,
+        Some(id(RegionKeyId::from_u128(8))?),
+        skrifheim_core::Classification::Restricted,
+        id(CompartmentKeyId::from_u128(9))?,
+        id(SegmentKeyId::from_u128(10))?,
+    ))
+}
+
 fn header(tx: u128, body: &[u8]) -> SkrifheimResult<WalFrameHeader> {
     WalFrameHeader::new(WalFrameHeaderInput {
         record_kind: WalRecordKind::FactBatch,
@@ -45,6 +59,22 @@ fn header(tx: u128, body: &[u8]) -> SkrifheimResult<WalFrameHeader> {
     })
 }
 
+fn segment_header(body: &[u8]) -> SkrifheimResult<SegmentHeader> {
+    SegmentHeader::new(SegmentHeaderInput {
+        segment_kind: SegmentKind::Fact,
+        tenant_id: tenant()?,
+        min_tx: id(TxId::from_u128(20))?,
+        max_tx: id(TxId::from_u128(21))?,
+        policy_id: id(skrifheim_core::PolicyId::from_u128(22))?,
+        encryption_key_id: id(KeyId::from_u128(23))?,
+        crypto_epoch: CryptoEpoch::new(24),
+        encryption_domain: segment_domain()?,
+        body_len: body.len() as u64,
+        body_crc64: BodyChecksum::Present(wal_body_crc64(body)),
+        content_digest: ContentDigest::new(DigestPolicy::HIGH_SECURITY, &[31; 32])?,
+    })
+}
+
 fn temp_path(name: &str) -> Result<PathBuf> {
     let timestamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -55,6 +85,42 @@ fn temp_path(name: &str) -> Result<PathBuf> {
         std::process::id()
     ));
     Ok(path)
+}
+
+fn wal_to_segment_error(error: WalFileError) -> SegmentFileError {
+    match error {
+        WalFileError::Io(error) => SegmentFileError::Io(error),
+        WalFileError::InvalidFrame(error) => SegmentFileError::InvalidSegment(error),
+        WalFileError::BodyLengthMismatch => SegmentFileError::BodyLengthMismatch,
+        WalFileError::PartialFrame => SegmentFileError::PartialSegment,
+    }
+}
+
+struct AcceptDigest;
+
+impl SegmentContentVerifier for AcceptDigest {
+    fn verify_content_digest(
+        &self,
+        header: &SegmentHeader,
+        _encrypted_body: &[u8],
+    ) -> SkrifheimResult<()> {
+        header
+            .content_digest()
+            .ok_or(SkrifheimError::InvalidDigest)?
+            .require_policy(DigestPolicy::HIGH_SECURITY)
+    }
+}
+
+struct RejectDigest;
+
+impl SegmentContentVerifier for RejectDigest {
+    fn verify_content_digest(
+        &self,
+        _header: &SegmentHeader,
+        _encrypted_body: &[u8],
+    ) -> SkrifheimResult<()> {
+        Err(SkrifheimError::InvalidDigest)
+    }
 }
 
 #[test]
@@ -78,6 +144,234 @@ fn wal_writer_and_reader_round_trip_encrypted_frames() -> Result<()> {
     assert_eq!(second.encrypted_body(), second_body);
     assert!(reader.next_frame()?.is_none());
     fs::remove_file(path)?;
+    Ok(())
+}
+
+#[test]
+fn segment_writer_and_reader_round_trip_encrypted_segment()
+-> core::result::Result<(), SegmentFileError> {
+    let path = temp_path("segment-round-trip").map_err(wal_to_segment_error)?;
+    let body = [41_u8; 16];
+    let header = segment_header(&body)?;
+    {
+        let mut writer = SegmentFileWriter::create(&path, SegmentWriteOptions::new(false))?;
+        writer.write_segment(&header, &body, &AcceptDigest)?;
+    }
+
+    let mut reader = SegmentFileReader::open(&path, segment_domain()?)?;
+    let segment = reader.read_segment(&AcceptDigest)?;
+
+    assert_eq!(segment.header().min_tx().get(), 20);
+    assert_eq!(segment.footer().max_tx().get(), 21);
+    assert_eq!(segment.encrypted_body(), body);
+    fs::remove_file(path)?;
+    Ok(())
+}
+
+#[test]
+fn segment_writer_rejects_body_length_mismatch() -> core::result::Result<(), SegmentFileError> {
+    let path = temp_path("segment-length-mismatch").map_err(wal_to_segment_error)?;
+    let mut writer = SegmentFileWriter::create(&path, SegmentWriteOptions::new(false))?;
+    let result = writer.write_segment(&segment_header(&[1, 2, 3, 4])?, &[1, 2, 3], &AcceptDigest);
+
+    assert!(matches!(result, Err(SegmentFileError::BodyLengthMismatch)));
+    fs::remove_file(path)?;
+    Ok(())
+}
+
+#[test]
+fn segment_writer_requires_content_digest_verifier() -> core::result::Result<(), SegmentFileError> {
+    let path = temp_path("segment-write-digest-verifier").map_err(wal_to_segment_error)?;
+    let body = [6_u8; 4];
+    let mut writer = SegmentFileWriter::create(&path, SegmentWriteOptions::new(false))?;
+    let result = writer.write_segment(&segment_header(&body)?, &body, &RejectDigest);
+
+    assert!(matches!(
+        result,
+        Err(SegmentFileError::ContentDigestRejected(
+            SkrifheimError::InvalidDigest
+        ))
+    ));
+    fs::remove_file(path)?;
+    Ok(())
+}
+
+#[test]
+fn segment_reader_rejects_body_crc_mismatch() -> core::result::Result<(), SegmentFileError> {
+    let path = temp_path("segment-crc-mismatch").map_err(wal_to_segment_error)?;
+    let original_body = [1_u8, 2, 3, 4];
+    let tampered_body = [1_u8, 2, 3, 5];
+    let header = segment_header(&original_body)?;
+    let footer = SegmentFooter::from_header(&header)?;
+    {
+        let mut file = OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(&path)?;
+        file.write_all(&header.encode())?;
+        file.write_all(&tampered_body)?;
+        file.write_all(&footer.encode())?;
+        file.flush()?;
+    }
+    let mut reader = SegmentFileReader::open(&path, segment_domain()?)?;
+
+    assert!(matches!(
+        reader.read_segment(&AcceptDigest),
+        Err(SegmentFileError::InvalidSegment(
+            SkrifheimError::InvalidStorageHeader(_)
+        ))
+    ));
+    fs::remove_file(path)?;
+    Ok(())
+}
+
+#[test]
+fn segment_reader_rejects_footer_header_mismatch() -> core::result::Result<(), SegmentFileError> {
+    let path = temp_path("segment-footer-mismatch").map_err(wal_to_segment_error)?;
+    let body = [7_u8; 8];
+    let header = segment_header(&body)?;
+    let different_body = [8_u8; 8];
+    let footer = SegmentFooter::from_header(&segment_header(&different_body)?)?;
+    {
+        let mut file = OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(&path)?;
+        file.write_all(&header.encode())?;
+        file.write_all(&body)?;
+        file.write_all(&footer.encode())?;
+        file.flush()?;
+    }
+    let mut reader = SegmentFileReader::open(&path, segment_domain()?)?;
+
+    assert!(matches!(
+        reader.read_segment(&AcceptDigest),
+        Err(SegmentFileError::InvalidSegment(
+            SkrifheimError::InvalidStorageHeader(_)
+        ))
+    ));
+    fs::remove_file(path)?;
+    Ok(())
+}
+
+#[test]
+fn segment_reader_rejects_unexpected_domain() -> core::result::Result<(), SegmentFileError> {
+    let path = temp_path("segment-domain").map_err(wal_to_segment_error)?;
+    let body = [21_u8; 4];
+    {
+        let mut writer = SegmentFileWriter::create(&path, SegmentWriteOptions::new(false))?;
+        writer.write_segment(&segment_header(&body)?, &body, &AcceptDigest)?;
+    }
+    let other_domain = EncryptionDomain::segment(
+        tenant()?,
+        None,
+        skrifheim_core::Classification::Restricted,
+        id(CompartmentKeyId::from_u128(9))?,
+        id(SegmentKeyId::from_u128(10))?,
+    );
+    let mut reader = SegmentFileReader::open(&path, other_domain)?;
+
+    assert!(matches!(
+        reader.read_segment(&AcceptDigest),
+        Err(SegmentFileError::InvalidSegment(
+            SkrifheimError::InvalidStorageHeader(_)
+        ))
+    ));
+    fs::remove_file(path)?;
+    Ok(())
+}
+
+#[test]
+fn segment_reader_rejects_partial_segment_and_trailing_bytes()
+-> core::result::Result<(), SegmentFileError> {
+    let partial_path = temp_path("segment-partial").map_err(wal_to_segment_error)?;
+    fs::write(&partial_path, [1_u8; 4])?;
+    let mut reader = SegmentFileReader::open(&partial_path, segment_domain()?)?;
+    assert!(matches!(
+        reader.read_segment(&AcceptDigest),
+        Err(SegmentFileError::PartialSegment)
+    ));
+    fs::remove_file(partial_path)?;
+
+    let trailing_path = temp_path("segment-trailing").map_err(wal_to_segment_error)?;
+    let body = [5_u8; 4];
+    let header = segment_header(&body)?;
+    let footer = SegmentFooter::from_header(&header)?;
+    {
+        let mut file = OpenOptions::new()
+            .create_new(true)
+            .write(true)
+            .open(&trailing_path)?;
+        file.write_all(&header.encode())?;
+        file.write_all(&body)?;
+        file.write_all(&footer.encode())?;
+        file.write_all(&[0_u8])?;
+        file.flush()?;
+    }
+    let mut reader = SegmentFileReader::open(&trailing_path, segment_domain()?)?;
+    assert!(matches!(
+        reader.read_segment(&AcceptDigest),
+        Err(SegmentFileError::FileLengthMismatch)
+    ));
+    fs::remove_file(trailing_path)?;
+    Ok(())
+}
+
+#[test]
+fn segment_reader_requires_content_digest_verifier() -> core::result::Result<(), SegmentFileError> {
+    let path = temp_path("segment-digest-verifier").map_err(wal_to_segment_error)?;
+    let body = [9_u8; 4];
+    {
+        let mut writer = SegmentFileWriter::create(&path, SegmentWriteOptions::new(false))?;
+        writer.write_segment(&segment_header(&body)?, &body, &AcceptDigest)?;
+    }
+    let mut reader = SegmentFileReader::open(&path, segment_domain()?)?;
+
+    assert!(matches!(
+        reader.read_segment(&RejectDigest),
+        Err(SegmentFileError::ContentDigestRejected(
+            SkrifheimError::InvalidDigest
+        ))
+    ));
+    fs::remove_file(path)?;
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn segment_writer_creates_owner_only_files() -> core::result::Result<(), SegmentFileError> {
+    let path = temp_path("segment-permissions").map_err(wal_to_segment_error)?;
+    let body = [3_u8; 4];
+    {
+        let mut writer = SegmentFileWriter::create(&path, SegmentWriteOptions::new(false))?;
+        writer.write_segment(&segment_header(&body)?, &body, &AcceptDigest)?;
+    }
+    let mode = fs::metadata(&path)?.permissions().mode() & 0o777;
+
+    assert_eq!(mode, 0o600);
+    fs::remove_file(path)?;
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn segment_reader_and_writer_reject_symlink_paths() -> core::result::Result<(), SegmentFileError> {
+    let target = temp_path("segment-symlink-target").map_err(wal_to_segment_error)?;
+    let link = temp_path("segment-symlink-link").map_err(wal_to_segment_error)?;
+    fs::write(&target, [])?;
+    symlink(&target, &link)?;
+
+    assert!(matches!(
+        SegmentFileWriter::create(&link, SegmentWriteOptions::new(false)),
+        Err(SegmentFileError::Io(_))
+    ));
+    assert!(matches!(
+        SegmentFileReader::open(&link, segment_domain()?),
+        Err(SegmentFileError::Io(_))
+    ));
+
+    fs::remove_file(link)?;
+    fs::remove_file(target)?;
     Ok(())
 }
 

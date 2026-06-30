@@ -334,6 +334,13 @@ Deliverables:
 
 Goal: persist and read immutable segments without compaction.
 
+Decision: keep the full mirrored 256-byte footer for the first durable segment
+reader/writer pass. The extra fixed footer cost is intentional because it lets
+the reader bind both ends of the immutable file, reject tail corruption, reject
+header/footer metadata drift, and fail closed on trailing bytes. Compact
+trailers can be reconsidered after segment sizing policy exists, but not before
+corruption evidence is stronger than the current mirrored layout.
+
 Deliverables:
 
 - segment writer,

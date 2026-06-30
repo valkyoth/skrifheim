@@ -144,6 +144,13 @@ negligible for large immutable segments and potentially visible for very small
 segments. `v0.18.0` must either keep full mirroring with documented overhead or
 define a compact footer/trailer that preserves mismatch detection.
 
+`v0.18.0` keeps full mirrored fixed-size segment headers and footers. The
+segment reader must reject unexpected domains, body CRC mismatches,
+header/footer metadata mismatches, truncated files, and trailing bytes before a
+segment can be accepted. Content-digest verification is a required injected
+trust-boundary operation until the admitted production digest engine computes
+the actual SHA-3/SHAKE body hash.
+
 Compaction must preserve tenant, policy, region, encryption, and MVCC boundaries.
 
 The in-memory transaction model must provide read-your-writes behavior before

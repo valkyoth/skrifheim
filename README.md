@@ -31,9 +31,8 @@ provenance; classification-aware planning; tamper-evident storage; and CMS
 integration through typed facts, atomic releases, sanitized projections, and AI
 artifacts with provenance.
 
-The project is currently at the `v0.17.0` release-prep stop, with pentest
-retest complete locally and residual timing/ancestry evidence tracked in the
-version plan. It is not a usable database engine.
+The project is currently at the `v0.18.0` implementation stop, pending pentest.
+It is not a usable database engine.
 
 `skrifheim` is licensed under the European Union Public Licence 1.2.
 
@@ -48,7 +47,7 @@ version plan. It is not a usable database engine.
 | `no_std` core policy | Active | Library crates under `crates/` use `#![no_std]` and `#![forbid(unsafe_code)]`. |
 | Dependency policy | Active | `cargo deny` policy denies wildcard external dependencies and unknown sources. |
 | Security reporting | Active | Private-first vulnerability process in `SECURITY.md`. |
-| Release notes | Active | `release-notes/RELEASE_NOTES_0.17.0.md` records scope, verification, and non-claims. |
+| Release notes | Active | `release-notes/RELEASE_NOTES_0.18.0.md` records scope, verification, and non-claims. |
 
 ### Initial Models
 
@@ -63,7 +62,7 @@ version plan. It is not a usable database engine.
 | Memory secrecy boundary | Scaffolded | Secret material enters crypto APIs through bounded non-clone redacted `SecretBytes` wrappers backed by admitted `sanitization` clear-on-drop storage. |
 | Identity and audit events | Scaffolded | Typed identities, attestation evidence references, break-glass event shape, signed/encrypted audit-log metadata, and actor-attribution checks. |
 | Crypto-agile envelopes | Scaffolded | Algorithm IDs, crypto epochs, bounded signature sets, key hierarchy metadata, key lifecycle metadata, encryption-domain metadata, and SHA-3/SHAKE digest policy skeletons exist without locking the database to one permanent algorithm. |
-| Storage metadata | Scaffolded | Immutable segment headers and footers validate magic, version, transaction range, policy, encryption key, crypto epoch, encryption domain, body length, CRC presence, and content digest presence; WAL frame headers validate fixed append-only encrypted-frame metadata, non-zero CRC presence, expected-domain binding, host-file append/read smoke coverage, and header-driven replay/recovery state transitions. |
+| Storage metadata | Scaffolded | Immutable segment headers and footers validate magic, version, transaction range, policy, encryption key, crypto epoch, encryption domain, body length, CRC presence, and content digest presence; fixed segment encoding, host-file write/read, CRC verification, footer/header binding, and verifier injection exist for opaque encrypted segment bodies; WAL frame headers validate fixed append-only encrypted-frame metadata, non-zero CRC presence, expected-domain binding, host-file append/read smoke coverage, and header-driven replay/recovery state transitions. |
 | Query planning primitives | Scaffolded | Query requests become policy decision plans for early read, causality, simulation, and context intents. |
 
 ### Tooling And Verification
@@ -71,7 +70,7 @@ version plan. It is not a usable database engine.
 | Capability | Status | Notes |
 | --- | --- | --- |
 | Local gate | Active | `scripts/checks.sh` runs formatting, shell syntax, doc links, release metadata, engineering policy, modularity, security policy, clippy, and tests. |
-| `v0.17.0` release gate | Active | `scripts/release_0_17_gate.sh` runs local checks, dependency policy, RustSec audit, CLI startup, and rootless Podman smoke. |
+| Release gate | Active | `scripts/checks.sh` is the normal local gate. Version release gates run after pentest findings are resolved and the permanent pentest digest is committed. |
 | Rootless Podman | Active | `Containerfile` builds and runs the current CLI in a non-root runtime image. |
 | Pentest stop rule | Active | Every version has a clean implementation stop before tagging. Root `PENTEST.md` is temporary findings input and must be removed after resolution. |
 | Modularity gate | Active | Non-generated Rust files over 500 lines fail the local gate. |
@@ -84,7 +83,7 @@ version plan. It is not a usable database engine.
 | WAL replay and recovery | Scaffolded | `v0.16.0` adds header-driven replay reports for committed, aborted, and clean-EOF uncommitted transactions; full state recovery remains planned. |
 | Quantum-aware digest policy | Scaffolded | SHA-3/SHAKE digest-strength profiles and full-width world/content/manifest digest types before compact IDs become durable storage authority. |
 | Immutable segment format | Scaffolded | `v0.17.0` adds policy-scoped immutable segment headers and footers with key epoch, encryption-domain, checksum, and algorithm-agile digest metadata. |
-| Immutable segment persistence | Planned | `v0.18.0` through `v0.20.0`. |
+| Immutable segment persistence | Scaffolded | `v0.18.0` adds fixed segment encoding plus host-file writer and reader scaffolds; manifests and indexes remain planned for `v0.19.0` through `v0.20.0`. |
 | Strict serializable transactions | Planned | `v0.21.0` through `v0.23.0`. |
 | Native query parser and execution | Planned | `v0.25.0` through `v0.28.0`. |
 | Rebuildable projections | Planned | `v0.29.0` through `v0.32.0`. |
@@ -140,7 +139,7 @@ cargo run -p skrifheim
 Expected output:
 
 ```text
-skrifheim 0.17.0
+skrifheim 0.18.0
 ```
 
 Run the normal local checks:
@@ -149,17 +148,8 @@ Run the normal local checks:
 scripts/checks.sh
 ```
 
-Run the `v0.17.0` release gate:
-
-```bash
-scripts/release_0_17_gate.sh
-```
-
-Skip the rootless Podman part only when the host cannot run containers:
-
-```bash
-SKRIFHEIM_SKIP_PODMAN=1 scripts/release_0_17_gate.sh
-```
+Release gates are run after the pentest stop has passed and the permanent
+pentest digest has been committed.
 
 ## Rootless Podman
 

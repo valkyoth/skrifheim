@@ -3,8 +3,10 @@ use core::fmt;
 use skrifheim_core::{PolicyId, Result, TenantId, TxId};
 use skrifheim_crypto::{ContentDigest, CryptoEpoch, EncryptionDomain, KeyId};
 
+mod encoding;
 mod validation;
 
+use encoding::{encode_footer, encode_header, parse_footer, parse_header};
 use validation::{
     SegmentValidationInput, content_digest_matches, invalid_segment, validate_segment_metadata,
     validate_version,
@@ -14,6 +16,8 @@ pub const SEGMENT_MAGIC: [u8; 8] = *b"SKRIFSEG";
 pub const SEGMENT_FOOTER_MAGIC: [u8; 8] = *b"SKRIFFTR";
 pub const SEGMENT_VERSION_MAX: u16 = 1;
 pub const SEGMENT_FOOTER_VERSION_MAX: u16 = 1;
+pub const SEGMENT_HEADER_BYTES: usize = 256;
+pub const SEGMENT_FOOTER_BYTES: usize = 256;
 pub const SEGMENT_BODY_MAX_BYTES: u64 = 1024 * 1024 * 1024;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -183,6 +187,21 @@ impl SegmentHeader {
         Ok(header)
     }
 
+    pub fn parse(bytes: &[u8]) -> Result<Self> {
+        parse_header(bytes)
+    }
+
+    pub fn parse_for_domain(bytes: &[u8], expected_domain: EncryptionDomain) -> Result<Self> {
+        let header = Self::parse(bytes)?;
+        header.validate_for_domain(expected_domain)?;
+        Ok(header)
+    }
+
+    #[must_use]
+    pub fn encode(&self) -> [u8; SEGMENT_HEADER_BYTES] {
+        encode_header(self)
+    }
+
     #[must_use]
     pub const fn magic(&self) -> [u8; 8] {
         self.magic
@@ -269,6 +288,17 @@ impl SegmentHeader {
             content_digest: self.content_digest.as_ref(),
         })
     }
+
+    pub fn validate_for_domain(&self, expected_domain: EncryptionDomain) -> Result<()> {
+        self.validate()?;
+        if !self
+            .encryption_domain
+            .structurally_equal_ct(&expected_domain)
+        {
+            return Err(invalid_segment("segment encryption domain mismatch"));
+        }
+        Ok(())
+    }
 }
 
 impl SegmentFooter {
@@ -308,6 +338,15 @@ impl SegmentFooter {
             body_crc64: header.body_crc64,
             content_digest,
         })
+    }
+
+    pub fn parse(bytes: &[u8]) -> Result<Self> {
+        parse_footer(bytes)
+    }
+
+    #[must_use]
+    pub fn encode(&self) -> [u8; SEGMENT_FOOTER_BYTES] {
+        encode_footer(self)
     }
 
     #[must_use]

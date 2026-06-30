@@ -116,6 +116,94 @@ fn footer_carries_matching_metadata() -> Result<()> {
 }
 
 #[test]
+fn header_and_footer_round_trip_fixed_bytes() -> Result<()> {
+    let header = header()?;
+    let footer = SegmentFooter::from_header(&header)?;
+
+    let header_bytes = header.encode();
+    let footer_bytes = footer.encode();
+    let parsed_header = SegmentHeader::parse(&header_bytes)?;
+    let parsed_footer = SegmentFooter::parse(&footer_bytes)?;
+
+    assert_eq!(header_bytes.len(), SEGMENT_HEADER_BYTES);
+    assert_eq!(footer_bytes.len(), SEGMENT_FOOTER_BYTES);
+    assert_eq!(parsed_header.segment_kind(), SegmentKind::Fact);
+    assert_eq!(parsed_header.tenant_id().get(), header.tenant_id().get());
+    assert_eq!(parsed_header.min_tx().get(), header.min_tx().get());
+    assert_eq!(parsed_header.max_tx().get(), header.max_tx().get());
+    assert_eq!(
+        parsed_header
+            .content_digest()
+            .ok_or(SkrifheimError::InvalidDigest)?
+            .digest_bytes(),
+        header
+            .content_digest()
+            .ok_or(SkrifheimError::InvalidDigest)?
+            .digest_bytes()
+    );
+    assert_eq!(
+        parsed_footer.validate_against_header(&parsed_header),
+        Ok(())
+    );
+    Ok(())
+}
+
+#[test]
+fn header_parse_for_domain_rejects_unexpected_domain() -> Result<()> {
+    let header = header()?;
+    let other_domain = EncryptionDomain::segment(
+        tenant_id()?,
+        Some(id(RegionKeyId::from_u128(8))?),
+        Classification::Restricted,
+        id(CompartmentKeyId::from_u128(9))?,
+        id(SegmentKeyId::from_u128(11))?,
+    );
+
+    assert!(matches!(
+        SegmentHeader::parse_for_domain(&header.encode(), other_domain),
+        Err(SkrifheimError::InvalidStorageHeader(_))
+    ));
+    Ok(())
+}
+
+#[test]
+fn parsers_reject_malformed_segment_metadata() -> Result<()> {
+    assert!(matches!(
+        SegmentHeader::parse(&header()?.encode()[..SEGMENT_HEADER_BYTES - 1]),
+        Err(SkrifheimError::InvalidStorageHeader(_))
+    ));
+
+    let mut header_bytes = header()?.encode();
+    header_bytes[11] = 1;
+    assert!(matches!(
+        SegmentHeader::parse(&header_bytes),
+        Err(SkrifheimError::InvalidStorageHeader(_))
+    ));
+
+    let mut footer_bytes = footer()?.encode();
+    footer_bytes[10] = 1;
+    assert!(matches!(
+        SegmentFooter::parse(&footer_bytes),
+        Err(SkrifheimError::InvalidStorageHeader(_))
+    ));
+    Ok(())
+}
+
+#[test]
+fn decoded_footer_rejects_header_mismatch() -> Result<()> {
+    let header = header()?;
+    let mut footer_bytes = SegmentFooter::from_header(&header)?.encode();
+    footer_bytes[160..168].copy_from_slice(&8_u64.to_le_bytes());
+    let footer = SegmentFooter::parse(&footer_bytes)?;
+
+    assert!(matches!(
+        footer.validate_against_header(&header),
+        Err(SkrifheimError::InvalidStorageHeader(_))
+    ));
+    Ok(())
+}
+
+#[test]
 fn header_rejects_inverted_transaction_range() -> Result<()> {
     let mut input = header_input()?;
     input.min_tx = id(TxId::from_u128(3))?;
