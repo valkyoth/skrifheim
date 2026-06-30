@@ -537,6 +537,33 @@ Deliverables:
 - fact history tests,
 - unauthorized stale-read tests.
 
+## v0.24.1 - Simulation Query Isolation Model
+
+Goal: decide how `SimulateConsequences` queries are isolated before the native
+query AST locks in simulation syntax and execution assumptions.
+
+Deliverables:
+
+- choose between writable temporary world forks and read-only counterfactual
+  query-time reasoning for simulation queries,
+- document how `QueryIntent::SimulateConsequences` relates to
+  `WorldKind::Simulation`,
+- if writable temporary forks are selected, define fork lifetime, deterministic
+  identity, transaction boundaries, cleanup, promotion prohibition by default,
+  audit requirements, and storage isolation,
+- if read-only counterfactual reasoning is selected, define assumption syntax,
+  overlay representation, result provenance, bounded traversal, and proof
+  output without creating durable world state,
+- define policy checks for simulated assumptions, including labels,
+  compartments, releasability, AI eligibility, and confidence thresholds,
+- define whether simulation results can feed context packs, projections, AI
+  artifacts, or durable facts, and which signed promotion/declassification
+  proofs would be required,
+- add tests that simulation cannot mutate the source world unless an explicit
+  future write/promote path authorizes it,
+- add documentation that `v0.25.0` must use the selected model when defining
+  simulation query AST nodes.
+
 ## v0.25.0 - Native Query AST
 
 Goal: define the first native query representation without execution.
@@ -546,7 +573,7 @@ Deliverables:
 - world read AST,
 - fact filter AST,
 - causality explain AST,
-- simulation query AST skeleton,
+- simulation query AST skeleton using the `v0.24.1` isolation model,
 - AST validation tests.
 
 ## v0.26.0 - Native Query Parser

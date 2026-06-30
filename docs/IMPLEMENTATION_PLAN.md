@@ -266,6 +266,15 @@ return context_pack {
 
 The result must include provenance, source facts, graph paths, redactions, stale artifact markers, and policy proof.
 
+Simulation query isolation must be decided before the native query AST is
+frozen. `QueryIntent::SimulateConsequences` and `WorldKind::Simulation` do not
+by themselves decide whether a simulation creates a writable temporary world
+fork or uses read-only counterfactual reasoning inside the query planner. The
+first model behaves like a short-lived branch with cleanup, transaction, and
+audit requirements. The second model behaves like a proof-producing read-only
+overlay. `v0.24.1` is reserved to choose this architecture before `v0.25.0`
+defines simulation AST nodes.
+
 Confidence is not just a stored scalar in the target model. Derived facts and
 query results should carry computed confidence from their evidence and
 caused-by chains, weighted by source reliability and fused with mandatory
