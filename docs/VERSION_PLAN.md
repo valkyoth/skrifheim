@@ -211,16 +211,33 @@ Deliverables:
 - confidence-threshold policy hooks for future propagated confidence,
 - tests for classification escalation.
 
-Post-release design note:
+Follow-up:
 
-- `ResultClassification` currently stores sovereignty in the same fixed
-  `PolicyTokenSet` used by policy compartments and releasability labels. This
-  intentionally fails closed if a derived result would span more than 64
-  distinct sovereignty tokens. That is secure, but it is not the long-term UX or
-  legal/compliance behavior we want for fine-grained jurisdiction tagging. The
-  planned fix is a typed sovereignty scope with an exact bounded-token state and
-  a saturated multi-jurisdiction state; overflow must become most-restrictive
-  result metadata, not `InvalidSecurityToken`.
+- `v0.10.1` is reserved for the sovereignty overflow fix.
+
+## v0.10.1 - Sovereignty Scope Overflow Sentinel
+
+Goal: make sovereignty propagation fail restrictive without failing as an
+invalid query when a result spans more jurisdictions than the exact bounded set
+can represent.
+
+Deliverables:
+
+- replace raw result-sovereignty `PolicyTokenSet` storage with a typed
+  sovereignty scope,
+- exact bounded sovereignty set for up to `POLICY_TOKEN_SET_MAX_ITEMS`
+  jurisdictions,
+- saturated multi-jurisdiction sentinel for overflow,
+- most-restrictive handling for the saturated state in policy proofs and query
+  plans,
+- redacted debug output for the new sovereignty scope,
+- tests that more than 64 distinct sovereignty tokens produces a
+  multi-jurisdiction result instead of `InvalidSecurityToken`,
+- tests that non-allow query plans continue to expose only public sentinel
+  metadata,
+- documentation that the sentinel is not a grantable clearance token and must
+  be handled as approval-required or deny by export, placement, indexing,
+  backup, AI processing, and legal/compliance decisions.
 
 ## v0.11.0 - Index And Projection Encryption Policy
 
