@@ -137,6 +137,13 @@ Implement:
 - policy and encryption boundary metadata,
 - corruption rejection instead of silent repair.
 
+The first segment encoding pass must evaluate the cost of duplicating metadata
+in both the segment header and footer. Full mirroring improves tail validation
+and corruption detection, but it doubles those fields on disk. That is
+negligible for large immutable segments and potentially visible for very small
+segments. `v0.18.0` must either keep full mirroring with documented overhead or
+define a compact footer/trailer that preserves mismatch detection.
+
 Compaction must preserve tenant, policy, region, encryption, and MVCC boundaries.
 
 The in-memory transaction model must provide read-your-writes behavior before

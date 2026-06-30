@@ -338,6 +338,12 @@ Deliverables:
 
 - segment writer,
 - segment reader,
+- on-disk encoding decision for duplicated header/footer metadata,
+- overhead measurement for very small segments where a full mirrored footer may
+  be significant,
+- explicit decision to keep full footer mirroring for corruption/tail
+  validation or replace it with a compact trailer that still detects
+  header/body/footer mismatch,
 - checksum verification,
 - content-hash verification,
 - encryption metadata verification,
