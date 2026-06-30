@@ -43,6 +43,13 @@ trailing bytes before exposing encrypted segment bytes.
   mismatch, footer/header mismatch, unexpected domain, partial/trailing files,
   writer and reader verifier rejection, Unix file permissions, and Unix symlink
   rejection.
+- Resolved the first `0.18.0` pentest pass by documenting that current
+  WAL/segment CRC and unkeyed digest checks are structural corruption checks
+  rather than keyed tamper resistance, blocking in-repo production
+  `SegmentContentVerifier` implementations until the admitted digest engine
+  lands, syncing parent directories after Unix WAL/segment file creation, and
+  adding batch world fact-list merge APIs to avoid future one-by-one insertion
+  pressure on high-volume write paths.
 
 ## Verification
 
@@ -61,6 +68,10 @@ production digest implementation is still a planned storage-kernel milestone.
 
 ## Pentest Status
 
-`0.18.0` is ready for the first pentest pass after the implementation stop
-commit. Root `PENTEST.md` must remain temporary input only and must be removed
-after findings are resolved.
+The first `0.18.0` pentest pass has been resolved locally. Root `PENTEST.md`
+has been removed after findings were resolved.
+
+Residual planned boundary: production tamper resistance for WAL and segment
+files still requires AEAD authentication, signed/keyed manifests, or an
+equivalent admitted integrity root before local disk-write attackers are in
+scope.

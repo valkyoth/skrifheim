@@ -226,8 +226,16 @@ impl World {
         insert_fact_id(&mut self.added_facts, fact_id)
     }
 
+    pub fn add_facts(&mut self, fact_ids: Vec<FactId>) -> Result<()> {
+        merge_fact_ids(&mut self.added_facts, fact_ids, WORLD_FACT_LIST_MAX_ITEMS)
+    }
+
     pub fn hide_fact(&mut self, fact_id: FactId) -> Result<()> {
         insert_fact_id(&mut self.hidden_facts, fact_id)
+    }
+
+    pub fn hide_facts(&mut self, fact_ids: Vec<FactId>) -> Result<()> {
+        merge_fact_ids(&mut self.hidden_facts, fact_ids, WORLD_FACT_LIST_MAX_ITEMS)
     }
 
     pub fn diff_to_child(&self, child: &Self) -> Result<WorldDiff> {
@@ -262,6 +270,58 @@ fn insert_fact_id_with_limit(
             Ok(())
         }
     }
+}
+
+fn merge_fact_ids(
+    values: &mut Vec<FactId>,
+    mut incoming: Vec<FactId>,
+    max_items: usize,
+) -> Result<()> {
+    if incoming.is_empty() {
+        return Ok(());
+    }
+    incoming.sort_unstable();
+    incoming.dedup();
+
+    let capacity = core::cmp::min(max_items, values.len().saturating_add(incoming.len()));
+    let mut merged = Vec::with_capacity(capacity);
+    let mut left = 0;
+    let mut right = 0;
+    while left < values.len() && right < incoming.len() {
+        match values[left].cmp(&incoming[right]) {
+            core::cmp::Ordering::Less => {
+                push_merged_fact(&mut merged, values[left], max_items)?;
+                left += 1;
+            }
+            core::cmp::Ordering::Equal => {
+                push_merged_fact(&mut merged, values[left], max_items)?;
+                left += 1;
+                right += 1;
+            }
+            core::cmp::Ordering::Greater => {
+                push_merged_fact(&mut merged, incoming[right], max_items)?;
+                right += 1;
+            }
+        }
+    }
+    while left < values.len() {
+        push_merged_fact(&mut merged, values[left], max_items)?;
+        left += 1;
+    }
+    while right < incoming.len() {
+        push_merged_fact(&mut merged, incoming[right], max_items)?;
+        right += 1;
+    }
+    *values = merged;
+    Ok(())
+}
+
+fn push_merged_fact(values: &mut Vec<FactId>, fact_id: FactId, max_items: usize) -> Result<()> {
+    if values.len() >= max_items {
+        return Err(SkrifheimError::TooManyFactLinks);
+    }
+    values.push(fact_id);
+    Ok(())
 }
 
 fn validate_world_name(name: String) -> Result<String> {

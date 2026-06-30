@@ -54,6 +54,13 @@ Segment headers use the typed non-zero `KeyId` metadata identifier rather than a
 raw integer. That prevents zero-key sentinels and accidental mixing with
 transaction, policy, tenant, or segment-scope identifiers at compile time.
 
+Current WAL and segment body verification is not cryptographic tamper
+resistance. CRC64 and unkeyed `ContentDigest` metadata catch accidental
+corruption and malformed files, but an attacker with disk write access can
+recompute both. No WAL or segment file may be treated as production-trusted
+against local tampering until encrypted bodies are authenticated with AEAD,
+signed/keyed manifests, or an equivalent admitted integrity root.
+
 ## Key Lifecycle
 
 The control plane must model:

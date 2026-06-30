@@ -123,6 +123,8 @@ pub struct WalFileWriter {
 
 impl WalFileWriter {
     pub fn open_append(path: impl AsRef<Path>, options: WalAppendOptions) -> Result<Self> {
+        let path = path.as_ref();
+        let created = !path.try_exists()?;
         let mut open_options = OpenOptions::new();
         open_options.create(true).append(true);
         #[cfg(unix)]
@@ -137,7 +139,12 @@ impl WalFileWriter {
             )));
         }
         #[cfg(unix)]
-        file.set_permissions(Permissions::from_mode(0o600))?;
+        {
+            file.set_permissions(Permissions::from_mode(0o600))?;
+            if created {
+                fsync_parent_dir(path)?;
+            }
+        }
         Ok(Self { file, options })
     }
 
@@ -268,6 +275,12 @@ impl From<SkrifheimError> for SegmentFileError {
 /// long-term digest implementation. Readers must therefore inject the admitted
 /// digest verifier at the trust boundary instead of silently accepting a header
 /// digest as proof of body integrity.
+///
+/// Implementations must recompute the admitted content digest over
+/// `encrypted_body`. Until authenticated encryption, signatures, or keyed
+/// manifests are wired in, this API provides structural-corruption detection
+/// only; a local attacker with write access can recompute unkeyed CRC/digest
+/// metadata.
 pub trait SegmentContentVerifier {
     fn verify_content_digest(
         &self,
@@ -283,6 +296,7 @@ pub struct SegmentFileWriter {
 
 impl SegmentFileWriter {
     pub fn create(path: impl AsRef<Path>, options: SegmentWriteOptions) -> SegmentResult<Self> {
+        let path = path.as_ref();
         let mut open_options = OpenOptions::new();
         open_options.create_new(true).write(true);
         #[cfg(unix)]
@@ -297,7 +311,10 @@ impl SegmentFileWriter {
             )));
         }
         #[cfg(unix)]
-        file.set_permissions(Permissions::from_mode(0o600))?;
+        {
+            file.set_permissions(Permissions::from_mode(0o600))?;
+            fsync_parent_dir(path)?;
+        }
         Ok(Self { file, options })
     }
 
@@ -457,6 +474,9 @@ fn validate_segment_body_len(header: &SegmentHeader, encrypted_body: &[u8]) -> S
 }
 
 fn verify_segment_body_crc(header: &SegmentHeader, encrypted_body: &[u8]) -> SegmentResult<()> {
+    // CRC64 catches accidental corruption and malformed files only. It is not a
+    // keyed integrity mechanism and must be paired with AEAD/signatures or a
+    // keyed manifest before stored segments are trusted against local tampering.
     match header.body_crc64() {
         skrifheim_storage::BodyChecksum::Present(expected)
             if wal_body_crc64(encrypted_body) == expected =>
@@ -519,6 +539,17 @@ fn map_segment_partial_read(error: io::Error) -> SegmentFileError {
     } else {
         SegmentFileError::Io(error)
     }
+}
+
+#[cfg(unix)]
+fn fsync_parent_dir(path: &Path) -> io::Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        File::open(parent)?.sync_all()?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]

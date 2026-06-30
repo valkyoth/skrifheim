@@ -19,6 +19,11 @@
 - Added a mandatory `SegmentContentVerifier` boundary on both segment writes
   and reads until the production SHA-3/SHAKE digest engine is admitted.
 - Added host-file tests for segment round trips and corruption rejection.
+- Resolved the first `0.18.0` pentest pass by clarifying current unkeyed
+  WAL/segment integrity limits, blocking production in-repo segment verifier
+  implementations until the admitted digest engine lands, syncing parent
+  directories after Unix file creation, and adding batch world fact-list merge
+  APIs for future high-volume ingestion.
 - Bumped workspace and internal crate dependency versions to `0.18.0`.
 
 ## 0.17.0

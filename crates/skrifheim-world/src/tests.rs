@@ -152,6 +152,52 @@ fn fact_tracking_is_sorted_and_bounded() -> Result<()> {
 }
 
 #[test]
+fn batch_fact_tracking_sorts_deduplicates_and_merges() -> Result<()> {
+    let mut world = World::root(tenant(1)?, "production", WorldKind::Production)?;
+    world.add_fact(id(FactId::from_u128(20))?)?;
+    world.add_facts(vec![
+        id(FactId::from_u128(30))?,
+        id(FactId::from_u128(10))?,
+        id(FactId::from_u128(20))?,
+        id(FactId::from_u128(10))?,
+    ])?;
+    world.hide_facts(vec![
+        id(FactId::from_u128(90))?,
+        id(FactId::from_u128(70))?,
+        id(FactId::from_u128(90))?,
+    ])?;
+
+    assert_eq!(
+        world.added_facts(),
+        &[
+            id(FactId::from_u128(10))?,
+            id(FactId::from_u128(20))?,
+            id(FactId::from_u128(30))?,
+        ]
+    );
+    assert_eq!(
+        world.hidden_facts(),
+        &[id(FactId::from_u128(70))?, id(FactId::from_u128(90))?,]
+    );
+    Ok(())
+}
+
+#[test]
+fn batch_fact_tracking_respects_list_limit() -> Result<()> {
+    let mut facts = vec![id(FactId::from_u128(10))?, id(FactId::from_u128(20))?];
+
+    assert_eq!(
+        merge_fact_ids(
+            &mut facts,
+            vec![id(FactId::from_u128(30))?, id(FactId::from_u128(40))?],
+            3
+        ),
+        Err(SkrifheimError::TooManyFactLinks)
+    );
+    Ok(())
+}
+
+#[test]
 fn branch_fact_sets_are_isolated_from_parent() -> Result<()> {
     let mut production = World::root(tenant(1)?, "production", WorldKind::Production)?;
     production.add_fact(id(FactId::from_u128(7))?)?;

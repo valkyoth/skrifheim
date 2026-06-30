@@ -396,3 +396,9 @@ fi
 check_no_sensitive_derive crates/skrifheim-core/src/lib.rs Value Debug
 check_no_sensitive_derive crates/skrifheim-fact/src/lib.rs Fact Debug
 check_no_sensitive_derive crates/skrifheim-fact/src/builder.rs FactBuilder Debug
+
+if grep -R -n -E "^[[:space:]]*impl([[:space:]]*<[^>]*>)?[[:space:]]+SegmentContentVerifier[[:space:]]+for[[:space:]]+" crates host tools --include '*.rs' \
+    | grep -v '/tests.rs:' >/dev/null; then
+    echo "SegmentContentVerifier production impls are blocked until the admitted digest engine lands" >&2
+    exit 1
+fi
