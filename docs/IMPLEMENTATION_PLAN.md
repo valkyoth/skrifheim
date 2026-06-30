@@ -165,6 +165,17 @@ uses temporary scoped authority, a policy-filtered legal/audit view, a
 `WorldKind::LegalAudit` isolation world, or an approval-required request that
 does not bypass normal policy until approved.
 
+One possible break-glass mechanism is an identity-proofed one-time emergency
+capability. The preferred proof should be hardware-backed or institution-backed
+where possible, such as FIDO2/passkey, smart card, employee PKI, HSM-held key,
+or an encrypted one-time file. Passport, national ID, face template, and
+biometric evidence are highly sensitive and should live in a separate encrypted
+identity vault if used at all; `skrifheim` should store references, issuer
+proofs, digests, expiration, and policy metadata rather than raw scans or
+photos. AI may assist with document, face, or liveness checks, but it must be
+treated as evidence for deterministic policy, never as the sole unlock
+authority.
+
 Before key hierarchy work proceeds beyond metadata, the policy planner must
 close known scaffold timing leaks: policy-token comparison needs admitted
 constant-time evidence, policy-token storage must use fixed-slot authorization

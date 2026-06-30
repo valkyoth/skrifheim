@@ -605,6 +605,17 @@ Deliverables:
   threshold approval requirements, and revocation behavior,
 - define how break-glass proofs bind to attested subject, device, workload,
   tenant, policy epoch, crypto epoch, and audit-log protection,
+- define one-time emergency capability options, including hardware-backed
+  identity, employee PKI, FIDO2/passkey, smart card, HSM-held key, encrypted
+  one-time file, or identity-vault reference,
+- document that passport, national ID, face template, or biometric evidence
+  must not be stored as ordinary database payload; if used, store only encrypted
+  identity-vault references, issuer proof, digest, expiration, and policy
+  metadata in `skrifheim`,
+- define AI-assisted identity-proofing as evidence only, not sole
+  authorization; deterministic policy must still verify identity proof,
+  attested device/workload, target scope, duration, approval threshold,
+  protected audit logging, and one-time-use state,
 - define whether reads happen against the source world, a policy-filtered
   legal/audit view, or a new `WorldKind::LegalAudit` isolation world,
 - require deterministic non-secret denial and approval-required outcomes for
@@ -614,7 +625,8 @@ Deliverables:
 - add tests that a `BreakGlass` audit event alone does not bypass
   `evaluate_read` or query-planning policy,
 - add tests that stale attestation, missing workload context, overbroad target
-  scope, expired approval, and missing audit-log protection deny access.
+  scope, expired approval, missing audit-log protection, reused one-time
+  capability, or AI-only identity verification deny access.
 
 ## v0.27.0 - Policy-Aware Query Planning
 

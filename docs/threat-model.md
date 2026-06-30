@@ -49,4 +49,6 @@ Status: baseline
 Break-glass access is not a current bypass capability. Existing break-glass
 audit metadata records intent and attested context only. The future access model
 must be scoped, time-bounded, approval-gated, and auditable before use; it must
-not silently become global clearance escalation.
+not silently become global clearance escalation. AI-assisted identity proofing
+can provide evidence, but must not be the sole authorization authority for
+emergency access.
