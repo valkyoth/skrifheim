@@ -211,6 +211,17 @@ Deliverables:
 - confidence-threshold policy hooks for future propagated confidence,
 - tests for classification escalation.
 
+Post-release design note:
+
+- `ResultClassification` currently stores sovereignty in the same fixed
+  `PolicyTokenSet` used by policy compartments and releasability labels. This
+  intentionally fails closed if a derived result would span more than 64
+  distinct sovereignty tokens. That is secure, but it is not the long-term UX or
+  legal/compliance behavior we want for fine-grained jurisdiction tagging. The
+  planned fix is a typed sovereignty scope with an exact bounded-token state and
+  a saturated multi-jurisdiction state; overflow must become most-restrictive
+  result metadata, not `InvalidSecurityToken`.
+
 ## v0.11.0 - Index And Projection Encryption Policy
 
 Goal: make index leakage part of the threat model and planner.
@@ -466,6 +477,10 @@ Deliverables:
 - rejection and redaction reports,
 - policy proof skeleton,
 - query-result classification,
+- sovereignty-scope overflow handling: exact bounded jurisdictions stay exact,
+  while more than the bounded exact set becomes a typed multi-jurisdiction
+  sentinel that is treated as most-restrictive for export, placement, indexing,
+  backup, AI processing, and legal/compliance decisions,
 - confidence-aware allow/redact/reject policy hooks,
 - tests for denied plans.
 
@@ -786,6 +801,8 @@ Deliverables:
 - jurisdiction and legal-basis identifiers,
 - data-category and processing-mode identifiers,
 - request-context markers such as actor, workload, source region, and device posture,
+- legal handling for exact sovereignty scopes versus saturated
+  multi-jurisdiction scopes,
 - tests that unlabeled non-public data cannot be read, exported, indexed, processed by AI, backed up, or planned for movement.
 
 ## v0.53.0 - Law Pack Metadata And Admission
