@@ -448,7 +448,8 @@ Deliverables:
 
 ## v0.21.0 - In-Memory Transaction Model
 
-Goal: model read sets, write sets, predicate sets, and commit timestamps.
+Goal: model read sets, write sets, predicate sets, commit timestamps, and fact
+identity allocation semantics.
 
 Deliverables:
 
@@ -456,6 +457,16 @@ Deliverables:
 - read/write/predicate set tracking,
 - conflict model,
 - commit timestamp allocation,
+- fact ID allocation strategy decision before write-set validation hardens,
+- explicit evaluation of monotone/timestamp-derived IDs, random IDs,
+  content-derived IDs, and hybrid tenant/world scoped IDs,
+- decision on whether `FactId` may reveal write ordering or must remain
+  order-hiding,
+- write-time uniqueness checks for whichever strategy is selected,
+- MVCC implications for fact identity, transaction identity, valid time,
+  commit time, and causal links,
+- documentation that `FactId` is not an authorization capability and must not
+  be used as a sole storage isolation key,
 - deterministic unit tests.
 
 ## v0.22.0 - Strict Serializable Validation

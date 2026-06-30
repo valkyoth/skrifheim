@@ -62,6 +62,15 @@ Build append-only facts with:
 - caused-by, supersedes, and invalidates links,
 - signatures and content identity.
 
+`FactId` allocation is a database design decision, not just an identifier
+helper. Before the transaction model hardens, `skrifheim` must decide whether
+fact IDs are monotone/timestamp-derived, random, content-derived, or a hybrid
+tenant/world scoped identity. Monotone IDs can expose write ordering. Random IDs
+need write-time uniqueness checks. Content-derived IDs couple identity to
+canonical serialization and signature policy. The chosen strategy must be
+documented before MVCC, indexes, manifests, and causal graph traversal rely on
+fact identity.
+
 The first correctness question is: can `skrifheim` prove what was true, who asserted it, which policy governed it, and which evidence supported it?
 
 Fact payloads are bounded at the canonical layer. Text and byte values must be
