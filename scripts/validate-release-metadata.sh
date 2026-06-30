@@ -32,6 +32,7 @@ release-notes/RELEASE_NOTES_0.13.0.md
 release-notes/RELEASE_NOTES_0.14.0.md
 release-notes/RELEASE_NOTES_0.15.0.md
 release-notes/RELEASE_NOTES_0.16.0.md
+release-notes/RELEASE_NOTES_0.17.0.md
 security/pentest/v0.5.0.md
 security/pentest/v0.6.0.md
 "

@@ -128,8 +128,10 @@ for derive_name in PartialEq Eq; do
     check_no_sensitive_derive crates/skrifheim-crypto/src/digest.rs ManifestDigest "$derive_name"
 done
 
-check_no_sensitive_derive crates/skrifheim-storage/src/lib.rs SegmentHeader Debug
-check_no_sensitive_derive crates/skrifheim-storage/src/lib.rs SegmentHeaderInput Debug
+check_no_sensitive_derive crates/skrifheim-storage/src/segment.rs SegmentHeader Debug
+check_no_sensitive_derive crates/skrifheim-storage/src/segment.rs SegmentHeaderInput Debug
+check_no_sensitive_derive crates/skrifheim-storage/src/segment.rs SegmentFooter Debug
+check_no_sensitive_derive crates/skrifheim-storage/src/segment.rs SegmentFooterInput Debug
 check_no_sensitive_derive crates/skrifheim-storage/src/wal.rs WalFrameHeader Debug
 check_no_sensitive_derive crates/skrifheim-storage/src/wal.rs WalFrameHeaderInput Debug
 check_no_sensitive_derive crates/skrifheim-world/src/lib.rs WorldMetadata Debug
@@ -146,6 +148,10 @@ for derive_name in PartialEq Eq; do
     check_no_sensitive_derive crates/skrifheim-policy/src/result.rs ResultClassification "$derive_name"
     check_no_sensitive_derive crates/skrifheim-query/src/lib.rs QueryRequest "$derive_name"
     check_no_sensitive_derive crates/skrifheim-query/src/lib.rs QueryPlan "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-storage/src/segment.rs SegmentHeader "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-storage/src/segment.rs SegmentHeaderInput "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-storage/src/segment.rs SegmentFooter "$derive_name"
+    check_no_sensitive_derive crates/skrifheim-storage/src/segment.rs SegmentFooterInput "$derive_name"
     check_no_sensitive_derive crates/skrifheim-storage/src/wal.rs WalFrameHeader "$derive_name"
     check_no_sensitive_derive crates/skrifheim-storage/src/wal.rs WalFrameHeaderInput "$derive_name"
 done
@@ -289,8 +295,8 @@ if grep -E "\\.field\\(\"(surface|domain)\",[[:space:]]*&self\\.(surface|domain)
     exit 1
 fi
 
-if grep -E "\\.field\\(\"(magic|tenant_id|tx_range|policy_id|encryption_key_id|body_crc64|content_hash|content_digest)\",[[:space:]]*&self\\." crates/skrifheim-storage/src/lib.rs >/dev/null; then
-    echo "SegmentHeader Debug must redact identifiers, keys, checksums, and hashes" >&2
+if grep -E "\\.field\\(\"(magic|tenant_id|tx_range|policy_id|encryption_key_id|crypto_epoch|encryption_domain|body_crc64|content_hash|content_digest)\",[[:space:]]*&self\\." crates/skrifheim-storage/src/segment.rs >/dev/null; then
+    echo "SegmentHeader and SegmentFooter Debug must redact identifiers, keys, epochs, domains, checksums, and hashes" >&2
     exit 1
 fi
 
@@ -318,8 +324,27 @@ if awk '
     END {
         exit found ? 0 : 1
     }
-' crates/skrifheim-storage/src/lib.rs; then
+' crates/skrifheim-storage/src/segment.rs; then
     echo "SegmentHeader fields must stay private; use the validating constructor" >&2
+    exit 1
+fi
+
+if awk '
+    /^[[:space:]]*pub[[:space:]]+struct[[:space:]]+SegmentFooter[[:space:]]*\{/ {
+        in_struct = 1
+        next
+    }
+    in_struct && /^[[:space:]]*\}/ {
+        in_struct = 0
+    }
+    in_struct && /^[[:space:]]*pub[[:space:]]+[[:alnum:]_]+[[:space:]]*:/ {
+        found = 1
+    }
+    END {
+        exit found ? 0 : 1
+    }
+' crates/skrifheim-storage/src/segment.rs; then
+    echo "SegmentFooter fields must stay private; use the validating constructor" >&2
     exit 1
 fi
 

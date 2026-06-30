@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+## 0.17.0
+
+- Moved immutable segment metadata from the storage crate root into a dedicated
+  `skrifheim-storage` segment module.
+- Added immutable segment footer metadata with validating construction and
+  header/footer consistency checks.
+- Added crypto epoch and segment encryption-domain metadata to segment headers
+  and footers.
+- Rejected zero segment crypto epochs, non-segment encryption domains,
+  tenant/domain mismatches, missing classification/compartment/segment domain
+  fields, missing CRCs, zero CRC sentinels, and all-zero content digests.
+- Added constant-width structural comparison for header/footer digest and
+  encryption-domain matching.
+- Added redacted Debug output and security-policy gate coverage for segment
+  headers, footers, and their inputs.
+- Bumped workspace and internal crate dependency versions to `0.17.0`.
+- Added `0.17.0` release metadata and gate script.
+
 ## 0.16.0
 
 - Updated CI to `actions/checkout@v7`.
