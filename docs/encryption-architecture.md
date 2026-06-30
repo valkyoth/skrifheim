@@ -75,6 +75,13 @@ Dangerous key operations require audit records and future threshold approval.
 Crypto-erasure must pass through an explicit destruction checkpoint before key
 metadata enters the crypto-erased state.
 
+The crypto epoch identifies key-material/version authority for WAL frames,
+segments, manifests, signatures, and recovery checks. It should not be the only
+ordering mechanism for lifecycle metadata. A future lifecycle event sequence or
+state epoch must record compromise, quarantine, destruction, and erasure events
+when those operations do not introduce new key material. Rotation and
+replacement-key activation still require strictly advancing crypto epochs.
+
 Key hierarchy validation must reject children of compromised, quarantined,
 destroyed, or crypto-erased parent keys. Future storage-backed ancestor walks
 must propagate those states through the subtree before segment access is

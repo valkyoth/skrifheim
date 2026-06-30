@@ -185,6 +185,15 @@ Deliverables:
 - crypto-erasure metadata,
 - tests for invalid lifecycle transitions.
 
+Follow-up:
+
+- `v0.18.2` is reserved for separating crypto-material epoch advancement from
+  lifecycle metadata changes. The current scaffold requires every lifecycle
+  transition, including compromise and quarantine declarations, to advance
+  `CryptoEpoch`. That is fail-closed, but it may not match HSM/KMS operations
+  where compromise declaration is a metadata/audit state change for the same
+  key material epoch.
+
 ## v0.9.0 - Encryption Domains
 
 Goal: define blast-radius boundaries for encrypted data.
@@ -359,6 +368,32 @@ Deliverables:
 - documentation that the sentinel is not a grantable clearance token and must
   be handled as approval-required or deny by export, placement, indexing,
   backup, AI processing, and legal/compliance decisions.
+
+## v0.18.2 - Key Lifecycle Event Epoch Semantics
+
+Goal: make key compromise and quarantine operationally precise before manifests
+and recovery logic treat crypto epochs as durable storage authority.
+
+Deliverables:
+
+- document the distinction between crypto-material epochs and lifecycle/audit
+  event ordering,
+- add a lifecycle event sequence, state epoch, or equivalent non-cryptographic
+  ordering marker for metadata-only state changes,
+- allow compromise, quarantine, destruction, and crypto-erasure metadata
+  transitions to preserve the existing `CryptoEpoch` when no new key material
+  is introduced,
+- keep rotation and replacement-key activation on strictly advancing
+  `CryptoEpoch` values,
+- keep storage, WAL, segment, and manifest crypto-epoch fields tied only to key
+  material/version identity, not administrative state-change ordering,
+- ensure compromised, quarantined, destroyed, and crypto-erased states remain
+  fail-closed for key hierarchy validation and storage access regardless of
+  whether the crypto epoch changed,
+- add tests for compromise declaration without epoch advancement,
+- add tests that rotation and replacement still require epoch advancement,
+- update encryption architecture and security controls to describe the split
+  between crypto epoch and lifecycle event ordering.
 
 ## v0.19.0 - Manifest And Checkpoint Format
 
