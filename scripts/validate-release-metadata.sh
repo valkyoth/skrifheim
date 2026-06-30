@@ -34,8 +34,22 @@ release-notes/RELEASE_NOTES_0.14.0.md
 release-notes/RELEASE_NOTES_0.15.0.md
 release-notes/RELEASE_NOTES_0.16.0.md
 release-notes/RELEASE_NOTES_0.17.0.md
+security/pentest/v0.1.0.md
+security/pentest/v0.2.0.md
+security/pentest/v0.3.0.md
+security/pentest/v0.4.0.md
 security/pentest/v0.5.0.md
 security/pentest/v0.6.0.md
+security/pentest/v0.7.0.md
+security/pentest/v0.8.0.md
+security/pentest/v0.9.0.md
+security/pentest/v0.10.0.md
+security/pentest/v0.11.0.md
+security/pentest/v0.12.0.md
+security/pentest/v0.13.0.md
+security/pentest/v0.14.0.md
+security/pentest/v0.15.0.md
+security/pentest/v0.16.0.md
 security/pentest/v0.17.0.md
 "
 
