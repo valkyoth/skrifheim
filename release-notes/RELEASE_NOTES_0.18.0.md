@@ -1,6 +1,6 @@
 # skrifheim 0.18.0 Release Notes
 
-Status: implementation stop, pending pentest.
+Status: release-prep stop, local release gate pending, GitHub verification pending.
 
 ## Scope
 
@@ -56,6 +56,8 @@ trailing bytes before exposing encrypted segment bytes.
 - `cargo test -p skrifheim-storage`
 - `cargo test -p skrifheim-storage-host`
 - `scripts/validate-modularity-policy.sh`
+- `scripts/checks.sh`
+- `scripts/release_0_18_gate.sh`
 
 ## Non-Claims
 
@@ -75,3 +77,6 @@ Residual planned boundary: production tamper resistance for WAL and segment
 files still requires AEAD authentication, signed/keyed manifests, or an
 equivalent admitted integrity root before local disk-write attackers are in
 scope.
+
+This release is waiting for the permanent pentest digest commit, local release
+gate, and GitHub verification before signed tag creation.

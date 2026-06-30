@@ -34,6 +34,7 @@ release-notes/RELEASE_NOTES_0.14.0.md
 release-notes/RELEASE_NOTES_0.15.0.md
 release-notes/RELEASE_NOTES_0.16.0.md
 release-notes/RELEASE_NOTES_0.17.0.md
+release-notes/RELEASE_NOTES_0.18.0.md
 security/pentest/v0.1.0.md
 security/pentest/v0.2.0.md
 security/pentest/v0.3.0.md
@@ -51,6 +52,7 @@ security/pentest/v0.14.0.md
 security/pentest/v0.15.0.md
 security/pentest/v0.16.0.md
 security/pentest/v0.17.0.md
+security/pentest/v0.18.0.md
 "
 
 for path in $required; do
