@@ -13,6 +13,7 @@ Status: baseline control map
 | Modularity | Focused crates and file-size gate | Active | `docs/modularity-policy.md` |
 | Canonical truth | Facts are versioned and evidence-bound | Scaffolded | `skrifheim-fact` |
 | Fact identity allocation | Fact ID generation strategy must be selected before transaction write sets and MVCC harden; IDs must not become authorization capabilities or sole tenant/storage isolation keys | Planned | `docs/VERSION_PLAN.md` |
+| Transaction read-your-writes | In-memory transaction state must expose a transaction's own uncommitted writes to its reads while hiding them from other transactions until durable commit | Planned | `docs/VERSION_PLAN.md` |
 | World promotion safety | Promotion and rollback preflight expose deterministic conflict categories before merge/promotion logic exists, using sorted-slice scans to avoid transient set allocation | Scaffolded | `skrifheim-world` |
 | Classification | Labels and clearance checks | Scaffolded | `skrifheim-policy` |
 | External error shape | `SkrifheimError::public_message()` provides generic messages for trust-boundary responses; `Display` is internal diagnostic output only | Scaffolded | `skrifheim-core` |

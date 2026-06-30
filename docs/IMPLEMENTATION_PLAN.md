@@ -139,6 +139,13 @@ Implement:
 
 Compaction must preserve tenant, policy, region, encryption, and MVCC boundaries.
 
+The in-memory transaction model must provide read-your-writes behavior before
+durable commit. Reads inside a transaction should consult transaction-local
+inserts, hides, supersessions, invalidations, and predicate changes before the
+committed snapshot, while other transactions must not see those uncommitted
+writes. This belongs in the v0.21.0 transaction state model, before strict
+serializable validation and WAL commit are wired in.
+
 ## Phase 4: Policy And Classification Planner
 
 The planner must answer:

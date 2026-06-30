@@ -455,6 +455,12 @@ Deliverables:
 
 - transaction state type,
 - read/write/predicate set tracking,
+- read-your-writes overlay for uncommitted writes inside the owning
+  transaction,
+- deterministic lookup order for transaction-local writes, tombstones,
+  predicate reads, and committed snapshot state,
+- isolation rule that uncommitted writes are visible only to the owning
+  transaction until durable commit succeeds,
 - conflict model,
 - commit timestamp allocation,
 - fact ID allocation strategy decision before write-set validation hardens,
@@ -467,6 +473,9 @@ Deliverables:
   commit time, and causal links,
 - documentation that `FactId` is not an authorization capability and must not
   be used as a sole storage isolation key,
+- tests that a transaction reads its own inserted, updated, hidden, superseded,
+  and invalidated facts before commit,
+- tests that other transactions cannot see those uncommitted writes,
 - deterministic unit tests.
 
 ## v0.22.0 - Strict Serializable Validation
