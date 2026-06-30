@@ -483,6 +483,34 @@ Deliverables:
 - rollback of uncommitted transactions,
 - crash tests around prepare/commit.
 
+## v0.23.1 - Confidence Propagation Math
+
+Goal: define the confidence semantics before fact indexes and query execution
+depend on caused-by traversal.
+
+Deliverables:
+
+- choose and document the initial confidence propagation model,
+- explicitly evaluate min-chain, decay, product, and Dempster-Shafer style
+  alternatives,
+- prototype the selected model with deterministic fixtures over evidence and
+  caused-by chains,
+- define source-reliability weighting and its bounded integer representation,
+- define how direct fact confidence, evidence reliability, and causal depth
+  combine into computed confidence,
+- define confidence behavior for supersedes and invalidates links separately
+  from ordinary caused-by links,
+- define saturation, rounding, and overflow behavior for the `0..=1000`
+  confidence scale,
+- define how query results report computed confidence and confidence proof
+  inputs without leaking restricted facts,
+- define policy behavior for confidence thresholds, including allow, redact,
+  reject, and approval-required outcomes,
+- add tests that long causal chains decay or otherwise degrade confidence
+  according to the selected model,
+- add documentation that v0.28.0 query execution must implement this model
+  rather than inventing propagation semantics during execution work.
+
 ## v0.24.0 - Fact Index And Snapshot Reads
 
 Goal: read facts by world and snapshot from recovered state.
@@ -493,6 +521,8 @@ Deliverables:
 - snapshot timestamp visibility,
 - supersession and invalidation lookup,
 - forward causal-edge lookup for future blast-radius traversal,
+- confidence-propagation fixtures from `v0.23.1` available to index/query
+  tests,
 - fact history tests,
 - unauthorized stale-read tests.
 
@@ -548,7 +578,8 @@ Deliverables:
 - point lookup execution,
 - causality edge traversal over fact links,
 - bounded forward traversal for taint and blast-radius queries,
-- first propagated-confidence calculation over evidence and caused-by chains,
+- implementation of the selected `v0.23.1` propagated-confidence model over
+  evidence and caused-by chains,
 - bounded result sets,
 - tests for authorized and denied reads.
 

@@ -263,6 +263,20 @@ caused-by chains, weighted by source reliability and fused with mandatory
 access control so policy can express rules such as redacting high-classification
 facts below an accepted confidence threshold.
 
+The confidence propagation math is a release-blocking design choice before
+query execution. The project must choose and test an explicit model before
+`v0.28.0`, with `v0.23.1` reserved for that decision. The initial candidate
+models are:
+
+- min-chain: derived confidence is limited by the weakest dependency,
+- decay: confidence degrades by causal depth and source reliability,
+- product: dependencies combine multiplicatively on the `0..=1000` scale,
+- Dempster-Shafer style evidence fusion for a more formal but heavier model.
+
+The default recommendation is to prototype a bounded integer decay model first
+because it handles long causal chains without the abrupt behavior of min-chain
+or the rapid collapse of naive product multiplication.
+
 ## Distinctive Security And Truth Capabilities
 
 These capabilities are expected to make `skrifheim` stand out once the durable
