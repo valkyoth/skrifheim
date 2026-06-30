@@ -1,6 +1,6 @@
 # skrifheim 0.17.0 Release Notes
 
-Status: implementation stop, first pentest pass resolved.
+Status: implementation stop, first pentest pass resolved with tracked residuals.
 
 ## Scope
 
@@ -69,4 +69,16 @@ segment bytes before accepting stored facts.
 ## Pentest Status
 
 The first `0.17.0` pentest pass has been resolved locally. Root `PENTEST.md`
-has been removed after findings were resolved. This stop is ready for retest.
+has been removed after findings were resolved.
+
+Retest reported no new issues. Two residuals remain intentionally tracked:
+
+- `DigestValue::structurally_equal_ct` remains scaffold-only until the planned
+  production timing evidence gate adds dudect-style or equivalent statistical
+  evidence.
+- Promotion and rollback preflight ancestry validation is fail-closed and
+  partial by design: external callers cannot mark a preflight storage-validated
+  yet, so `require_storage_validated()` always rejects until storage-backed
+  ancestry traversal is implemented.
+
+This stop is ready for further retest.

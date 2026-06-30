@@ -358,6 +358,9 @@ Deliverables:
 - WAL replay from checkpoint,
 - storage-backed world ancestry verification before promotion or rollback
   execution can be authorized,
+- internal storage-validated promotion and rollback preflight construction that
+  can set the currently private storage-validation marker only after durable
+  ancestor traversal succeeds,
 - corrupted manifest rejection,
 - missing-key and compromised-key rejection,
 - deterministic recovery fixtures.
@@ -370,7 +373,7 @@ claim.
 Deliverables:
 
 - dudect-style or equivalent timing harness for policy-token equality,
-- digest equality timing evidence,
+- `DigestValue::structurally_equal_ct` timing evidence,
 - encryption-domain equality timing evidence,
 - release-gate integration for timing-sensitive authorization and storage-root
   comparisons.
