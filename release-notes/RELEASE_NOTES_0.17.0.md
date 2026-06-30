@@ -1,6 +1,6 @@
 # skrifheim 0.17.0 Release Notes
 
-Status: implementation stop, first pentest pass resolved with tracked residuals.
+Status: release-prep stop, local release gate passed, GitHub verification pending.
 
 ## Scope
 
@@ -81,4 +81,5 @@ Retest reported no new issues. Two residuals remain intentionally tracked:
   yet, so `require_storage_validated()` always rejects until storage-backed
   ancestry traversal is implemented.
 
-This stop is ready for further retest.
+The local release gate passed after this retest update. This release is waiting
+for GitHub verification before signed tag creation.

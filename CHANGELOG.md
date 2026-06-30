@@ -21,6 +21,8 @@
   WAL domain comparison, WAL body allocation, structural fact validation
   wording, world preflight execution guards, WAL CRC64 performance, WAL crypto
   epoch ordering, audit timestamp validity, and timing-evidence planning.
+- Prepared `0.17.0` for signed tag creation after pentest retest and the local
+  release gate passed; GitHub verification remains the final pre-tag gate.
 - Bumped workspace and internal crate dependency versions to `0.17.0`.
 - Added `0.17.0` release metadata and gate script.
 
