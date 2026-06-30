@@ -155,6 +155,16 @@ The planner must answer:
 
 Rejected plans must be deterministic and constant-shape where practical.
 
+Break-glass access is not an audit event by itself. The audit layer can record
+and validate a break-glass event shape, including device and workload
+attestation, but the policy planner must separately define the access effect.
+The default security posture is that break-glass must be scoped, time-bounded,
+audited before use, and approval-gated; it must not silently grant global
+`TopSecret` clearance. `v0.26.1` is reserved to decide whether emergency access
+uses temporary scoped authority, a policy-filtered legal/audit view, a
+`WorldKind::LegalAudit` isolation world, or an approval-required request that
+does not bypass normal policy until approved.
+
 Before key hierarchy work proceeds beyond metadata, the policy planner must
 close known scaffold timing leaks: policy-token comparison needs admitted
 constant-time evidence, policy-token storage must use fixed-slot authorization

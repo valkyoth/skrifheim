@@ -45,3 +45,8 @@ Status: baseline
 - quarantine stale or forked replicas,
 - keep public web projections separate from private worlds,
 - treat AI output as untrusted until reviewed.
+
+Break-glass access is not a current bypass capability. Existing break-glass
+audit metadata records intent and attested context only. The future access model
+must be scoped, time-bounded, approval-gated, and auditable before use; it must
+not silently become global clearance escalation.

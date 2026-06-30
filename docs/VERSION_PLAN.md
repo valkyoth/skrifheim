@@ -588,6 +588,34 @@ Deliverables:
 - parser fixtures,
 - fuzz seed corpus.
 
+## v0.26.1 - Break-Glass Access Model
+
+Goal: define what break-glass access actually does before policy-aware query
+planning can accidentally treat an audit event as an unrestricted bypass.
+
+Deliverables:
+
+- decide whether break-glass grants temporary scoped authority, opens a scoped
+  target, creates an isolated `LegalAudit` world, or produces an
+  approval-required access request without bypassing normal policy by itself,
+- explicitly reject implicit global `TopSecret` escalation unless a future
+  threat-model review approves it,
+- define the break-glass request type, target scope, maximum duration,
+  classification ceiling, world/fact/query scope, reason code, approver or
+  threshold approval requirements, and revocation behavior,
+- define how break-glass proofs bind to attested subject, device, workload,
+  tenant, policy epoch, crypto epoch, and audit-log protection,
+- define whether reads happen against the source world, a policy-filtered
+  legal/audit view, or a new `WorldKind::LegalAudit` isolation world,
+- require deterministic non-secret denial and approval-required outcomes for
+  failed break-glass preconditions,
+- require tamper-evident audit records before, during, and after any granted
+  break-glass operation,
+- add tests that a `BreakGlass` audit event alone does not bypass
+  `evaluate_read` or query-planning policy,
+- add tests that stale attestation, missing workload context, overbroad target
+  scope, expired approval, and missing audit-log protection deny access.
+
 ## v0.27.0 - Policy-Aware Query Planning
 
 Goal: convert query AST into a policy-checked plan.
@@ -596,6 +624,8 @@ Deliverables:
 
 - logical plan,
 - security checks before execution,
+- break-glass planning uses the `v0.26.1` access model and does not treat audit
+  metadata as a blanket policy bypass,
 - rejection and redaction reports,
 - policy proof skeleton,
 - query-result classification,
@@ -861,6 +891,8 @@ Deliverables:
 - authenticated authority-context extraction for subject, device, and workload,
 - mTLS or equivalent identity binding hook for device and workload context,
 - service/node identity hook,
+- break-glass request authentication and attestation binding using the
+  `v0.26.1` access model,
 - constant-shape API errors,
 - tests for unauthenticated and unauthorized requests.
 
