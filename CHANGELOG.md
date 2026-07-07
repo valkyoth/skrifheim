@@ -16,6 +16,12 @@
 - Added policy and query tests for exact sovereignty propagation, overflow
   saturation, invalid-token rejection, redacted debug output, and non-allow
   metadata masking.
+- Resolved the first `0.18.1` pentest pass by failing closed on unsupported
+  non-Unix host-storage targets, replacing bare sovereignty containment with
+  explicit present/absent/indeterminate containment, bounding sovereignty
+  scope input before scanning, requiring expiring break-glass attestation
+  evidence, rejecting oversized world fact batches before sorting, and
+  documenting the `SecretBytes` no-retention closure contract.
 - Updated the pinned stable Rust toolchain from `1.96.0` to `1.96.1` after
   checking the official Rust release announcement.
 - Bumped workspace and internal crate dependency versions to `0.18.1`.

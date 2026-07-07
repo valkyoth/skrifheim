@@ -1,6 +1,6 @@
 # skrifheim 0.18.1 Release Notes
 
-Status: implementation stop, pentest pending.
+Status: pentest findings resolved locally, retest pending.
 
 ## Scope
 
@@ -25,14 +25,25 @@ processing, and legal/compliance decisions.
 - Added a saturated multi-jurisdiction sentinel for overflow instead of
   returning `InvalidSecurityToken`.
 - Kept invalid sovereignty tokens fail-closed before saturation is accepted.
+- Replaced bare boolean sovereignty containment with explicit
+  present/absent/indeterminate containment so saturated scopes cannot be
+  silently treated as absence.
+- Added an upfront sovereignty-scope input bound before token scanning.
 - Redacted `SovereigntyScope` debug output and added release-gate checks so it
   cannot derive sensitive `Debug`, `PartialEq`, or `Eq`.
 - Ensured non-allow query plans still expose only public sentinel result
   metadata.
+- Failed closed on unsupported non-Unix `skrifheim-storage-host` targets until
+  hardened platform-specific file controls exist.
+- Required break-glass audit events to use expiring device and workload
+  attestation evidence.
+- Rejected oversized world fact batches before sorting.
+- Documented that `SecretBytes::with_secret` and `try_with_secret` closures
+  must not retain secret-derived bytes.
 
 ## Verification
 
-- `cargo test -p skrifheim-policy -p skrifheim-query`
+- `cargo test -p skrifheim-policy -p skrifheim-query -p skrifheim-audit -p skrifheim-world -p skrifheim-crypto`
 - `scripts/checks.sh`
 - `scripts/release_0_18_1_gate.sh`
 
@@ -40,12 +51,18 @@ processing, and legal/compliance decisions.
 
 This release does not add legal/compliance passport enforcement, placement
 planning, export authorization, backup policy enforcement, AI-processing
-policy enforcement, or production query execution. The saturated sovereignty
-scope is a scaffolded policy signal that future legal/compliance and operation
-planners must treat as approval-required or deny.
+policy enforcement, production query execution, Windows host-file storage
+hardening, one-time break-glass state tracking, or key-subtree revocation
+execution. The saturated sovereignty scope is a scaffolded policy signal that
+future legal/compliance and operation planners must treat as
+approval-required or deny.
 
 ## Pentest Status
 
-This release is ready for the first `0.18.1` pentest pass after the
-implementation stop commit. Root `PENTEST.md` must be used only as temporary
-findings input and removed after findings are resolved.
+The first `0.18.1` pentest pass has been resolved locally. Root `PENTEST.md`
+has been removed after findings were resolved.
+
+Residual planned boundary: break-glass single-use evidence binding requires
+persisted one-time-use state in the `v0.26.1` access model, and key-subtree
+revocation requires the storage-backed key registry/control plane before real
+key-use paths land.

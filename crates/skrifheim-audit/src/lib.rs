@@ -112,6 +112,11 @@ impl AttestationEvidenceRef {
     }
 
     #[must_use]
+    pub const fn expires_at(self) -> Option<Timestamp> {
+        self.expires_at
+    }
+
+    #[must_use]
     pub const fn is_current_at(self, timestamp: Timestamp) -> bool {
         timestamp.get() >= self.captured_at.get()
             && match self.expires_at {
@@ -301,13 +306,11 @@ impl AuditEvent {
             input.occurred_at,
         )?;
         if matches!(input.kind, AuditEventKind::BreakGlass(_)) {
-            let device_attested = input
-                .device
-                .is_some_and(DeviceAuditContext::has_attestation);
-            let workload_attested = input
-                .workload
-                .is_some_and(WorkloadAuditContext::has_attestation);
-            if !device_attested || !workload_attested {
+            let device_attestation = input.device.and_then(DeviceAuditContext::attestation);
+            let workload_attestation = input.workload.and_then(WorkloadAuditContext::attestation);
+            if !has_expiring_attestation(device_attestation)
+                || !has_expiring_attestation(workload_attestation)
+            {
                 return Err(SkrifheimError::InvalidAuditEvent);
             }
         }
@@ -407,6 +410,13 @@ impl fmt::Debug for AuditEvent {
             .field("targets", &"<redacted>")
             .field("crypto_epoch", &"<redacted>")
             .finish()
+    }
+}
+
+const fn has_expiring_attestation(attestation: Option<AttestationEvidenceRef>) -> bool {
+    match attestation {
+        Some(attestation) => attestation.expires_at().is_some(),
+        None => false,
     }
 }
 

@@ -34,6 +34,15 @@ fn device_attestation() -> Result<AttestationEvidenceRef> {
     )
 }
 
+fn unbounded_attestation() -> Result<AttestationEvidenceRef> {
+    AttestationEvidenceRef::new(
+        id(AttestationEvidenceId::from_u128(31))?,
+        actor()?,
+        timestamp(10),
+        None,
+    )
+}
+
 fn signatures() -> Result<SignatureSet> {
     SignatureSet::new(alloc::vec![SignatureEnvelope::new(
         AlgorithmId::Ed25519,
@@ -134,6 +143,34 @@ fn break_glass_requires_attested_device_and_workload_context() -> Result<()> {
     input.workload = Some(WorkloadAuditContext::new(
         id(WorkloadId::from_u128(6))?,
         None,
+    ));
+
+    assert!(matches!(
+        AuditEvent::new(input, timestamp(11)),
+        Err(SkrifheimError::InvalidAuditEvent)
+    ));
+    Ok(())
+}
+
+#[test]
+fn break_glass_requires_expiring_attestation_evidence() -> Result<()> {
+    let mut input = event_input()?;
+    input.kind = AuditEventKind::BreakGlass(BreakGlassJustification::TenantRecovery);
+    input.device = Some(DeviceAuditContext::new(
+        id(DeviceId::from_u128(5))?,
+        Some(unbounded_attestation()?),
+    ));
+
+    assert!(matches!(
+        AuditEvent::new(input, timestamp(11)),
+        Err(SkrifheimError::InvalidAuditEvent)
+    ));
+
+    let mut input = event_input()?;
+    input.kind = AuditEventKind::BreakGlass(BreakGlassJustification::TenantRecovery);
+    input.workload = Some(WorkloadAuditContext::new(
+        id(WorkloadId::from_u128(6))?,
+        Some(unbounded_attestation()?),
     ));
 
     assert!(matches!(

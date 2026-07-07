@@ -198,6 +198,21 @@ fn batch_fact_tracking_respects_list_limit() -> Result<()> {
 }
 
 #[test]
+fn batch_fact_tracking_rejects_oversized_input_before_sorting() -> Result<()> {
+    let mut facts = Vec::new();
+    let mut incoming = Vec::new();
+    for index in 1..=4 {
+        incoming.push(id(FactId::from_u128(index))?);
+    }
+
+    assert_eq!(
+        merge_fact_ids(&mut facts, incoming, 3),
+        Err(SkrifheimError::TooManyFactLinks)
+    );
+    Ok(())
+}
+
+#[test]
 fn branch_fact_sets_are_isolated_from_parent() -> Result<()> {
     let mut production = World::root(tenant(1)?, "production", WorldKind::Production)?;
     production.add_fact(id(FactId::from_u128(7))?)?;

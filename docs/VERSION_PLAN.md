@@ -649,6 +649,8 @@ Deliverables:
 - add tests that stale attestation, missing workload context, overbroad target
   scope, expired approval, missing audit-log protection, reused one-time
   capability, or AI-only identity verification deny access.
+- add persisted one-time-use state so the same attestation evidence identifier
+  or emergency capability cannot authorize multiple break-glass operations.
 
 ## v0.27.0 - Policy-Aware Query Planning
 

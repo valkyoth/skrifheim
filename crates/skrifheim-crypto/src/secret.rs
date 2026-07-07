@@ -43,10 +43,18 @@ impl SecretBytes {
         self.bytes.is_empty()
     }
 
+    /// Temporarily exposes the secret to a closure.
+    ///
+    /// The closure must not copy, return, log, format, cache, or otherwise
+    /// retain bytes derived from the provided slice. Any returned value `R`
+    /// must be non-secret metadata, a verification result, or an error/status
+    /// value. Use this only for operations that consume the slice in-place
+    /// while it is borrowed.
     pub fn with_secret<R>(&self, inspect: impl FnOnce(&[u8]) -> R) -> R {
         self.bytes.with_secret(inspect)
     }
 
+    /// Fallible form of [`Self::with_secret`] with the same no-retention rule.
     pub fn try_with_secret<R, E>(
         &self,
         inspect: impl FnOnce(&[u8]) -> core::result::Result<R, E>,

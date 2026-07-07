@@ -6,6 +6,7 @@ use skrifheim_core::{
 };
 
 pub const RESULT_CLASSIFICATION_INPUT_MAX_ITEMS: usize = 64;
+pub const SOVEREIGNTY_SCOPE_INPUT_MAX_ITEMS: usize = 256;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum PiiMarker {
@@ -39,6 +40,13 @@ impl AiProcessingEligibility {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SovereigntyContainment {
+    Present,
+    Absent,
+    Indeterminate,
+}
+
 #[derive(Clone)]
 pub struct SovereigntyScope {
     kind: SovereigntyScopeKind,
@@ -59,6 +67,9 @@ impl SovereigntyScope {
     }
 
     pub fn from_tokens(values: Vec<String>) -> Result<Self> {
+        if values.len() > SOVEREIGNTY_SCOPE_INPUT_MAX_ITEMS {
+            return Err(SkrifheimError::InvalidQueryRequest);
+        }
         let mut exact = Vec::new();
         let mut saturated = false;
         for value in values {
@@ -123,10 +134,13 @@ impl SovereigntyScope {
     }
 
     #[must_use]
-    pub fn contains(&self, needle: &str) -> bool {
+    pub fn containment(&self, needle: &str) -> SovereigntyContainment {
         match &self.kind {
-            SovereigntyScopeKind::Exact(tokens) => tokens.contains(needle),
-            SovereigntyScopeKind::MultiJurisdiction => false,
+            SovereigntyScopeKind::Exact(tokens) if tokens.contains(needle) => {
+                SovereigntyContainment::Present
+            }
+            SovereigntyScopeKind::Exact(_) => SovereigntyContainment::Absent,
+            SovereigntyScopeKind::MultiJurisdiction => SovereigntyContainment::Indeterminate,
         }
     }
 
@@ -140,12 +154,12 @@ impl SovereigntyScope {
             (SovereigntyScopeKind::MultiJurisdiction, _)
             | (_, SovereigntyScopeKind::MultiJurisdiction) => Ok(Self::multi_jurisdiction()),
             (SovereigntyScopeKind::Exact(left), SovereigntyScopeKind::Exact(right)) => {
-                match left.union(right) {
-                    Ok(tokens) => Ok(Self {
-                        kind: SovereigntyScopeKind::Exact(Box::new(tokens)),
-                    }),
-                    Err(SkrifheimError::InvalidSecurityToken) => Ok(Self::multi_jurisdiction()),
-                    Err(error) => Err(error),
+                if left.len().saturating_add(right.len()) > POLICY_TOKEN_SET_MAX_ITEMS {
+                    Ok(Self::multi_jurisdiction())
+                } else {
+                    Ok(Self {
+                        kind: SovereigntyScopeKind::Exact(Box::new(left.union(right)?)),
+                    })
                 }
             }
         }

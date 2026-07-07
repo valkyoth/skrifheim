@@ -5,7 +5,7 @@ use skrifheim_core::{
 };
 use skrifheim_policy::{
     AiProcessingEligibility, ConfidenceThreshold, DeviceContext, PiiMarker, QueryResultInput,
-    SubjectContext, WorkloadContext,
+    SovereigntyContainment, SubjectContext, WorkloadContext,
 };
 
 fn id<T>(id: Option<T>) -> skrifheim_core::Result<T> {
@@ -118,8 +118,14 @@ fn plan_propagates_result_classification_metadata() -> skrifheim_core::Result<()
     assert_eq!(plan.output_classification(), Classification::Secret);
     assert!(result.sovereignty().is_exact());
     assert_eq!(result.sovereignty().len(), 2);
-    assert!(result.sovereignty().contains("EU"));
-    assert!(result.sovereignty().contains("SE"));
+    assert_eq!(
+        result.sovereignty().containment("EU"),
+        SovereigntyContainment::Present
+    );
+    assert_eq!(
+        result.sovereignty().containment("SE"),
+        SovereigntyContainment::Present
+    );
     assert_eq!(result.pii(), PiiMarker::ContainsPii);
     assert_eq!(result.ai_processing(), AiProcessingEligibility::NotEligible);
     assert_eq!(

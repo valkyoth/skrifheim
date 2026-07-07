@@ -51,8 +51,14 @@ fn result_classification_joins_all_metadata() -> Result<()> {
     assert_eq!(result.output_classification(), Classification::Secret);
     assert!(result.sovereignty().is_exact());
     assert_eq!(result.sovereignty().len(), 2);
-    assert!(result.sovereignty().contains("EU"));
-    assert!(result.sovereignty().contains("SE"));
+    assert_eq!(
+        result.sovereignty().containment("EU"),
+        SovereigntyContainment::Present
+    );
+    assert_eq!(
+        result.sovereignty().containment("SE"),
+        SovereigntyContainment::Present
+    );
     assert_eq!(result.pii(), PiiMarker::ContainsPii);
     assert_eq!(result.ai_processing(), AiProcessingEligibility::NotEligible);
     assert_eq!(
@@ -120,7 +126,10 @@ fn result_classification_saturates_sovereignty_overflow() -> Result<()> {
     assert!(result.sovereignty().is_multi_jurisdiction());
     assert!(result.sovereignty().requires_restrictive_handling());
     assert!(result.sovereignty().exact_tokens().is_none());
-    assert!(!result.sovereignty().contains("FIRST-0"));
+    assert_eq!(
+        result.sovereignty().containment("FIRST-0"),
+        SovereigntyContainment::Indeterminate
+    );
     Ok(())
 }
 
@@ -161,6 +170,25 @@ fn sovereignty_overflow_still_rejects_invalid_tokens() {
             None,
         ),
         Err(SkrifheimError::InvalidSecurityToken)
+    ));
+}
+
+#[test]
+fn sovereignty_scope_rejects_unbounded_input_before_scanning() {
+    let mut tokens = Vec::new();
+    for index in 0..=SOVEREIGNTY_SCOPE_INPUT_MAX_ITEMS {
+        tokens.push(alloc::format!("JURISDICTION-{index}"));
+    }
+
+    assert!(matches!(
+        input(
+            Classification::Public,
+            tokens,
+            PiiMarker::NoPii,
+            AiProcessingEligibility::Eligible,
+            None,
+        ),
+        Err(SkrifheimError::InvalidQueryRequest)
     ));
 }
 

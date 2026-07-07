@@ -216,6 +216,12 @@ check_no_public_impl_method \
     "QueryResultInput must not expose raw metadata accessors publicly"
 
 check_no_public_impl_method \
+    crates/skrifheim-policy/src/result.rs \
+    SovereigntyScope \
+    "contains" \
+    "SovereigntyScope must not expose bare boolean containment; callers must handle indeterminate saturation"
+
+check_no_public_impl_method \
     crates/skrifheim-crypto/src/secret.rs \
     SecretBytes \
     "as_slice|as_mut_slice|to_vec|into_vec|bytes|secret_bytes|expose" \

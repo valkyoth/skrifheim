@@ -13,8 +13,13 @@ if ! grep -R "MultiJurisdiction" crates/skrifheim-policy/src/result.rs >/dev/nul
     exit 1
 fi
 
-if ! grep -R "InvalidSecurityToken) => Ok(Self::multi_jurisdiction())" crates/skrifheim-policy/src/result.rs >/dev/null; then
-    echo "0.18.1 requires sovereignty overflow to saturate instead of hard-failing" >&2
+if ! grep -R "SOVEREIGNTY_SCOPE_INPUT_MAX_ITEMS" crates/skrifheim-policy/src/result.rs >/dev/null; then
+    echo "0.18.1 requires bounded sovereignty scope input" >&2
+    exit 1
+fi
+
+if ! grep -R "SovereigntyContainment::Indeterminate" crates/skrifheim-policy/src/result.rs crates/skrifheim-policy/src/result_tests.rs >/dev/null; then
+    echo "0.18.1 requires explicit indeterminate containment for saturated sovereignty scope" >&2
     exit 1
 fi
 
@@ -23,18 +28,38 @@ if ! grep -R "requires_restrictive_handling" crates/skrifheim-policy/src/result.
     exit 1
 fi
 
-if ! grep -R "plan_preserves_saturated_sovereignty_scope" crates/skrifheim-query/src/lib.rs >/dev/null; then
+if ! grep -R "plan_preserves_saturated_sovereignty_scope" crates/skrifheim-query/src/tests.rs >/dev/null; then
     echo "0.18.1 requires query-plan saturation coverage" >&2
     exit 1
 fi
 
-if ! grep -R "sovereignty_overflow_still_rejects_invalid_tokens" crates/skrifheim-policy/src/result.rs >/dev/null; then
+if ! grep -R "sovereignty_overflow_still_rejects_invalid_tokens" crates/skrifheim-policy/src/result_tests.rs >/dev/null; then
     echo "0.18.1 requires invalid-token rejection coverage" >&2
     exit 1
 fi
 
 if ! grep -R "check_no_sensitive_derive .* SovereigntyScope" scripts/validate-security-policy.sh >/dev/null; then
     echo "0.18.1 requires security-policy derive checks for SovereigntyScope" >&2
+    exit 1
+fi
+
+if ! grep -R "SovereigntyScope.*contains" scripts/validate-security-policy.sh >/dev/null; then
+    echo "0.18.1 requires security-policy gate against bare sovereignty containment" >&2
+    exit 1
+fi
+
+if ! grep -R "#\\[cfg(not(unix))\\]" host/skrifheim-storage-host/src/lib.rs >/dev/null; then
+    echo "0.18.1 requires host storage to fail closed on unsupported non-Unix targets" >&2
+    exit 1
+fi
+
+if ! grep -R "has_expiring_attestation" crates/skrifheim-audit/src/lib.rs >/dev/null; then
+    echo "0.18.1 requires break-glass audit events to use expiring attestation evidence" >&2
+    exit 1
+fi
+
+if ! grep -R "incoming.len() > max_items" crates/skrifheim-world/src/lib.rs >/dev/null; then
+    echo "0.18.1 requires batch world fact input to be bounded before sorting" >&2
     exit 1
 fi
 

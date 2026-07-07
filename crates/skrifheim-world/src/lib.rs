@@ -280,6 +280,9 @@ fn merge_fact_ids(
     if incoming.is_empty() {
         return Ok(());
     }
+    if incoming.len() > max_items {
+        return Err(SkrifheimError::TooManyFactLinks);
+    }
     incoming.sort_unstable();
     incoming.dedup();
 

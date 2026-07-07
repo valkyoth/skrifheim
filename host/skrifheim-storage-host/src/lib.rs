@@ -13,6 +13,11 @@ use std::{
     os::unix::fs::{OpenOptionsExt, PermissionsExt},
 };
 
+#[cfg(not(unix))]
+compile_error!(
+    "skrifheim-storage-host requires a supported Unix target for O_NOFOLLOW, owner-only file permissions, and parent-directory fsync; no hardened fallback exists for this platform"
+);
+
 use skrifheim_core::{Result as SkrifheimResult, SkrifheimError};
 use skrifheim_crypto::EncryptionDomain;
 use skrifheim_storage::{
