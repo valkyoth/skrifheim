@@ -537,14 +537,14 @@ engine, policy planner, and key hierarchy are in place:
   sensitive results can be redacted or rejected even when the requester has
   clearance.
 
-## Phase 9: Local-First And Optional Application Extensions
+## Phase 9: Local-First Core And Extension Compatibility
 
-Support offline, collaborative, publishing, forum-style, messenger-style,
-forge-style, and source-state worlds through generic core primitives plus
-optional extension crates:
+Support offline and disconnected use in the core world database while keeping
+publishing, forum-style, messenger-style, forge-style, source-state, and other
+application-family behavior in optional post-1.0 extension crates:
 
 - draft worlds,
-- CRDT fields for collaborative text,
+- extension-compatible metadata for future collaborative text models,
 - policy-filtered changefeeds,
 - encrypted sync cursors,
 - device-bound local replicas,
@@ -575,15 +575,13 @@ metadata primitives, but `skrifheim` must keep them generic and policy-bound:
   credentials, sessions, bootstrap tokens, recovery codes, key material, and
   other secrets.
 
-The collaborative text model must be selected before optional publishing,
-forum, messenger, or collaboration extension crates depend on it. `skrifheim`
-must choose between Operational Transform, an established CRDT family such as
-RGA, LOGOOT, or YATA, or a documented custom model. The decision must define
-operation/state representation, actor and device identity, causal clocks,
-tombstones, compaction, policy boundaries, and whether releases store
-materialized text, operation history, compacted state, or signed projections.
-
-Publishing extensions use world promotion, not mutable published flags.
+The collaborative text model is a post-1.0 extension-track decision before
+optional publishing, forum, messenger, or collaboration crates depend on it.
+When selected, it must define operation/state representation, actor and device
+identity, causal clocks, tombstones, compaction, policy boundaries, and whether
+releases store materialized text, operation history, compacted state, or signed
+projections. Publishing extensions use world promotion, not mutable published
+flags.
 
 Source-state and compliance-forge hosting are first-class optional extension
 shapes alongside publishing, forum, messenger, and collaboration support.
@@ -633,8 +631,9 @@ possible through portable core code and optional host adapters.
 
 ## Phase 11: Hyve Cluster Fabric
 
-Build cluster features only after the single-node database and legal planning
-foundations are strong enough to test in isolation.
+Build cluster features only after the single-node database is production-ready
+and the first optional extension tracks have proven the public API. The cluster
+roadmap starts at `v2.0.0`.
 
 Planned components:
 

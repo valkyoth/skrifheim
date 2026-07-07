@@ -34,7 +34,7 @@ live outside the core.
 - Plugin and theme execution must use capability-limited WASM when implemented.
 - AI cannot directly publish, declassify, or rewrite authoritative content.
 - Sensitive content requires approval workflows before release.
-- Collaborative text editing must use the selected `v0.38.4` convergence model;
+- Collaborative text editing must use the selected `v1.1.1` convergence model;
   the optional publishing extension must not invent independent OT/CRDT
   semantics outside the database plan.
 

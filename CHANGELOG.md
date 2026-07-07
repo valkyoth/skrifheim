@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Reworked the roadmap so `v1.0.0` is the core production world database,
+  `v1.1.0` through `v1.6.0` are optional application-extension tracks, and
+  Hyve clustering starts at `v2.0.0`.
 - Reserved an optional extension-crate boundary so product-family primitives do
   not become mandatory core database semantics by accident.
 - Added a cross-platform portability rule and reserved `v0.18.6` to prevent
@@ -15,24 +18,15 @@
   snapshot-root facts, locked archive/recovery worlds, policy-checked restore
   modes, protected compaction references, and explicit purge/crypto-erasure
   authority.
-- Reserved `v0.18.5` and `v0.52.6` for release evidence hardening:
+- Reserved `v0.18.5` and `v0.52.1` for release evidence hardening:
   SBOM validation, dependency-tree snapshots, runtime/optional-boundary policy,
   gate tests, and source-lock evidence for external legal, compliance,
   cryptographic, storage-format, parser, and conformance claims.
 - Reserved `v0.33.1` for the threshold-signature or bounded quorum
   multi-signature proof model before approval-sensitive production workflows.
-- Added pre-1.0 source-state backend milestones for compliance-forge
-  workloads: proof-carrying bundles, resource-budgeted verification,
-  operation/event/explanation/context records, and sealed private realms.
-- Added pre-1.0 optional relationship/feed extension milestones for high-volume
-  applications: relationship visibility, timeline projections, media
-  authorization, realtime/notification rebuilds, moderation/safety labels,
-  consent, transparency, privacy-rights workflows, and private-channel metadata
-  boundaries.
-- Added pre-1.0 hierarchical discussion and extension/import milestones:
-  scoped permissions, sanitized-content provenance, read/watch projections,
-  moderation workflow simulation, plugin/theme capability boundaries, and
-  dry-run migration planning.
+- Moved source-state/forge, relationship/feed, media, forum/discussion,
+  private-channel, privacy, mailbox, and collaboration work to explicit
+  post-1.0 optional extension tracks.
 - Added pre-1.0 operational application bootstrap milestones: one-time
   bootstrap, public-origin and alias separation, public descriptors, scheduled
   operations, cache controls, and secret-free configuration export.

@@ -8,6 +8,8 @@ Tags use:
 v0.N.0      milestone release
 v0.N.P      patch/fix release
 v1.0.0      first serious production-ready database
+v1.N.0      optional application-extension releases over the stable database
+v2.N.0      Hyve cluster releases after core and extension API stability
 ```
 
 ## Release Principles
@@ -1011,187 +1013,24 @@ Deliverables:
 - no lower-domain embedding of higher-domain facts,
 - tests for denied vector/AI projection writes.
 
-## v0.32.1 - Optional Relationship Graph Visibility And Feed Projection Extension
+## v0.32.1 - Extension Deferral And Core API Proof Gate
 
-Goal: define optional extension-crate primitives for high-volume relationship
-graphs and feed-like projections without letting feeds, search, counters, or
-caches bypass viewer-specific authorization, legal basis, encryption-domain, or
-moderation policy.
+Goal: confirm that product-family primitives remain outside the mandatory
+pre-1.0 world database.
 
 Deliverables:
 
-- optional `skrifheim-ext-social` or equivalent extension crate plan,
-- generic relationship edge classes for subscription, membership, denial,
-  preference, interaction, reference, endorsement, collection, and report-like
-  signals without making any product's schema canonical,
-- viewer-context visibility planner for public, limited-audience, group-scoped,
-  member-scoped, deleted, tombstoned, and visibility-reduced content states,
-- policy hooks for relationship denial, audience restriction, user preference,
-  content-control, and scoped-role decisions without embedding product-specific
-  moderation text,
-- timeline projection metadata for pull feeds, materialized hot timelines,
-  lazy fanout, notification timelines, and rebuildable replay,
-- durable timeline-item record shape with source fact range, viewer or audience
-  scope, policy epoch, consistency watermark, and rebuild command,
-- deterministic counter model for relationship-derived interactions and
-  privacy-preserving aggregate views,
-- tests that search projections, actor feeds, audience feeds, thread reads,
-  media feeds, notification reads, counters, and cached timelines all apply the
-  same viewer-context visibility rules, legal constraints, and policy epochs.
-
-## v0.32.2 - Media Object Authorization And Processing State Model
-
-Goal: provide database primitives for encrypted media metadata, normalized
-variants, captions, takedowns, and short-lived access grants without storing or
-serving raw blobs from `skrifheim`.
-
-Deliverables:
-
-- media asset, variant, caption/subtitle, processing job, takedown, and
-  access-grant record shapes,
-- encryption-domain and key metadata for original uploads, normalized display
-  variants, captions, subtitles, transcripts, filenames, alt text, and
-  moderation notes,
-- processing-state model for quarantined, scanning, normalizing, ready, failed,
-  rejected, deleted, and takedown states,
-- short-lived media access-grant proof model with hashed token storage,
-  expiration, viewer binding, asset state, and post/account visibility
-  re-check requirements,
-- object-reference policy that prevents account IDs, handles, filenames, email
-  addresses, or local paths from leaking through storage keys,
-- metadata-only event contract for upload sessions, processing state changes,
-  takedowns, and delivery grants; binary media, object keys, wrapped keys,
-  hashes, captions, alt text, and user text must not enter event streams,
-- tests that stale grants fail after takedown, block, protected-account change,
-  post visibility change, asset deletion, moderation state change, legal hold,
-  expired consent, or key-domain mismatch.
-
-## v0.32.3 - Optional Realtime Hint, Notification, And Rebuildable Event Extension
-
-Goal: model realtime-adjacent extension features as rebuildable projections and
-metadata-only events, not as a second source of truth.
-
-Deliverables:
-
-- generic notification fact and projection model for relationship changes,
-  references, interactions, private-channel signals, voting/response signals,
-  group events, moderation decisions, security events, and compliance
-  workflows without embedding a product event taxonomy in core,
-- read/unread, clear/delete, snooze, priority, request-inbox, and per-account
-  notification filter state,
-- realtime hint event shape for WebSocket/SSE gateways that carries only
-  identifiers, state, watermarks, and coarse event kinds,
-- replay-after-disconnect cursor and watermark model,
-- rebuild contract for notification counts, presence/typing hints, hot
-  timelines, search indexes, and counters from canonical facts/events,
-- tests that realtime hints never expose private content, private-channel
-  ciphertext, content bodies, media metadata, account PII, or authorization
-  decisions not visible through a normal API read, and that replay after policy
-  changes re-evaluates visibility before delivery.
-
-## v0.32.4 - Optional Moderation, Appeals, And Safety-Label Extension
-
-Goal: make moderation and user-safety state available as optional policy inputs
-before extension crates depend on feed/search visibility.
-
-Deliverables:
-
-- generic report, appeal, trusted-notice, policy label, visibility reduction,
-  subject restriction, object restriction, and scoped moderation record shapes,
-- statement-of-reasons proof model with actor, authority, target, policy
-  version, legal basis where applicable, appeal status, and visibility effect,
-- stackable safety-label source model that can warn, hide, or reduce content
-  without granting third parties raw private data or unrestricted enforcement
-  authority,
-- user-selectable safety controls for filtered terms, notification classes,
-  interaction controls, sensitive-object labels, and review-note requests,
-- deterministic appeal workflow state machine,
-- transparency aggregate fact model that avoids per-user exposure,
-- tests that moderation-hidden content cannot leak through search, timelines,
-  media reads, notifications, counters, exports without policy, or cached
-  projections, and that appeal outcomes preserve immutable moderation history.
-
-## v0.32.5 - Optional Consent, Transparency, And Ranking Explanation Extension
-
-Goal: support optional relationship/feed extensions that must explain ranking,
-advertising, recommendation, or promoted-content decisions while respecting EU
-consent, privacy, and DSA-style transparency constraints.
-
-Deliverables:
-
-- consent ledger model with purpose, version, grant/withdrawal state, timestamp,
-  actor, device context, and legal basis,
-- separate consent purposes for necessary service operation, security logging,
-  personalized ranking, behavioral measurement, personalized ads, and
-  non-essential cookies/local tracking,
-- ranking explanation metadata for chronological, subscription-only, regional,
-  contextual, and personalized feed modes,
-- ad transparency record model with sponsor identity, campaign/ad identifiers,
-  creative reference, targeting category summary, placement, review state,
-  political-ad marker, and "why shown" explanation,
-- policy hooks that reject sensitive-category targeting, minor profiling,
-  consent-dark-pattern assumptions, and personalized delivery after withdrawal,
-- aggregate advertiser reporting model that does not expose per-user ad
-  histories to advertisers,
-- tests for consent withdrawal, non-personalized fallback, ranking explanation
-  redaction, political-ad disabled/default-deny behavior, and ad-label
-  propagation into API-visible result metadata,
-- documentation that ad and ranking primitives are compliance metadata only;
-  application-owned ranking algorithms, campaign workflows, payment providers,
-  and ad creative review rules stay outside the database core.
-
-## v0.32.6 - Hierarchical Discussion And Scoped Permission Model
-
-Goal: define generic primitives for nested discussion spaces, long-lived
-threads, read state, watches, and scoped moderation without absorbing
-application-owned discussion schema.
-
-Deliverables:
-
-- hierarchical container model for categories, forums, collections, channels,
-  or equivalent application-owned discussion spaces,
-- scoped role and capability grant model with inheritance, category/container
-  scope, ownership checks, temporary grants, trust-level hooks, and escalation
-  prevention,
-- content lifecycle model for draft, preview, published, edited, soft-deleted,
-  restored, locked, pinned, moved, merged, split, and visibility-reduced
-  discussion state,
-- sanitized-content provenance model that keeps source body, rendered body
-  digest, sanitizer policy/version, renderer policy/version, edit revision,
-  and author/actor attribution without making unsafe rendered output a trust
-  root,
-- read/unread and watch/subscription projection metadata for topics, threads,
-  tags, containers, and replies,
-- tests that scoped grants do not leak across containers, actors cannot grant
-  capabilities they do not hold, sanitized output can be regenerated from
-  canonical source and policy version, and soft-deleted or hidden content does
-  not leak through search, read-state, counters, or notifications.
-
-## v0.32.7 - Moderation Workflow Simulation And Delayed Action Model
-
-Goal: make moderation workflows auditable, replayable, and policy-bound before
-applications depend on reusable staff actions or delayed enforcement.
-
-Deliverables:
-
-- moderation queue, approval queue, warning/points, mute, ban, shadowban,
-  delayed job, and reusable action-sequence metadata expressed as generic
-  policy records,
-- transactional moderation action bundle model where partial failure leaves
-  queue, target, and audit state unchanged,
-- delayed moderation job model with due time, policy epoch, actor authority,
-  pending/completed/failed state, failure redaction, and single-execution
-  guarantees,
-- moderation replay/simulation model that previews how a rule, trust-level
-  change, or anti-abuse filter would affect recent facts without mutating
-  production worlds,
-- workload-routing metadata for language, category/container, severity,
-  conflict-of-interest, and staff availability without exposing private
-  content to unauthorized moderators,
-- tests that replay cannot mutate source worlds, delayed actions cannot execute
-  twice, failed bundles do not partially commit, shadow-hidden content remains
-  visible only where policy allows, and staff actions preserve previous/new
-  state in tamper-evident audit records.
+- default workspace build proves no `skrifheim-ext-*` crate is required by the
+  core database,
+- dependency-direction gate that rejects core crates depending on extension
+  crates,
+- one compile-only stub extension that depends on the stable public core API
+  without adding product schema to core,
+- documentation that publishing, messenger, forum, forge/source-state,
+  relationship/feed/media, mailbox, collaboration, and cluster workflows are
+  post-1.0 tracks with their own pentest gates,
+- release-gate check that pre-1.0 deliverables cannot add product-specific
+  schema to core crates without a deferral decision.
 
 ## v0.33.0 - Crypto-Agile Manifest Signatures
 
@@ -1444,62 +1283,26 @@ Deliverables:
   indexes, and cache operations never apply to admin/auth/bootstrap/private
   responses.
 
-## v0.38.4 - Collaborative Text Convergence Model
+## v0.38.4 - Extension API Compatibility Freeze
 
-Goal: choose the collaborative text model before optional publishing extension
-release primitives and local-first world metadata depend on merge semantics.
-
-Deliverables:
-
-- choose Operational Transform, a CRDT family such as RGA, LOGOOT, YATA, or a
-  documented custom model,
-- document why the selected model fits `skrifheim` worlds, facts, policy
-  labels, offline edits, and signed release workflows,
-- define the canonical operation or state format for collaborative text fields,
-- define stable actor/device identifiers, causal clocks, tombstones, deletion
-  semantics, and compaction rules,
-- define how collaborative text state is represented as facts without making
-  every keystroke a permanent high-blast-radius fact unless explicitly chosen,
-- define deterministic merge/convergence guarantees and conflict review
-  behavior,
-- define policy behavior for collaborative edits that cross classification,
-  compartment, sovereignty, or legal boundaries,
-- define whether public releases store materialized text, operation history,
-  compacted CRDT state, or a signed projection,
-- add fixtures for concurrent insert/delete, offline edit replay, actor
-  ordering, tombstone retention, and malicious operation rejection,
-- update optional publishing and local-first milestones to use the selected
-  model rather than generic "CRDT fields" language.
-
-## v0.39.0 - Optional Publishing World And Release Extension
-
-Goal: support the first optional publishing-style atomic release extension
-without making CMS semantics part of the mandatory world database core.
+Goal: freeze the public core APIs that optional post-1.0 extension crates will
+compile against, without implementing any product-family extension in the
+mandatory database.
 
 Deliverables:
 
-- optional `skrifheim-ext-publishing` or equivalent extension crate plan,
-- public/private world split,
-- content field model follows the `v0.38.4` collaborative text decision
-  without making a CMS schema canonical,
-- generic release object,
-- publish preflight,
-- atomic promote/rollback,
-- tests for no half-published state.
-
-## v0.40.0 - Optional Publishing Render Dependency Graph Extension
-
-Goal: track causal dependencies for rendered public output in an optional
-publishing extension crate.
-
-Deliverables:
-
-- route render graph model,
-- content dependency edges,
-- invalidation calculation,
-- blast-radius invalidation for rendered output,
-- public projection boundary,
-- tests for precise invalidation.
+- public API review for facts, worlds, labels, policy proofs, query plans,
+  storage roots, encryption domains, audit records, and legal/compliance
+  passports,
+- compile-only extension fixture that depends on the core APIs without being a
+  default workspace dependency,
+- documentation of which APIs are stable for v1.1.0 through v1.6.x extension
+  crates,
+- release-gate check proving optional extension fixtures can be omitted from
+  the production core build,
+- explicit deferral notes that collaborative text, publishing releases, render
+  graphs, forum/discussion, messenger, feed/media, mailbox, collaboration, and
+  forge/source-state behavior starts after v1.0.0.
 
 ## v0.41.0 - AI Artifact Provenance
 
@@ -1524,8 +1327,9 @@ Deliverables:
 - device-bound world metadata,
 - sync cursor model,
 - encrypted sync envelope metadata,
-- collaborative text field metadata using the selected `v0.38.4` convergence
-  model,
+- extension-compatible placeholder metadata for future collaborative text
+  extension crates without choosing or implementing the convergence algorithm
+  before v1.1.1,
 - policy-filtered sync tests.
 
 ## v0.43.0 - Mission Capsule And Cross-Domain Export Skeleton
@@ -1542,153 +1346,27 @@ Deliverables:
 - import verification preflight,
 - rejected downgrade tests.
 
-## v0.43.1 - Source-State Object And Bundle Backend Model
+## v0.43.1 - Extension Trust Boundary And Import Deferral
 
-Goal: define policy-bound primitives for source-state and forge-style
-applications without treating publishing as the only application extension
-shape.
-
-Deliverables:
-
-- application object identity domain model with object type, hash/digest
-  algorithm tag, canonical format version, and tenant/world scope,
-- immutable source-state records for objects, state roots, changes, change
-  revisions, operations, proof reports, bundles, and releases,
-- mutable alias model that points human names such as project heads, review
-  worlds, or release channels to immutable state records through transactions,
-- proof-carrying bundle manifest model covering object ranges, fact ranges,
-  world heads, policy epoch, crypto epoch, schema version, and required
-  verification profile,
-- remote decision fact types for accept, deny, quarantine, and
-  more-evidence-required outcomes,
-- quarantine world/state metadata for imported but untrusted bundles,
-- tests for object-type confusion, digest-algorithm confusion, stale alias
-  rollback, missing object references, and importing without proof material,
-- documentation that application-owned source object formats remain owned by
-  the consuming application, while `skrifheim` provides durable,
-  policy-aware, compliance-aware backend primitives.
-
-## v0.43.2 - Resource-Budgeted Verification Modes
-
-Goal: let source-state applications verify large worlds and bundles through
-bounded, policy-declared verification modes without unbounded graph admission
-or all-or-nothing full-world scans.
+Goal: define the trust boundary for future extension, plugin, source-state, and
+import workflows without implementing those application-family systems before
+the core database is stable.
 
 Deliverables:
 
-- verification profile model with bounded-batch, lazy-cone, and full-world
-  modes,
-- memory, object-count, edge-count, body-size, and parallelism budget metadata,
-- remote/bundle preflight that compares declared verification requirements
-  with local tenant and deployment budgets before trust or materialization,
-- changed-cone proof model for normal small updates,
-- full-world proof model for regulated or high-assurance worlds,
-- proof-cache metadata for unchanged object and fact subgraphs,
-- quarantine or no-materialization decision state when remote requirements
-  exceed local budgets,
-- tests for oversized manifests, cyclic graphs, missing references,
-  stronger-than-local remote verification requirements, proof-cache reuse, and
-  refusal to materialize untrusted state.
-
-## v0.43.3 - Operation, Event, Explanation, And Context Records
-
-Goal: define generic records for applications that need append-only operations,
-bounded events, deterministic fact compilation, auditable explanations, and
-context packs in addition to ordinary query results.
-
-Deliverables:
-
-- operation record model for user-visible mutations, imports, promotions,
-  rollbacks, undo actions, vault actions, sync decisions, and administrative
-  changes,
-- bounded event envelope model that records command/runtime observations
-  without making them authoritative facts by itself,
-- deterministic event-to-fact compiler contract with missing-source rejection,
-  duplicate derivation behavior, and policy epoch binding,
-- undo/compensation model where reversing a user action creates a new operation
-  and never deletes immutable facts, objects, or history,
-- explanation object model with question, deterministic query plan, evidence
-  edges, missing evidence, redaction notices, confidence, policy proof,
-  optional AI-use marker, and signatures,
-- bounded context-pack model for diagnostics, hosted support, and optional AI
-  use that includes selected facts, object references, snippets, causal paths,
-  redactions, and missing-evidence markers,
-- tests that events cannot satisfy policy as facts until compiled, explanations
-  cannot hide missing evidence, context packs cannot include unrelated private
-  facts or secret material, and undo preserves immutable history.
-
-## v0.43.4 - Sealed Private Realm And Blind Remote Backend Model
-
-Goal: support encrypted source-state hosting where the backend may store,
-sync, and verify allowed metadata without learning protected source content.
-
-Deliverables:
-
-- sealed private realm metadata for locked, unlocked, and materialized states,
-- public storage ID over encrypted envelopes and private keyed object ID over
-  canonical plaintext for membership-leak resistance,
-- visible-versus-protected metadata policy for object paths, world names,
-  change titles, actor identity, facts, symbols, dependency graphs, and context
-  packs,
-- recipient slot and key-wrapping metadata compatible with the key hierarchy
-  and crypto epoch model,
-- encrypted bundle and pack envelope metadata for trusted, blind, and
-  split-trust remote modes,
-- leak-scan result fact model for plaintext worktree, cache, log, index, and
-  backup exposure findings,
-- explicit dangerous plaintext export and realm-disable proof model,
-- tests that public plaintext hashes are not exposed as storage IDs in sealed
-  private mode, protected metadata is not indexed into public projections,
-  recipient removal is not treated as retroactive revocation, and blind remote
-  imports are verified before decrypt or materialization.
-
-## v0.43.5 - Extension, Theme, And Plugin Capability Boundary Model
-
-Goal: define database primitives for plugin/theme ecosystems without allowing
-extension code or templates to bypass policy, leak protected facts, or become
-implicit trusted code.
-
-Deliverables:
-
-- extension manifest metadata with version, compatibility window, declared
-  hooks, requested capabilities, tenant scope, world scope, data categories,
-  and policy epoch,
-- host-grant proof model for read, write, emit-event, render, query,
-  projection, and admin-like capabilities,
-- plugin capability simulator that evaluates requested grants against a
-  selected actor, tenant, world, data passport, law pack, and policy epoch
-  without mutating state,
-- hook invocation record model with bounded inputs, redacted outputs,
-  execution result, timeout/memory budget, and failure isolation state,
-- theme/template modification metadata with deterministic ordering, CSP/security
-  policy version, accessibility/check evidence, and rollback pointer,
-- tests that extension manifests cannot request undeclared authority, simulator
-  denial matches runtime denial, plugin failures cannot corrupt canonical
-  facts, template metadata cannot read arbitrary database state, and unsafe
-  render output is not stored as canonical truth.
-
-## v0.43.6 - Import, Migration, And Permission Gap Reporting Model
-
-Goal: support application migrations and legacy imports through dry-run,
-policy-checked planning rather than ad hoc direct writes.
-
-Deliverables:
-
-- import plan metadata for source system, schema version, actor mapping,
-  object/fact mapping, attachment/media mapping, timestamp policy, and
-  trust-level of imported evidence,
-- dry-run import report with expected writes, skipped records, conflicts,
-  malformed records, missing actors, permission gaps, policy gaps, and legal
-  basis gaps,
-- import quarantine world/state for accepted-but-untrusted imported data,
-- idempotent import checkpoint model that prevents duplicate writes and
-  supports resume after failure,
-- migration compatibility proof tying schema catalog version, law pack, policy
-  epoch, crypto epoch, and retention policy to the import result,
-- tests that dry-run produces no writes, permission gaps block promotion,
-  imported sanitized/rendered content is treated as untrusted until regenerated
-  or verified, duplicate import chunks are idempotent, and attachments/media do
-  not bypass encryption-domain policy.
+- core capability vocabulary for future extension crates: read, write,
+  emit-event, render, query, projection, import, export, and admin-like
+  operations,
+- policy rule that extension, plugin, theme, source-state, import, and
+  migration behavior starts after v1.0.0 unless explicitly promoted as generic
+  core functionality,
+- compile-only omission test proving the core database does not require
+  plugin/theme/import/source-state crates,
+- documentation mapping source-state/forge work to v1.4.0 through v1.4.4,
+  import/migration work to v1.4.4, and extension/plugin/theme work to the
+  relevant post-1.0 extension crate,
+- tests that the core API rejects undeclared capabilities and policy-bypassing
+  extension proofs even before real extension crates exist.
 
 ## v0.44.0 - Fuzz And Property Test Baseline
 
@@ -1811,144 +1489,7 @@ Deliverables:
   multi-jurisdiction scopes,
 - tests that unlabeled non-public data cannot be read, exported, indexed, processed by AI, backed up, or planned for movement.
 
-## v0.52.1 - Optional Privacy Rights, Legal Hold, And Deletion Workflow Extension
-
-Goal: support optional product-family crates that need GDPR-style export,
-deletion, retention, deactivation, and legal-hold workflows without breaking
-immutable audit or provenance guarantees.
-
-Deliverables:
-
-- privacy export job, delete job, deactivation job, retention job, and legal
-  hold record shapes,
-- subject-access export proof model that records scope, actor, requester,
-  policy epoch, legal basis, redactions, excluded third-party data, and
-  generated artifact metadata,
-- deletion/tombstone/crypto-erasure decision model separating public removal,
-  account deactivation, account deletion, retention-required audit state,
-  legal hold, and irreversible key destruction,
-- progress and failure-state metadata for long-running export, delete,
-  retention, and breach-response jobs,
-- processor-log and breach-response evidence record shapes,
-- tests that legal hold blocks destructive erasure, deletion removes user
-  visibility while preserving required audit facts, export does not leak other
-  users' private facts, and retention expiry cannot erase protected audit
-  history.
-
-## v0.52.2 - Optional End-To-End Encrypted Message Metadata Extension
-
-Goal: provide optional extension-crate support for E2EE private-channel
-products where the server stores ciphertext and minimal routing metadata only.
-
-Deliverables:
-
-- private-channel thread, group membership, message ciphertext, attachment
-  reference, delivery/read signal, interaction signal, presence hint, and
-  abuse-report metadata shapes,
-- minimal routing metadata policy for sender, recipient, thread identifiers,
-  timestamps, delivery state, and device/key epoch references,
-- encryption-domain and key-epoch metadata for message ciphertext, encrypted
-  attachments, and client-managed key material references,
-- search and analytics exclusion rules for message plaintext, private message
-  bodies, and protected attachment metadata,
-- abuse-report evidence package model that can include user-authorized
-  decrypted excerpts or client-provided proofs without making plaintext
-  generally queryable,
-- tests that private-channel ciphertext is never indexed as plaintext,
-  realtime events carry no message content, exports respect participant
-  visibility, and moderation reports do not create a general server-side
-  decrypt path.
-
-## v0.52.3 - Cross-Product Export And Deletion Orchestration Model
-
-Goal: coordinate privacy-rights workflows across multiple product boundaries
-without letting one identity/account service directly own or silently delete
-another product's data.
-
-Deliverables:
-
-- product exporter contract metadata with product ID, schema version, supported
-  scopes, retention rules, legal basis, delivery mode, and failure behavior,
-- product deletion contract metadata with dry-run support, finalization flag,
-  row/object counts, crypto-erasure capability, legal-hold interaction,
-  notification behavior, and idempotent resume key,
-- orchestrated export package proof that records every contributing product,
-  redactions, missing services, excluded third-party data, generated artifacts,
-  delivery channel, expiry, and audit references,
-- orchestrated deletion plan that requires final dry-run counts, operator or
-  user authority proof, product-by-product before/after audit events, and
-  resumable checkpoints,
-- operator override model for early export processing, retry, link expiry,
-  archive clearing, cleanup, and deletion finalization with fresh verification,
-  reason capture, and immutable audit,
-- tests that product finalization remains disabled until every required product
-  contract is present, dry-run performs no writes, duplicate finalize attempts
-  are idempotent, operators never see download tokens, and legal hold blocks
-  destructive steps across all products.
-
-## v0.52.4 - Optional Searchable Encrypted Mailbox And Support Thread Extension
-
-Goal: support optional mailbox-style extension crates that intentionally use
-server-authorized decryption for search, folders, support communication, and
-abuse handling while remaining encrypted at rest with strict audit controls.
-
-Deliverables:
-
-- mailbox account, immutable address identity, alias, thread, participant,
-  message, body-version, attachment, receipt, notification, delivery-job,
-  folder, and per-user thread-folder membership metadata,
-- rule that thread membership and folder placement are separate per-user
-  concepts, including forced system views such as support or compliance inboxes
-  that cannot be deleted as ordinary user folders,
-- encryption-domain model for mailbox key, per-message content key, wrapped
-  content key, encrypted body, encrypted draft, encrypted attachment, and
-  searchable protected representation,
-- server-authorized decrypt/index proof model with actor/service identity,
-  purpose, legal basis, mailbox/thread scope, key epoch, policy epoch, and
-  audit binding,
-- support-thread link model that connects a support case/ticket to a user-facing
-  message thread without making the support system own general mailbox data,
-- tests that searchable encrypted content cannot be indexed without an
-  authorized decrypt/index proof, support views expose only linked/authorized
-  threads, forced system views cannot be removed as ordinary folders, and key
-  rotation or mailbox deletion updates all wrapped-message metadata.
-
-## v0.52.5 - Server-Blind Collaboration Envelope Model
-
-Goal: support collaboration systems where the database stores workspace,
-conversation, delivery, legal-hold, and encrypted-envelope metadata while
-clients retain plaintext, message search, and group-key authority.
-
-Deliverables:
-
-- workspace, channel, direct conversation, small-group conversation, thread,
-  membership, guest, invitation, device, read-cursor, delivery-state, reaction,
-  pin, saved-item, draft, and scheduled-send metadata shapes,
-- encrypted collaboration envelope model with opaque workspace/conversation
-  identifiers, sender device identity, group epoch, envelope kind, ciphertext
-  size bounds, key-package or welcome-message references, and replay-resistant
-  sequencing metadata,
-- strict server-blind boundary that rejects plaintext message bodies, channel
-  names, direct conversation names, file names, search terms, client group
-  secrets, raw invite addresses, raw invite tokens, notification bodies, and
-  push-token material from canonical server-side records,
-- client-owned search and local-state boundary model where decrypted indexes,
-  local caches, profile-scoped state, and group-key state remain outside the
-  server trust boundary,
-- retention, legal-hold, export, and admin-policy model for ciphertext and
-  metadata that does not imply server plaintext recovery; authorized exports
-  must record whether decryption requires client-side or separately approved
-  administrator tooling,
-- plugin/integration metadata model for capability grants, webhook/event
-  subscriptions, command invocations, workflow state, and outbound integration
-  queues without giving server plugins plaintext or group-key material,
-- tests that ciphertext envelopes accept only bounded opaque encrypted payloads,
-  delivery/read cursors cannot carry snippets, server-side search/indexing is
-  denied for client-owned plaintext, legal hold preserves ciphertext without
-  declassification, and plugin metadata cannot request plaintext or key access
-  by default.
-
-## v0.52.6 - External Source Lock And Evidence Model
+## v0.52.1 - External Source Lock And Evidence Model
 
 Goal: prevent legal, compliance, cryptographic, storage-format, and external
 conformance claims from being implemented from memory or shifting upstream
@@ -2061,31 +1602,13 @@ Deliverables:
 - rootless Podman deployment,
 - backup/restore,
 - secure first-run bootstrap and instance identity primitives,
-- public origin, alias, descriptor, scheduled operation, and cache-control
-  primitives,
 - read-only secret-free configuration export,
-- optional publishing release primitives, public/private world split, and render
-  dependency tracking as extension-layer proof of the core API,
-- optional relationship/feed extension primitives for visibility, timelines,
-  media metadata authorization, processing state, moderation, safety labels,
-  consent, transparency, and ranking explanations,
-- optional forum/discussion extension primitives for hierarchical discussion,
-  scoped permission, sanitized-content provenance, read state,
-  watch/subscription, and moderation workflow,
-- optional privacy-rights, legal-hold, deletion, and private-channel metadata
-  extension boundaries,
 - platform identity, shared-account, product-boundary, guardian-consent, and
   derived-claim primitives,
-- optional cross-product export/deletion orchestration, searchable encrypted
-  mailbox support-thread boundaries, and server-blind encrypted collaboration
-  envelope support,
-- optional source-state object and proof-carrying bundle backend extension
-  primitives,
 - resource-budgeted verification modes,
 - operation, event, explanation, and context-pack records,
-- sealed private realm and blind remote backend model,
-- extension/theme capability boundary and import/migration dry-run model for
-  optional application-family crates,
+- extension API compatibility freeze proving optional application-family crates
+  can compile against core without being mandatory dependencies,
 - AI artifact provenance,
 - complete release runbook,
 - security review PASS for exact commit.
@@ -2101,13 +1624,330 @@ Non-goals for 1.0:
 - AI as authoritative truth,
 - exotic hardware requirement.
 
-## Post-1.0 Cluster Roadmap
+## Post-1.0 Extension Roadmap
 
-The full Hyve cluster fabric starts after the first production single-node
-database unless explicitly re-scoped. Each item still needs its own clean stop,
-pentest handoff, and release notes.
+The first post-1.0 releases prove the stable world database through optional
+compiled-in extension crates. Each extension release has its own clean stop,
+pentest handoff, release notes, and dependency review. Core crates must not
+depend on extension crates.
 
-### v1.1.0 - Local Cell Cluster Runtime
+### v1.1.0 - Publishing/CMS Extension Crate
+
+Goal: add `skrifheim-ext-publishing` as the first optional extension crate.
+
+Deliverables:
+
+- optional crate wiring that can be omitted from a core-only build,
+- public/private/review world mapping over core worlds,
+- publishing release object and release proof model,
+- publish preflight using core policy, legal, encryption-domain, and audit
+  checks,
+- atomic promote/rollback through world promotion rather than mutable published
+  flags,
+- public projection boundary for published materialized outputs,
+- tests for no half-published state, denied private-world reads, denied
+  missing-approval releases, and extension omission from core builds.
+
+### v1.1.1 - Publishing Collaborative Text Model
+
+Goal: choose and implement the text-convergence model required by the optional
+publishing extension.
+
+Deliverables:
+
+- selected OT, established CRDT, or documented custom convergence model,
+- operation/state representation with actor/device identifiers, causal clocks,
+  tombstones, deletion semantics, and compaction rules,
+- policy behavior for collaborative edits crossing classification,
+  compartment, sovereignty, or legal boundaries,
+- release representation decision: materialized text, operation history,
+  compacted state, or signed projection,
+- fixtures for concurrent insert/delete, offline edit replay, actor ordering,
+  tombstone retention, and malicious operation rejection.
+
+### v1.1.2 - Publishing Render Dependency Graph
+
+Goal: track causal dependencies for rendered public output in the optional
+publishing extension.
+
+Deliverables:
+
+- route/render graph model,
+- content and projection dependency edges,
+- invalidation calculation and blast-radius invalidation for rendered output,
+- cache eligibility metadata for immutable public assets and public
+  projections,
+- scheduled publish/cache purge/warm operations as private authenticated
+  operations,
+- tests for precise invalidation, no private-preview leakage, and cache
+  operations never applying to admin/auth/bootstrap/private responses.
+
+### v1.2.0 - Messenger/Private-Channel Extension Crate
+
+Goal: add `skrifheim-ext-messaging` for ciphertext-only private-channel
+metadata.
+
+Deliverables:
+
+- optional crate wiring that can be omitted from a core-only build,
+- private-channel thread, group membership, message ciphertext, attachment
+  reference, delivery/read signal, interaction signal, presence hint, and
+  abuse-report metadata shapes,
+- minimal routing metadata policy for sender, recipient, thread identifiers,
+  timestamps, delivery state, and device/key epoch references,
+- encryption-domain and key-epoch metadata for message ciphertext, encrypted
+  attachments, and client-managed key material references,
+- search and analytics exclusion rules for message plaintext and protected
+  attachment metadata,
+- abuse-report evidence package model with user-authorized decrypted excerpts
+  or client-provided proofs without making plaintext generally queryable,
+- tests that ciphertext is never indexed as plaintext, realtime events carry no
+  message content, exports respect participant visibility, and moderation
+  reports do not create a general server-side decrypt path.
+
+### v1.3.0 - Forum/Discussion Extension Crate
+
+Goal: add `skrifheim-ext-discussion` for nested discussions, scoped
+permissions, and moderation workflows.
+
+Deliverables:
+
+- optional crate wiring that can be omitted from a core-only build,
+- hierarchical container model for categories, forums, collections, channels,
+  or equivalent application-owned discussion spaces,
+- scoped role and capability grants with inheritance, container scope,
+  ownership checks, temporary grants, trust-level hooks, and escalation
+  prevention,
+- content lifecycle model for draft, preview, published, edited, soft-deleted,
+  restored, locked, pinned, moved, merged, split, and visibility-reduced states,
+- sanitized-content provenance with source body, rendered-body digest,
+  sanitizer/renderer policy version, edit revision, and actor attribution,
+- read/unread and watch/subscription projection metadata,
+- tests that scoped grants do not leak across containers, actors cannot grant
+  capabilities they do not hold, sanitized output can be regenerated, and
+  hidden content does not leak through search, read-state, counters, or
+  notifications.
+
+### v1.3.1 - Forum Moderation Workflow Simulation
+
+Goal: make discussion moderation replayable, auditable, delayed, and
+policy-bound.
+
+Deliverables:
+
+- moderation queue, approval queue, warning/points, mute, ban, shadow-hide,
+  delayed job, and reusable action-sequence metadata expressed as policy
+  records,
+- transactional moderation action bundle model where partial failure leaves
+  queue, target, and audit state unchanged,
+- delayed moderation job model with due time, policy epoch, actor authority,
+  failure redaction, and single-execution guarantees,
+- replay/simulation model that previews rule, trust-level, or abuse-filter
+  changes without mutating production worlds,
+- tests that replay cannot mutate source worlds, delayed actions cannot execute
+  twice, failed bundles do not partially commit, and staff actions preserve
+  previous/new state in tamper-evident audit records.
+
+### v1.4.0 - Forge/Source-State Extension Crate
+
+Goal: add `skrifheim-ext-forge` for policy-bound source-state and proof-carrying
+bundle workflows.
+
+Deliverables:
+
+- optional crate wiring that can be omitted from a core-only build,
+- application object identity domain model with object type, hash/digest
+  algorithm tag, canonical format version, tenant, and world scope,
+- immutable source-state records for objects, state roots, changes, revisions,
+  proof reports, bundles, releases, and operation records,
+- mutable alias model pointing human names such as project heads, review worlds,
+  and release channels to immutable state through transactions,
+- proof-carrying bundle manifest covering object ranges, fact ranges, world
+  heads, policy epoch, crypto epoch, schema version, and required verification
+  profile,
+- remote decision facts for accept, deny, quarantine, and
+  more-evidence-required outcomes,
+- tests for object-type confusion, digest-algorithm confusion, stale alias
+  rollback, missing object references, and importing without proof material.
+
+### v1.4.1 - Forge Resource-Budgeted Verification
+
+Goal: verify large source-state worlds and bundles through bounded declared
+verification modes.
+
+Deliverables:
+
+- verification profile model with bounded-batch, lazy-cone, and full-world
+  modes,
+- memory, object-count, edge-count, body-size, and parallelism budgets,
+- remote/bundle preflight comparing declared requirements with local tenant and
+  deployment budgets,
+- changed-cone proof model and full-world proof model,
+- proof-cache metadata for unchanged object and fact subgraphs,
+- quarantine or no-materialization decision when requirements exceed budgets,
+- tests for oversized manifests, cyclic graphs, missing references,
+  stronger-than-local verification requirements, proof-cache reuse, and refusal
+  to materialize untrusted state.
+
+### v1.4.2 - Forge Sealed Private Realm
+
+Goal: support encrypted source-state hosting where the backend stores, syncs,
+and verifies allowed metadata without learning protected source content.
+
+Deliverables:
+
+- sealed private realm metadata for locked, unlocked, and materialized states,
+- public storage ID over encrypted envelopes and private keyed object ID over
+  canonical plaintext for membership-leak resistance,
+- visible-versus-protected metadata policy for object paths, world names,
+  change titles, actor identity, facts, symbols, dependency graphs, and context
+  packs,
+- recipient slot and key-wrapping metadata compatible with the key hierarchy,
+- encrypted bundle and pack envelope metadata for trusted, blind, and
+  split-trust remote modes,
+- leak-scan result facts and dangerous plaintext export proof model,
+- tests that protected metadata is not indexed into public projections and
+  blind remote imports are verified before decrypt or materialization.
+
+### v1.4.3 - Forge Import And Migration Planning
+
+Goal: support imports through dry-run, policy-checked planning rather than ad
+hoc direct writes.
+
+Deliverables:
+
+- import plan metadata for source system, schema version, actor mapping,
+  object/fact mapping, attachment/media mapping, timestamp policy, and
+  trust-level of imported evidence,
+- dry-run import report with expected writes, skipped records, conflicts,
+  malformed records, missing actors, permission gaps, policy gaps, and legal
+  basis gaps,
+- import quarantine world/state for accepted-but-untrusted imported data,
+- idempotent import checkpoint model,
+- migration compatibility proof tying schema catalog version, law pack, policy
+  epoch, crypto epoch, and retention policy to the import result,
+- tests that dry-run produces no writes, permission gaps block promotion,
+  duplicate import chunks are idempotent, and attachments/media do not bypass
+  encryption-domain policy.
+
+### v1.5.0 - Relationship/Feed Extension Crate
+
+Goal: add `skrifheim-ext-relationship` for high-volume relationship graphs and
+feed-like projections.
+
+Deliverables:
+
+- optional crate wiring that can be omitted from a core-only build,
+- generic relationship edge classes for subscription, membership, denial,
+  preference, interaction, reference, endorsement, collection, and report-like
+  signals,
+- viewer-context visibility planner for public, limited-audience, group-scoped,
+  member-scoped, deleted, tombstoned, and visibility-reduced content states,
+- policy hooks for relationship denial, audience restriction, user preference,
+  content-control, and scoped-role decisions,
+- timeline projection metadata for pull feeds, materialized hot timelines,
+  lazy fanout, notification timelines, and rebuildable replay,
+- deterministic counter model for relationship-derived interactions and
+  privacy-preserving aggregate views,
+- tests that search projections, actor feeds, audience feeds, thread reads,
+  counters, media feeds, notification reads, and cached timelines all apply the
+  same visibility, legal, and policy-epoch rules.
+
+### v1.5.1 - Media Authorization Extension
+
+Goal: add encrypted media metadata, processing states, takedowns, and
+short-lived access grants without storing or serving raw blobs from core.
+
+Deliverables:
+
+- media asset, variant, caption/subtitle, processing job, takedown, and
+  access-grant record shapes,
+- encryption-domain and key metadata for original uploads, normalized display
+  variants, captions, transcripts, filenames, alt text, and moderation notes,
+- processing-state model for quarantined, scanning, normalizing, ready, failed,
+  rejected, deleted, and takedown states,
+- short-lived media access-grant proof model with hashed token storage,
+  expiration, viewer binding, asset state, and visibility re-checks,
+- object-reference policy that prevents identifiers, filenames, emails, or
+  local paths from leaking through storage keys,
+- tests that stale grants fail after takedown, visibility changes, deletion,
+  moderation state changes, legal hold, expired consent, or key-domain
+  mismatch.
+
+### v1.5.2 - Realtime Hint And Notification Extension
+
+Goal: model realtime-adjacent extension features as rebuildable projections and
+metadata-only events.
+
+Deliverables:
+
+- generic notification fact and projection model for relationship changes,
+  references, interactions, private-channel signals, voting/response signals,
+  group events, moderation decisions, security events, and compliance
+  workflows,
+- read/unread, clear/delete, snooze, priority, request-inbox, and notification
+  filter state,
+- realtime hint event shape for WebSocket/SSE gateways carrying only
+  identifiers, state, watermarks, and coarse event kinds,
+- replay-after-disconnect cursor and watermark model,
+- rebuild contract for notification counts, presence/typing hints, hot
+  timelines, search indexes, and counters,
+- tests that realtime hints never expose private content, ciphertext, content
+  bodies, media metadata, account PII, or hidden authorization decisions.
+
+### v1.5.3 - Moderation, Safety, Consent, And Transparency Extension
+
+Goal: support relationship/feed extensions that need moderation, safety labels,
+consent, transparency, ranking, advertising, recommendation, or promoted-content
+explanations.
+
+Deliverables:
+
+- generic report, appeal, trusted-notice, policy label, visibility reduction,
+  subject restriction, object restriction, and scoped moderation records,
+- statement-of-reasons proof model,
+- stackable safety-label source model,
+- user-selectable safety controls for filtered terms, notification classes,
+  interaction controls, sensitive-object labels, and review-note requests,
+- consent ledger with purpose, version, grant/withdrawal state, timestamp,
+  actor, device context, and legal basis,
+- ranking/transparency metadata for chronological, subscription-only,
+  regional, contextual, personalized, advertising, recommendation, and promoted
+  modes,
+- tests for consent withdrawal, non-personalized fallback, transparency
+  redaction, sensitive-category targeting denial, and label propagation into
+  API-visible result metadata.
+
+### v1.6.0 - Privacy, Mailbox, And Collaboration Extension Track
+
+Goal: add optional crates for cross-product privacy workflows, searchable
+encrypted mailbox use cases, and server-blind collaboration envelopes.
+
+Deliverables:
+
+- `skrifheim-ext-privacy` export/delete/deactivation/retention/legal-hold job
+  model,
+- subject-access export proof model with scope, actor, requester, policy epoch,
+  legal basis, redactions, excluded third-party data, and artifact metadata,
+- deletion/tombstone/crypto-erasure decision model,
+- cross-product export/deletion orchestration with product contracts, dry-run
+  support, finalization guard, resumable checkpoints, and immutable audit,
+- `skrifheim-ext-mailbox` searchable encrypted mailbox metadata with
+  server-authorized decrypt/index proof model,
+- `skrifheim-ext-collaboration` server-blind envelope metadata where clients
+  retain plaintext, search, and group-key authority,
+- tests that legal hold blocks destructive erasure, exports do not leak third
+  parties, server-side search needs decrypt/index proof, and collaboration
+  envelopes reject plaintext, filenames, search terms, client group secrets,
+  invite tokens, notification bodies, and push-token material.
+
+## Post-Extension Cluster Roadmap
+
+Hyve clustering starts only after the core world database is production-ready
+and the first optional extension tracks have proven the public API. Each item
+still needs its own clean stop, pentest handoff, and release notes.
+
+### v2.0.0 - Local Cell Cluster Runtime
 
 Goal: run a local sovereign cell with multiple nodes.
 
@@ -2120,7 +1960,7 @@ Deliverables:
 - cell health model,
 - tests for one-node loss inside a cell.
 
-### v1.2.0 - Hyve Control Plane
+### v2.1.0 - Hyve Control Plane
 
 Goal: make topology and placement intent first-class database state.
 
@@ -2134,7 +1974,7 @@ Deliverables:
 - policy, key, and law-pack epoch tracking,
 - tests for control-plane proposals that cannot bypass local vetoes.
 
-### v1.3.0 - Policy-Scoped Tunnel Fabric
+### v2.2.0 - Policy-Scoped Tunnel Fabric
 
 Goal: open encrypted database tunnels with identity and legal scope.
 
@@ -2147,7 +1987,7 @@ Deliverables:
 - replication and health streams,
 - tests that denied labels cannot cross an otherwise healthy tunnel.
 
-### v1.4.0 - Geo Replication And Witness Roles
+### v2.3.0 - Geo Replication And Witness Roles
 
 Goal: replicate safely across cells where policy permits it.
 
@@ -2160,7 +2000,7 @@ Deliverables:
 - hash-only witness/notary role,
 - tests for stale, divergent, and witness-only replicas.
 
-### v1.5.0 - Compliance-Aware Failover
+### v2.4.0 - Compliance-Aware Failover
 
 Goal: fail over per world, data class, and legal basis.
 
@@ -2172,9 +2012,10 @@ Deliverables:
 - split-brain prevention,
 - tests for public data failover and sensitive data failover denial.
 
-### v1.6.0 - Cluster Compliance Autopilot
+### v2.5.0 - Cluster Compliance Autopilot
 
-Goal: reconcile actual placement, tunnels, replicas, keys, and law packs against lawful desired state.
+Goal: reconcile actual placement, tunnels, replicas, keys, and law packs
+against lawful desired state.
 
 Deliverables:
 
@@ -2185,9 +2026,10 @@ Deliverables:
 - compliance incident record,
 - tests for law-pack, node-passport, and certification drift.
 
-### v1.7.0 - Multi-Region Publishing Extension Operation
+### v2.6.0 - Multi-Region Publishing Extension Operation
 
-Goal: serve publishing-style public reads locally while keeping private data and publishing controls lawful.
+Goal: serve publishing-style public reads locally while keeping private data and
+publishing controls lawful.
 
 Deliverables:
 
