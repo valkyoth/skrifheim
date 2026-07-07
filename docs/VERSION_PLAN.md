@@ -59,7 +59,7 @@ Goal: initialize the serious Rust workspace and policy baseline.
 
 Deliverables:
 
-- Rust stable `1.96.0` pinned.
+- Rust stable `1.96.1` pinned.
 - Focused workspace crates.
 - `scripts/checks.sh`.
 - CI, dependency policy, security policy, release notes.

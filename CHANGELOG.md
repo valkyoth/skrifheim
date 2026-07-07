@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+## 0.18.1
+
+- Added `SovereigntyScope` in `skrifheim-policy` so query-result
+  sovereignty metadata can remain exact up to the bounded token-set limit or
+  saturate to a redacted multi-jurisdiction sentinel on overflow.
+- Changed result classification joins to return the multi-jurisdiction
+  sentinel instead of failing with `InvalidSecurityToken` when more than the
+  exact bounded sovereignty set is present.
+- Kept invalid sovereignty tokens fail-closed before saturation is accepted.
+- Ensured saturated sovereignty scope is not a grantable clearance token and
+  that non-allow query plans continue to expose only public sentinel metadata.
+- Added policy and query tests for exact sovereignty propagation, overflow
+  saturation, invalid-token rejection, redacted debug output, and non-allow
+  metadata masking.
+- Updated the pinned stable Rust toolchain from `1.96.0` to `1.96.1` after
+  checking the official Rust release announcement.
+- Bumped workspace and internal crate dependency versions to `0.18.1`.
+
 ## 0.18.0
 
 - Added fixed-size immutable segment header and footer byte encoding/parsing in

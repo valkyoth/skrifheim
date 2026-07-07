@@ -31,7 +31,7 @@ provenance; classification-aware planning; tamper-evident storage; and CMS
 integration through typed facts, atomic releases, sanitized projections, and AI
 artifacts with provenance.
 
-The project is currently at the `v0.18.0` implementation stop, pending pentest.
+The project is currently at the `v0.18.1` implementation stop, pending pentest.
 It is not a usable database engine.
 
 `skrifheim` is licensed under the European Union Public Licence 1.2.
@@ -42,12 +42,12 @@ It is not a usable database engine.
 
 | Capability | Status | Notes |
 | --- | --- | --- |
-| Rust workspace | Active | Edition 2024, resolver `3`, Rust stable `1.96.0` pinned. |
+| Rust workspace | Active | Edition 2024, resolver `3`, Rust stable `1.96.1` pinned. |
 | Core crate split | Active | Focused crates for core types, facts, worlds, policy, crypto envelopes, storage metadata, query planning, and CLI orchestration. |
 | `no_std` core policy | Active | Library crates under `crates/` use `#![no_std]` and `#![forbid(unsafe_code)]`. |
 | Dependency policy | Active | `cargo deny` policy denies wildcard external dependencies and unknown sources. |
 | Security reporting | Active | Private-first vulnerability process in `SECURITY.md`. |
-| Release notes | Active | `release-notes/RELEASE_NOTES_0.18.0.md` records scope, verification, and non-claims. |
+| Release notes | Active | `release-notes/RELEASE_NOTES_0.18.1.md` records scope, verification, and non-claims. |
 
 ### Initial Models
 
@@ -57,7 +57,7 @@ It is not a usable database engine.
 | Fact builder and validation | Scaffolded | Facts carry valid time, evidence, confidence, policy, labels, causal links, and signature sets. |
 | World overlays | Scaffolded | Worlds support deterministic metadata identity, parent pointers, depth, added facts, hidden facts, fork, diff, promotion preflight, rollback preflight, and conflict categories. |
 | Authority-aware policy context | Scaffolded | Subject, device, and workload context constrain clearance, compartments, releasability, output classification, and aggregate proof metadata. |
-| Query-result classification | Scaffolded | Allowed plans propagate output classification, sovereignty, PII-derived state, AI-processing eligibility, and confidence-threshold policy hooks. |
+| Query-result classification | Scaffolded | Allowed plans propagate output classification, exact or saturated sovereignty scope, PII-derived state, AI-processing eligibility, and confidence-threshold policy hooks. |
 | Index and projection encryption policy | Scaffolded | Secondary, graph, search, vector, columnar, cache, and compaction projection surfaces require projection encryption domains and reject incompatible domain mixing. |
 | Memory secrecy boundary | Scaffolded | Secret material enters crypto APIs through bounded non-clone redacted `SecretBytes` wrappers backed by admitted `sanitization` clear-on-drop storage. |
 | Identity and audit events | Scaffolded | Typed identities, attestation evidence references, break-glass event shape, signed/encrypted audit-log metadata, and actor-attribution checks. |
@@ -139,7 +139,7 @@ cargo run -p skrifheim
 Expected output:
 
 ```text
-skrifheim 0.18.0
+skrifheim 0.18.1
 ```
 
 Run the normal local checks:

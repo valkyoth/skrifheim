@@ -8,7 +8,7 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-skrifheim-core = { version = "0.18.0", path = "../skrifheim-core" }
+skrifheim-core = { version = "0.18.1", path = "../skrifheim-core" }
 blake3 = { version = "1.8.5", default-features = false }
 
 [lints]

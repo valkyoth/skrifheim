@@ -1,7 +1,8 @@
-use alloc::{string::String, vec::Vec};
+use alloc::{boxed::Box, string::String, vec::Vec};
 use core::fmt;
 use skrifheim_core::{
-    Classification, PolicyTokenSet, Result, SecurityLabel, SkrifheimError, canonical_policy_set,
+    Classification, POLICY_TOKEN_SET_MAX_ITEMS, PolicyTokenSet, Result, SecurityLabel,
+    SkrifheimError, canonical_policy_set, canonical_policy_token,
 };
 
 pub const RESULT_CLASSIFICATION_INPUT_MAX_ITEMS: usize = 64;
@@ -38,6 +39,128 @@ impl AiProcessingEligibility {
     }
 }
 
+#[derive(Clone)]
+pub struct SovereigntyScope {
+    kind: SovereigntyScopeKind,
+}
+
+#[derive(Clone)]
+enum SovereigntyScopeKind {
+    Exact(Box<PolicyTokenSet>),
+    MultiJurisdiction,
+}
+
+impl SovereigntyScope {
+    #[must_use]
+    pub fn public() -> Self {
+        Self {
+            kind: SovereigntyScopeKind::Exact(Box::new(PolicyTokenSet::empty())),
+        }
+    }
+
+    pub fn from_tokens(values: Vec<String>) -> Result<Self> {
+        let mut exact = Vec::new();
+        let mut saturated = false;
+        for value in values {
+            let value = canonical_policy_token(value)?;
+            if exact.iter().any(|existing| existing == &value) {
+                continue;
+            }
+            if exact.len() == POLICY_TOKEN_SET_MAX_ITEMS {
+                saturated = true;
+            } else if !saturated {
+                exact.push(value);
+            }
+        }
+        if saturated {
+            Ok(Self::multi_jurisdiction())
+        } else {
+            Ok(Self {
+                kind: SovereigntyScopeKind::Exact(Box::new(canonical_policy_set(exact)?)),
+            })
+        }
+    }
+
+    #[must_use]
+    pub const fn multi_jurisdiction() -> Self {
+        Self {
+            kind: SovereigntyScopeKind::MultiJurisdiction,
+        }
+    }
+
+    #[must_use]
+    pub fn is_multi_jurisdiction(&self) -> bool {
+        matches!(self.kind, SovereigntyScopeKind::MultiJurisdiction)
+    }
+
+    #[must_use]
+    pub fn is_exact(&self) -> bool {
+        matches!(self.kind, SovereigntyScopeKind::Exact(_))
+    }
+
+    #[must_use]
+    pub fn exact_tokens(&self) -> Option<&PolicyTokenSet> {
+        match &self.kind {
+            SovereigntyScopeKind::Exact(tokens) => Some(tokens.as_ref()),
+            SovereigntyScopeKind::MultiJurisdiction => None,
+        }
+    }
+
+    #[must_use]
+    pub fn len(&self) -> usize {
+        match &self.kind {
+            SovereigntyScopeKind::Exact(tokens) => tokens.len(),
+            SovereigntyScopeKind::MultiJurisdiction => POLICY_TOKEN_SET_MAX_ITEMS,
+        }
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        match &self.kind {
+            SovereigntyScopeKind::Exact(tokens) => tokens.is_empty(),
+            SovereigntyScopeKind::MultiJurisdiction => false,
+        }
+    }
+
+    #[must_use]
+    pub fn contains(&self, needle: &str) -> bool {
+        match &self.kind {
+            SovereigntyScopeKind::Exact(tokens) => tokens.contains(needle),
+            SovereigntyScopeKind::MultiJurisdiction => false,
+        }
+    }
+
+    #[must_use]
+    pub fn requires_restrictive_handling(&self) -> bool {
+        self.is_multi_jurisdiction()
+    }
+
+    pub fn join(&self, other: &Self) -> Result<Self> {
+        match (&self.kind, &other.kind) {
+            (SovereigntyScopeKind::MultiJurisdiction, _)
+            | (_, SovereigntyScopeKind::MultiJurisdiction) => Ok(Self::multi_jurisdiction()),
+            (SovereigntyScopeKind::Exact(left), SovereigntyScopeKind::Exact(right)) => {
+                match left.union(right) {
+                    Ok(tokens) => Ok(Self {
+                        kind: SovereigntyScopeKind::Exact(Box::new(tokens)),
+                    }),
+                    Err(SkrifheimError::InvalidSecurityToken) => Ok(Self::multi_jurisdiction()),
+                    Err(error) => Err(error),
+                }
+            }
+        }
+    }
+}
+
+impl fmt::Debug for SovereigntyScope {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("SovereigntyScope")
+            .field("kind", &"<redacted>")
+            .field("tokens", &"<redacted>")
+            .finish()
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct ConfidenceThreshold(u16);
 
@@ -65,7 +188,7 @@ impl ConfidenceThreshold {
 #[derive(Clone)]
 pub struct QueryResultInput {
     label: SecurityLabel,
-    sovereignty: PolicyTokenSet,
+    sovereignty: SovereigntyScope,
     pii: PiiMarker,
     ai_processing: AiProcessingEligibility,
     confidence_threshold: Option<ConfidenceThreshold>,
@@ -79,7 +202,7 @@ impl QueryResultInput {
     pub fn label_only(label: SecurityLabel) -> Self {
         Self {
             label,
-            sovereignty: PolicyTokenSet::empty(),
+            sovereignty: SovereigntyScope::public(),
             pii: PiiMarker::NoPii,
             ai_processing: AiProcessingEligibility::Eligible,
             confidence_threshold: None,
@@ -95,7 +218,7 @@ impl QueryResultInput {
     ) -> Result<Self> {
         Ok(Self {
             label,
-            sovereignty: canonical_policy_set(sovereignty)?,
+            sovereignty: SovereigntyScope::from_tokens(sovereignty)?,
             pii,
             ai_processing,
             confidence_threshold,
@@ -138,7 +261,7 @@ impl fmt::Debug for QueryResultInput {
 #[derive(Clone)]
 pub struct ResultClassification {
     output_classification: Classification,
-    sovereignty: PolicyTokenSet,
+    sovereignty: SovereigntyScope,
     pii: PiiMarker,
     ai_processing: AiProcessingEligibility,
     confidence_threshold: Option<ConfidenceThreshold>,
@@ -149,7 +272,7 @@ impl ResultClassification {
     pub fn public() -> Self {
         Self {
             output_classification: Classification::Public,
-            sovereignty: PolicyTokenSet::empty(),
+            sovereignty: SovereigntyScope::public(),
             pii: PiiMarker::NoPii,
             ai_processing: AiProcessingEligibility::Eligible,
             confidence_threshold: None,
@@ -160,7 +283,7 @@ impl ResultClassification {
     pub(crate) fn classification_only(output_classification: Classification) -> Self {
         Self {
             output_classification,
-            sovereignty: PolicyTokenSet::empty(),
+            sovereignty: SovereigntyScope::public(),
             pii: PiiMarker::NoPii,
             ai_processing: AiProcessingEligibility::Eligible,
             confidence_threshold: None,
@@ -173,7 +296,7 @@ impl ResultClassification {
     }
 
     #[must_use]
-    pub const fn sovereignty(&self) -> &PolicyTokenSet {
+    pub const fn sovereignty(&self) -> &SovereigntyScope {
         &self.sovereignty
     }
 
@@ -196,7 +319,7 @@ impl ResultClassification {
         if input.label.classification() > self.output_classification {
             self.output_classification = input.label.classification();
         }
-        self.sovereignty = self.sovereignty.union(&input.sovereignty)?;
+        self.sovereignty = self.sovereignty.join(&input.sovereignty)?;
         self.pii = self.pii.join(input.pii());
         self.ai_processing = self.ai_processing.join(input.ai_processing());
         self.confidence_threshold =
@@ -243,153 +366,5 @@ const fn join_thresholds(
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use alloc::{string::String, vec, vec::Vec};
-    use skrifheim_core::POLICY_TOKEN_SET_MAX_ITEMS;
-
-    fn input(
-        classification: Classification,
-        sovereignty: Vec<String>,
-        pii: PiiMarker,
-        ai_processing: AiProcessingEligibility,
-        threshold: Option<u16>,
-    ) -> Result<QueryResultInput> {
-        QueryResultInput::new(
-            SecurityLabel::new(classification, Vec::new(), Vec::new())?,
-            sovereignty,
-            pii,
-            ai_processing,
-            match threshold {
-                Some(value) => Some(ConfidenceThreshold::new(value)?),
-                None => None,
-            },
-        )
-    }
-
-    #[test]
-    fn confidence_threshold_is_bounded() {
-        assert!(matches!(
-            ConfidenceThreshold::new(ConfidenceThreshold::MAX + 1),
-            Err(SkrifheimError::InvalidConfidence)
-        ));
-    }
-
-    #[test]
-    fn result_classification_joins_all_metadata() -> Result<()> {
-        let result = derive_result_classification(&[
-            input(
-                Classification::Restricted,
-                vec![String::from("eu")],
-                PiiMarker::NoPii,
-                AiProcessingEligibility::Eligible,
-                Some(500),
-            )?,
-            input(
-                Classification::Secret,
-                vec![String::from("se")],
-                PiiMarker::ContainsPii,
-                AiProcessingEligibility::NotEligible,
-                Some(900),
-            )?,
-        ])?;
-
-        assert_eq!(result.output_classification(), Classification::Secret);
-        assert_eq!(result.sovereignty().len(), 2);
-        assert!(result.sovereignty().contains("EU"));
-        assert!(result.sovereignty().contains("SE"));
-        assert_eq!(result.pii(), PiiMarker::ContainsPii);
-        assert_eq!(result.ai_processing(), AiProcessingEligibility::NotEligible);
-        assert_eq!(
-            result.confidence_threshold(),
-            Some(ConfidenceThreshold::new(900)?)
-        );
-        Ok(())
-    }
-
-    #[test]
-    fn result_classification_rejects_empty_input_sets() {
-        assert!(matches!(
-            derive_result_classification(&[]),
-            Err(SkrifheimError::InvalidQueryRequest)
-        ));
-    }
-
-    #[test]
-    fn result_classification_rejects_too_many_inputs() -> Result<()> {
-        let mut inputs = Vec::new();
-        for index in 0..=RESULT_CLASSIFICATION_INPUT_MAX_ITEMS {
-            inputs.push(input(
-                Classification::Public,
-                vec![alloc::format!("JURISDICTION-{index}")],
-                PiiMarker::NoPii,
-                AiProcessingEligibility::Eligible,
-                None,
-            )?);
-        }
-
-        assert!(matches!(
-            derive_result_classification(&inputs),
-            Err(SkrifheimError::InvalidQueryRequest)
-        ));
-        Ok(())
-    }
-
-    #[test]
-    fn result_classification_rejects_sovereignty_overflow() -> Result<()> {
-        let mut first = Vec::new();
-        let mut second = Vec::new();
-        for index in 0..POLICY_TOKEN_SET_MAX_ITEMS {
-            first.push(alloc::format!("FIRST-{index}"));
-            second.push(alloc::format!("SECOND-{index}"));
-        }
-        let inputs = vec![
-            input(
-                Classification::Public,
-                first,
-                PiiMarker::NoPii,
-                AiProcessingEligibility::Eligible,
-                None,
-            )?,
-            input(
-                Classification::Public,
-                second,
-                PiiMarker::NoPii,
-                AiProcessingEligibility::Eligible,
-                None,
-            )?,
-        ];
-
-        assert!(matches!(
-            derive_result_classification(&inputs),
-            Err(SkrifheimError::InvalidSecurityToken)
-        ));
-        Ok(())
-    }
-
-    #[test]
-    fn debug_redacts_query_result_input_and_classification_metadata() -> Result<()> {
-        let input = input(
-            Classification::Secret,
-            vec![String::from("se")],
-            PiiMarker::ContainsPii,
-            AiProcessingEligibility::NotEligible,
-            Some(900),
-        )?;
-        let input_debug = alloc::format!("{input:?}");
-        assert!(!input_debug.contains("Secret"));
-        assert!(!input_debug.contains("SE"));
-        assert!(!input_debug.contains("ContainsPii"));
-        assert!(!input_debug.contains("NotEligible"));
-        assert!(!input_debug.contains("900"));
-
-        let result = derive_result_classification(&[input])?;
-        let result_debug = alloc::format!("{result:?}");
-        assert!(!result_debug.contains("Secret"));
-        assert!(!result_debug.contains("SE"));
-        assert!(!result_debug.contains("ContainsPii"));
-        assert!(!result_debug.contains("NotEligible"));
-        assert!(!result_debug.contains("900"));
-        Ok(())
-    }
-}
+#[path = "result_tests.rs"]
+mod tests;

@@ -18,5 +18,5 @@ pub use decision::{
 pub use result::{
     AiProcessingEligibility, ConfidenceThreshold, PiiMarker, QueryResultInput,
     RESULT_CLASSIFICATION_INPUT_FIXED_STORAGE_BYTES, RESULT_CLASSIFICATION_INPUT_MAX_ITEMS,
-    ResultClassification,
+    ResultClassification, SovereigntyScope,
 };

@@ -398,6 +398,7 @@ mod tests {
             assert_eq!(proof.decision(), decision);
             assert_eq!(proof.input_label_count(), 0);
             assert_eq!(result.output_classification(), Classification::Public);
+            assert!(result.sovereignty().is_exact());
             assert_eq!(result.sovereignty().len(), 0);
             assert_eq!(result.pii(), crate::PiiMarker::NoPii);
             assert_eq!(

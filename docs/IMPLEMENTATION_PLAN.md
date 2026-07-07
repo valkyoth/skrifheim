@@ -18,7 +18,7 @@ from truth.
 
 ## Non-Negotiable Engineering Rules
 
-- Rust stable `1.96.0`, edition 2024, workspace resolver `3`.
+- Rust stable `1.96.1`, edition 2024, workspace resolver `3`.
 - Latest stable Rust and dependency versions are re-checked before dependency/toolchain changes.
 - Core library crates use `#![no_std]` where possible.
 - External crates are exceptional: discuss, verify, document, and test before use. Prefer local implementation.
@@ -175,6 +175,13 @@ The planner must answer:
 - what classification does the output carry.
 
 Rejected plans must be deterministic and constant-shape where practical.
+
+Result sovereignty is represented as either an exact bounded jurisdiction set
+or a saturated multi-jurisdiction scope. The saturated scope is not a
+clearance, compartment, or releasability token. It is a most-restrictive signal
+that future export, placement, indexing, backup, AI processing, and
+legal/compliance planners must treat as approval-required or deny unless a
+later policy layer proves a more specific lawful route.
 
 Break-glass access is not an audit event by itself. The audit layer can record
 and validate a break-glass event shape, including device and workload
