@@ -4,7 +4,10 @@ Status: planning document
 
 Database name: `skrifheim`
 
-1.0 target: a production-ready causal world-state database for a CMS-style application that uses facts, worlds, policies, atomic releases, sanitized public projections, and AI artifacts with provenance.
+1.0 target: a production-ready causal world-state database for
+security/compliance-first application backends, including CMS-style
+applications that use facts, worlds, policies, atomic releases, sanitized
+public projections, and AI artifacts with provenance.
 
 ## Core Position
 
@@ -23,6 +26,25 @@ assumptions from consuming projects. Those projects must adapt to
 write, explicit legal basis where needed, encryption domains for protected
 surfaces, bounded verification, tamper-evident audit, redacted diagnostics, and
 rebuildable projections.
+
+Multi-application deployments are a first-class planning constraint. The
+database must support strict separation between identity authority, shared
+account/profile data, operator identity, support identity, service identity,
+guardian authority, and product-owned data. Products should receive minimal
+derived claims, not raw private account facts, unless policy, legal basis,
+consent, purpose, and audit all authorize the disclosure.
+
+Cross-product privacy workflows must be orchestrated rather than centralized by
+one product. Export, deletion, retention, deactivation, legal hold, and
+breach-response jobs need product-owned contracts, dry-run counts, resumable
+checkpoints, immutable audit, and fail-closed behavior when a required product
+contract is missing.
+
+Messaging workloads split into at least two database-supported modes: true
+E2EE metadata boundaries where the server cannot read message bodies, and
+mailbox-style encrypted-at-rest systems where server-authorized decrypt,
+search, support access, and abuse handling require explicit proof records,
+purpose limitation, key epochs, and audit binding.
 
 ## Non-Negotiable Engineering Rules
 
@@ -361,7 +383,10 @@ applications without absorbing application-owned schema semantics:
   metadata that can support EU-style non-personalized fallback and DSA-style
   explanations,
 - E2EE direct-message metadata boundaries where the server stores ciphertext
-  and minimal routing metadata only.
+  and minimal routing metadata only,
+- mailbox-style encrypted-at-rest messaging boundaries where server-authorized
+  search, folders, support threads, and abuse handling require explicit
+  decrypt/index proofs, purpose limitation, key epochs, and audit binding.
 
 Hierarchical discussion workloads are also a first-class shape. The database
 must provide generic, policy-bound primitives for nested spaces, long-lived

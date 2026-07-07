@@ -21,6 +21,10 @@
 - Added pre-1.0 operational CMS bootstrap milestones: one-time bootstrap,
   public-origin and alias separation, public descriptors, scheduled operations,
   cache controls, and secret-free configuration export.
+- Added pre-1.0 platform identity and product-boundary milestones: separated
+  identity/account/operator/support/service/guardian authorities, minimal
+  derived claims, cross-product export/deletion orchestration, and searchable
+  encrypted mailbox support boundaries.
 
 ## 0.18.1
 

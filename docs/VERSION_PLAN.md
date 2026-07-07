@@ -802,6 +802,35 @@ Deliverables:
 - documentation that deployments with no legal authority or threshold group
   must configure explicit local roles before enabling approval-gated features.
 
+## v0.26.3 - Platform Identity And Product Boundary Model
+
+Goal: support multi-application deployments where authentication, shared
+account/profile data, operator identity, support identity, and product data stay
+separated by service, tenant, policy, and encryption domain.
+
+Deliverables:
+
+- identity-authority metadata for member, operator, support-agent, service,
+  guardian, and high-assurance certificate/public-key actors,
+- shared-account profile boundary model that separates public display fields,
+  private encrypted account fields, product activation state, app launcher
+  state, and product-owned data,
+- product/service passport model for product identifier, tenant scope,
+  database/storage boundary, secret-policy boundary, allowed identity claims,
+  and deletion/export contract,
+- minimal derived-claim model for age band, minor status, child-mode required,
+  guardian required, age-policy jurisdiction, and consent state without
+  exposing raw birthdate or private identity fields to products by default,
+- guardian consent and oversight proof skeleton with revocation, validity
+  window, jurisdiction, actor, child account, and audit binding,
+- service-secret and external key/secret provider policy boundary metadata
+  showing which service may read which secret path, unwrap which key, or sign
+  which token,
+- tests that product services cannot read private account fields directly,
+  operator permissions do not grant product-user authority, support-agent roles
+  do not grant admin authority, and derived claims are sufficient for policy
+  decisions without raw sensitive identity data.
+
 ## v0.27.0 - Policy-Aware Query Planning
 
 Goal: convert query AST into a policy-checked plan.
@@ -1693,6 +1722,60 @@ Deliverables:
   no message content, exports respect participant visibility, and moderation
   reports do not create a general server-side decrypt path.
 
+## v0.52.3 - Cross-Product Export And Deletion Orchestration Model
+
+Goal: coordinate privacy-rights workflows across multiple product boundaries
+without letting one identity/account service directly own or silently delete
+another product's data.
+
+Deliverables:
+
+- product exporter contract metadata with product ID, schema version, supported
+  scopes, retention rules, legal basis, delivery mode, and failure behavior,
+- product deletion contract metadata with dry-run support, finalization flag,
+  row/object counts, crypto-erasure capability, legal-hold interaction,
+  notification behavior, and idempotent resume key,
+- orchestrated export package proof that records every contributing product,
+  redactions, missing services, excluded third-party data, generated artifacts,
+  delivery channel, expiry, and audit references,
+- orchestrated deletion plan that requires final dry-run counts, operator or
+  user authority proof, product-by-product before/after audit events, and
+  resumable checkpoints,
+- operator override model for early export processing, retry, link expiry,
+  archive clearing, cleanup, and deletion finalization with fresh verification,
+  reason capture, and immutable audit,
+- tests that product finalization remains disabled until every required product
+  contract is present, dry-run performs no writes, duplicate finalize attempts
+  are idempotent, operators never see download tokens, and legal hold blocks
+  destructive steps across all products.
+
+## v0.52.4 - Searchable Encrypted Mailbox And Support Thread Model
+
+Goal: support mailbox-style messaging products that intentionally use
+server-authorized decryption for search, folders, support communication, and
+abuse handling while remaining encrypted at rest with strict audit controls.
+
+Deliverables:
+
+- mailbox account, immutable address identity, alias, thread, participant,
+  message, body-version, attachment, receipt, notification, delivery-job,
+  folder, and per-user thread-folder membership metadata,
+- rule that thread membership and folder placement are separate per-user
+  concepts, including forced system views such as support or compliance inboxes
+  that cannot be deleted as ordinary user folders,
+- encryption-domain model for mailbox key, per-message content key, wrapped
+  content key, encrypted body, encrypted draft, encrypted attachment, and
+  searchable protected representation,
+- server-authorized decrypt/index proof model with actor/service identity,
+  purpose, legal basis, mailbox/thread scope, key epoch, policy epoch, and
+  audit binding,
+- support-thread link model that connects a support case/ticket to a user-facing
+  message thread without making the support system own general mailbox data,
+- tests that searchable encrypted content cannot be indexed without an
+  authorized decrypt/index proof, support views expose only linked/authorized
+  threads, forced system views cannot be removed as ordinary folders, and key
+  rotation or mailbox deletion updates all wrapped-message metadata.
+
 ## v0.53.0 - Law Pack Metadata And Admission
 
 Goal: define how signed legal and compliance policy packs enter the system.
@@ -1788,6 +1871,10 @@ Deliverables:
 - hierarchical discussion, scoped permission, sanitized-content provenance,
   read-state, watch/subscription, and moderation workflow primitives,
 - privacy rights, legal-hold, deletion, and E2EE message metadata boundaries,
+- platform identity, shared-account, product-boundary, guardian-consent, and
+  derived-claim primitives,
+- cross-product export/deletion orchestration and searchable encrypted mailbox
+  support-thread boundaries,
 - source-state object and proof-carrying bundle backend primitives,
 - resource-budgeted verification modes,
 - operation, event, explanation, and context-pack records,
