@@ -227,6 +227,6 @@ Tags are created only when explicitly requested.
 - [Hyve Cluster And Compliance Roadmap](docs/hyve-cluster-and-compliance-roadmap.md)
 - [Security Controls](docs/security-controls.md)
 - [Threat Model](docs/threat-model.md)
-- [Optional Publishing Extension Target](docs/cms-1-0-target.md)
+- [Optional Publishing Extension Target](docs/publishing-extension-target.md)
 - [Toolchain Policy](docs/toolchain-policy.md)
 - [Release Runbook](docs/release-runbook.md)
