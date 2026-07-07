@@ -25,6 +25,10 @@
   identity/account/operator/support/service/guardian authorities, minimal
   derived claims, cross-product export/deletion orchestration, and searchable
   encrypted mailbox support boundaries.
+- Added a pre-1.0 server-blind collaboration envelope milestone for
+  workspace/channel/conversation metadata, ciphertext-only envelopes,
+  client-owned search and group-key state, legal hold over ciphertext, and
+  plugin/integration metadata without plaintext access.
 
 ## 0.18.1
 

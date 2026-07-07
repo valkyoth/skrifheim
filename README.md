@@ -100,7 +100,7 @@ It is not a usable database engine.
 | Distinctive security and truth features | Planned | Causal blast-radius invalidation, signed declassification proofs, AI derivation cones, and propagated confidence with mandatory access control are now tracked in the implementation and version plans. |
 | Local-first worlds, mission capsules, source-state, and extension/import support | Planned | `v0.42.0` through `v0.43.6`, including source-state object/bundle admission, resource-budgeted verification, operation/event/explanation/context records, sealed private realms, plugin/theme capability boundaries, and dry-run import planning. |
 | Fuzz/property baseline, operations, and hardening | Planned | `v0.44.0` through `v0.51.0`. |
-| Standalone legal/compliance passports and placement foundations | Planned | `v0.52.0` through `v0.55.0`, with privacy-rights workflows, E2EE message metadata, cross-product export/deletion orchestration, and searchable encrypted mailbox boundaries reserved in `v0.52.1` through `v0.52.4`. |
+| Standalone legal/compliance passports and placement foundations | Planned | `v0.52.0` through `v0.55.0`, with privacy-rights workflows, E2EE message metadata, cross-product export/deletion orchestration, searchable encrypted mailbox boundaries, and server-blind collaboration envelopes reserved in `v0.52.1` through `v0.52.5`. |
 | Production release candidate | Planned | `v0.56.0`. |
 | Hyve multi-cell cluster fabric | Planned | `v1.1.0` and later. |
 

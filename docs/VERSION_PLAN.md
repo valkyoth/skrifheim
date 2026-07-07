@@ -1776,6 +1776,41 @@ Deliverables:
   threads, forced system views cannot be removed as ordinary folders, and key
   rotation or mailbox deletion updates all wrapped-message metadata.
 
+## v0.52.5 - Server-Blind Collaboration Envelope Model
+
+Goal: support collaboration systems where the database stores workspace,
+conversation, delivery, legal-hold, and encrypted-envelope metadata while
+clients retain plaintext, message search, and group-key authority.
+
+Deliverables:
+
+- workspace, channel, direct conversation, small-group conversation, thread,
+  membership, guest, invitation, device, read-cursor, delivery-state, reaction,
+  pin, saved-item, draft, and scheduled-send metadata shapes,
+- encrypted collaboration envelope model with opaque workspace/conversation
+  identifiers, sender device identity, group epoch, envelope kind, ciphertext
+  size bounds, key-package or welcome-message references, and replay-resistant
+  sequencing metadata,
+- strict server-blind boundary that rejects plaintext message bodies, channel
+  names, direct conversation names, file names, search terms, client group
+  secrets, raw invite addresses, raw invite tokens, notification bodies, and
+  push-token material from canonical server-side records,
+- client-owned search and local-state boundary model where decrypted indexes,
+  local caches, profile-scoped state, and group-key state remain outside the
+  server trust boundary,
+- retention, legal-hold, export, and admin-policy model for ciphertext and
+  metadata that does not imply server plaintext recovery; authorized exports
+  must record whether decryption requires client-side or separately approved
+  administrator tooling,
+- plugin/integration metadata model for capability grants, webhook/event
+  subscriptions, command invocations, workflow state, and outbound integration
+  queues without giving server plugins plaintext or group-key material,
+- tests that ciphertext envelopes accept only bounded opaque encrypted payloads,
+  delivery/read cursors cannot carry snippets, server-side search/indexing is
+  denied for client-owned plaintext, legal hold preserves ciphertext without
+  declassification, and plugin metadata cannot request plaintext or key access
+  by default.
+
 ## v0.53.0 - Law Pack Metadata And Admission
 
 Goal: define how signed legal and compliance policy packs enter the system.
@@ -1873,8 +1908,9 @@ Deliverables:
 - privacy rights, legal-hold, deletion, and E2EE message metadata boundaries,
 - platform identity, shared-account, product-boundary, guardian-consent, and
   derived-claim primitives,
-- cross-product export/deletion orchestration and searchable encrypted mailbox
-  support-thread boundaries,
+- cross-product export/deletion orchestration, searchable encrypted mailbox
+  support-thread boundaries, and server-blind encrypted collaboration envelope
+  support,
 - source-state object and proof-carrying bundle backend primitives,
 - resource-budgeted verification modes,
 - operation, event, explanation, and context-pack records,

@@ -46,6 +46,14 @@ mailbox-style encrypted-at-rest systems where server-authorized decrypt,
 search, support access, and abuse handling require explicit proof records,
 purpose limitation, key epochs, and audit binding.
 
+Server-blind collaboration workloads add a stricter variant of the E2EE model:
+the database may plan over workspaces, channels, conversations, memberships,
+devices, invitations, encrypted envelopes, delivery state, read cursors, legal
+hold, retention, exports, plugins, and integration metadata, but plaintext,
+message search, client group secrets, attachment keys, local caches, and
+decrypted indexes stay client-owned unless an explicit future declassification
+or client-provided evidence path is used.
+
 ## Non-Negotiable Engineering Rules
 
 - Rust stable `1.96.1`, edition 2024, workspace resolver `3`.
@@ -384,6 +392,12 @@ applications without absorbing application-owned schema semantics:
   explanations,
 - E2EE direct-message metadata boundaries where the server stores ciphertext
   and minimal routing metadata only,
+- server-blind collaboration envelope boundaries where workspaces, channels,
+  memberships, invitations, device/key epochs, read cursors, delivery state,
+  legal hold, retention, exports, plugins, and integration metadata can be
+  represented without admitting plaintext, search terms, file names,
+  notification bodies, push-token material, client group secrets, or attachment
+  keys into canonical server-side records,
 - mailbox-style encrypted-at-rest messaging boundaries where server-authorized
   search, folders, support threads, and abuse handling require explicit
   decrypt/index proofs, purpose limitation, key epochs, and audit binding.
