@@ -1196,6 +1196,43 @@ Deliverables:
 - explicit note that `v0.35.0` remains a skeleton and v0.45.0 finalizes the
   catalog-backed compatibility model.
 
+## v0.35.2 - Local Snapshot And Rollback Retention Model
+
+Goal: provide local Btrfs/Snapper-style restore points without treating
+rollback as replication, backup, audit deletion, or silent production rewind.
+
+Deliverables:
+
+- snapshot-root metadata for manifest root, world head, policy epoch, crypto
+  epoch, schema/catalog root, retention class, creation reason, triggering
+  operation, actor/service authority, tenant, and protected data scope,
+- automatic restore-point policy for before migration, before compaction,
+  before bulk import, before key rotation, before release/publish, scheduled
+  hourly/daily/monthly retention, and explicitly named operator checkpoints,
+- locked rollback archive world model that can hold old facts, manifests,
+  segments, blobs, tombstones, and key-domain references as protected recovery
+  evidence without making them mutable production state,
+- restore modes for read-only inspection, recovery-world fork, simulation
+  replay, and signed promotion back into production through normal world
+  promotion policy,
+- signed rollback proof model with requester, approver or quorum proof, reason,
+  source snapshot root, target recovery/archive/production world, legal basis,
+  policy epoch, crypto epoch, affected fact ranges, and audit-log binding,
+- policy rules that rollback reads still use the active or explicitly selected
+  historical policy epoch, and that restoration cannot resurrect privacy-erased
+  or legally deleted material unless a legal hold, retention rule, or explicit
+  break-glass style override authorizes the recovery,
+- purge/override design for exceptional removal of rollback-protected material,
+  requiring scoped authority, reason, legal basis, quorum or local fallback
+  approval, audit proof, and preferably crypto-erasure over raw byte deletion,
+- compaction eligibility rules that treat protected snapshot roots as live
+  references, account for space retained only by rollback policy, and refuse to
+  compact segments/blobs/keys needed by non-expired rollback archives,
+- tests that rollback cannot bypass policy, cannot delete or rewrite audit
+  facts, cannot silently become production, cannot resurrect erased data
+  without explicit authorization, and prevents compaction from dropping
+  protected snapshot material.
+
 ## v0.36.0 - Compromise And Recovery Playbooks
 
 Goal: make key, tenant, compartment, node, backup, and replica compromise explicit.
@@ -1890,6 +1927,7 @@ Deliverables:
 - observability without secret leakage,
 - performance and load evidence,
 - tamper-evident manifests,
+- local snapshot and rollback retention with locked archive/recovery worlds,
 - rootless Podman deployment,
 - backup/restore,
 - secure first-run bootstrap and instance identity primitives,

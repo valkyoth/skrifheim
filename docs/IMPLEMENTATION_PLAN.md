@@ -175,6 +175,22 @@ Implement:
 - policy and encryption boundary metadata,
 - corruption rejection instead of silent repair.
 
+Local rollback is a storage and policy feature, not a mutable undo button.
+`skrifheim` should retain selected manifest/world roots as protected snapshot
+facts, then let operators inspect or fork those roots into locked archive,
+recovery, simulation, or production-promotion workflows. Rollback must create
+signed proof facts that record who requested it, why, which snapshot root was
+used, which policy and crypto epochs applied, and which target world received
+the recovery. Production state is changed only through normal policy-checked
+world promotion.
+
+Rollback retention is allowed to cost extra space. Compaction must treat
+protected snapshot roots as live references and report how much space is kept
+only for rollback. Exceptional purge of rollback-protected material is a
+separate dangerous operation requiring explicit authority, legal basis, audit
+proof, and preferably crypto-erasure; it must not be an accidental side effect
+of retention expiry or compaction.
+
 The first segment encoding pass must evaluate the cost of duplicating metadata
 in both the segment header and footer. Full mirroring improves tail validation
 and corruption detection, but it doubles those fields on disk. That is

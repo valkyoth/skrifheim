@@ -5,6 +5,10 @@
 - Reserved pre-1.0 milestones for admitted production digest and AEAD storage
   encryption, early WAL/segment fuzzing, early storage/API performance and
   integration smoke, approval-role modeling, and backup/schema compatibility.
+- Reserved `v0.35.2` for local snapshot and rollback retention with signed
+  snapshot-root facts, locked archive/recovery worlds, policy-checked restore
+  modes, protected compaction references, and explicit purge/crypto-erasure
+  authority.
 - Reserved `v0.33.1` for the threshold-signature or bounded quorum
   multi-signature proof model before approval-sensitive production workflows.
 - Added pre-1.0 source-state backend milestones for compliance-forge

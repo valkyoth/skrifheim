@@ -93,7 +93,7 @@ It is not a usable database engine.
 | Platform identity and product boundaries | Planned | `v0.26.3` separates identity authority, shared account/profile facts, operator/support/service identities, guardian consent, product-owned data, and minimal derived claims. |
 | Rebuildable projections and social/community workload primitives | Planned | `v0.29.0` through `v0.32.7`, including graph/search/vector projections plus social graph visibility, timelines, media authorization, realtime notifications, moderation/safety labels, consent, ads transparency, ranking explanations, hierarchical discussion, scoped permissions, and moderation workflow simulation. |
 | Crypto-agile manifest and threshold signatures | Planned | `v0.33.0` signs manifests; `v0.33.1` defines the threshold-signature or bounded quorum multi-signature proof model before approval-sensitive operations depend on multi-party authority. |
-| Audit proofs and backup/restore | Planned | `v0.34.0` through `v0.36.0`, with `v0.35.1` reserved for backup-format evolution and schema compatibility before the full schema catalog. |
+| Audit proofs, backup/restore, and local rollback | Planned | `v0.34.0` through `v0.36.0`, with `v0.35.1` reserved for backup-format evolution and schema compatibility, and `v0.35.2` reserved for local snapshot/rollback retention with locked archive and recovery worlds. |
 | Secure bootstrap, public origins, descriptors, and scheduled operations | Planned | `v0.38.1` through `v0.38.3` define one-time bootstrap, origin/alias separation, public descriptors, scheduled operations, cache controls, and secret-free config export. |
 | CMS release primitives | Planned | `v0.39.0` through `v0.40.0`. |
 | AI artifact provenance | Planned | `v0.41.0`. |
