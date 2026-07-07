@@ -1,6 +1,6 @@
 # skrifheim 0.18.1 Release Notes
 
-Status: pentest findings resolved locally, retest pending.
+Status: pentest clean, release candidate pending tag.
 
 ## Scope
 
@@ -66,7 +66,8 @@ approval-required or deny.
 ## Pentest Status
 
 The first `0.18.1` pentest pass and retest feedback have been resolved
-locally. Root `PENTEST.md` has been removed after findings were resolved.
+locally. Maintainer review reported no remaining findings. Root `PENTEST.md`
+has been removed after findings were resolved.
 
 Residual planned boundary: break-glass single-use evidence binding requires
 persisted one-time-use state in the `v0.26.1` access model, and key-subtree

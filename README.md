@@ -32,7 +32,8 @@ CMS-style publishing, messenger, forum, forge, and other application-family
 support is planned as optional compiled-in extension crates over the core world
 database primitives.
 
-The project is currently at the `v0.18.1` implementation stop, pending pentest.
+The project is currently preparing the `v0.18.1` release candidate after a
+clean pentest retest.
 It is not a usable database engine.
 
 `skrifheim` is licensed under the European Union Public Licence 1.2.
