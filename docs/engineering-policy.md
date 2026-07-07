@@ -33,6 +33,13 @@ extension crates must compose existing authorization, legal/compliance,
 encryption-domain, key-lifecycle, provenance, audit, and release-evidence
 semantics instead of redefining them.
 
+Before implementation starts for an extension milestone, each proposed
+primitive must be classified as mandatory core, generic extension helper, or
+product-owned schema. Mandatory-core classification requires written proof that
+the primitive is required by the world database itself. Product-owned schema
+must stay outside core crates. The review must name the expected denial,
+quarantine, redaction, rebuild, audit, and legal/compliance tests.
+
 ## Portability Rules
 
 `skrifheim` must not become a Linux-only or x86-only database by accident.

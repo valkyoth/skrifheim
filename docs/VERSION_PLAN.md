@@ -55,6 +55,22 @@ own release gate, pentest handoff, dependency admission, legal/compliance
 review, and proof that it cannot bypass core policy, encryption-domain,
 provenance, or audit rules.
 
+Before any extension milestone starts, every proposed primitive must pass an
+extension primitive review:
+
+- classify the primitive as mandatory core, generic extension helper, or
+  product-owned schema,
+- prove why anything marked mandatory core is required by the world database
+  itself and not just by one application family,
+- keep product-owned schema inside the extension or consuming application,
+- verify dependency direction from extension to core only,
+- verify the primitive composes existing authorization, legal/compliance,
+  encryption-domain, key-lifecycle, provenance, audit, and release-evidence
+  semantics instead of redefining them,
+- record deny, quarantine, redaction, rebuild, audit, and legal/compliance tests
+  expected for the primitive,
+- document the decision in the extension release notes before implementation.
+
 ## Clean Stop And Pentest Rule
 
 Each version has a deliberate clean stop. When implementation criteria are done,
@@ -983,6 +999,8 @@ Deliverables:
 - extension-crate policy for product-family primitives, including naming,
   dependency direction, default-build behavior, release gates, and pentest
   requirements,
+- extension primitive review template that every `v1.x` extension release must
+  complete before implementation,
 - workspace layout plan for optional crates such as `skrifheim-ext-social`,
   `skrifheim-ext-messaging`, `skrifheim-ext-forge`, and future application
   families,
@@ -1022,6 +1040,9 @@ Deliverables:
 
 - default workspace build proves no `skrifheim-ext-*` crate is required by the
   core database,
+- release-gate check that every proposed extension primitive is classified as
+  mandatory core, generic extension helper, or product-owned schema before
+  implementation,
 - dependency-direction gate that rejects core crates depending on extension
   crates,
 - one compile-only stub extension that depends on the stable public core API
@@ -1628,8 +1649,8 @@ Non-goals for 1.0:
 
 The first post-1.0 releases prove the stable world database through optional
 compiled-in extension crates. Each extension release has its own clean stop,
-pentest handoff, release notes, and dependency review. Core crates must not
-depend on extension crates.
+pentest handoff, release notes, dependency review, and extension primitive
+review. Core crates must not depend on extension crates.
 
 ### v1.1.0 - Publishing/CMS Extension Crate
 

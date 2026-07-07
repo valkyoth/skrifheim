@@ -12,6 +12,8 @@ Status: policy
   not required by the mandatory database core.
 - Core crates must not depend on extension crates; extension crates prove the
   core APIs are generic enough by depending on core crates.
+- Every extension primitive must be classified before implementation as
+  mandatory core, generic extension helper, or product-owned schema.
 - `lib.rs` wires modules and exports APIs; it does not hold subsystem implementation.
 - `main.rs` starts the process and delegates behavior.
 - Parsing, validation, state mutation, I/O, policy checks, and tests stay separate.
