@@ -61,6 +61,14 @@ recompute both. No WAL or segment file may be treated as production-trusted
 against local tampering until encrypted bodies are authenticated with AEAD,
 signed/keyed manifests, or an equivalent admitted integrity root.
 
+`v0.18.3` is the scheduled milestone for that boundary. It must admit the
+production SHA-3/SHAKE digest engine and AEAD implementation, define the
+encrypted body envelope, bind WAL and segment headers as associated data,
+define nonce uniqueness and crash-recovery rules, and add wrong-key,
+wrong-domain, wrong-epoch, swapped-header/footer, replay, truncation, and
+corrupt-ciphertext rejection tests. Later manifests and recovery code must not
+claim tamper resistance before this milestone is complete.
+
 ## Key Lifecycle
 
 The control plane must model:
@@ -124,6 +132,10 @@ The current scaffold models these as metadata-only blast-radius boundaries in
 purpose, tenant, region, classification, compartment, world or branch, and
 segment identity must match before two encrypted surfaces can be treated as the
 same domain. Durable encryption and key derivation are still planned work.
+`v0.18.3` turns those domains into associated-data and key-derivation inputs
+for WAL and segment bodies; projection, backup, export, AI artifact, and audit
+body encryption must reuse the same domain-separation contract in their later
+milestones.
 
 ## Query-Result Classification
 

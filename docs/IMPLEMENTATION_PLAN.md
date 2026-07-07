@@ -151,6 +151,17 @@ segment can be accepted. Content-digest verification is a required injected
 trust-boundary operation until the admitted production digest engine computes
 the actual SHA-3/SHAKE body hash.
 
+`v0.18.3` is the release that must admit and implement the production digest
+and AEAD engine. After that milestone, WAL and segment bodies must be encrypted
+and authenticated with domain-separated associated data before manifests,
+checkpoints, or recovery can claim tamper resistance. CRC64 remains only a
+structural corruption check.
+
+`v0.18.4` pulls fuzzing forward for the WAL and segment byte parsers. The
+general fuzz/property baseline remains later, but hand-written parsing of
+untrusted WAL and segment bytes must have a deterministic fuzz smoke from this
+storage phase onward.
+
 Compaction must preserve tenant, policy, region, encryption, and MVCC boundaries.
 
 The in-memory transaction model must provide read-your-writes behavior before
@@ -159,6 +170,14 @@ inserts, hides, supersessions, invalidations, and predicate changes before the
 committed snapshot, while other transactions must not see those uncommitted
 writes. This belongs in the v0.21.0 transaction state model, before strict
 serializable validation and WAL commit are wired in.
+
+Early performance and integration evidence must be gathered before the storage,
+transaction, query, and API shapes are too expensive to change. `v0.20.2`
+measures storage/recovery overhead, including mirrored footers and fixed-slot
+policy checks. `v0.23.2` exercises transaction storage under local load and
+crash scenarios. `v0.24.2` validates a minimal authenticated request boundary
+and planner context shape before the native query AST and policy-aware planner
+freeze their assumptions.
 
 ## Phase 4: Policy And Classification Planner
 
@@ -203,6 +222,12 @@ proofs, digests, expiration, and policy metadata rather than raw scans or
 photos. AI may assist with document, face, or liveness checks, but it must be
 treated as evidence for deterministic policy, never as the sole unlock
 authority.
+
+Approval language must map to executable local roles before it appears in
+break-glass, key lifecycle, law-pack admission, declassification, backup, or
+release workflows. `v0.26.2` defines owner, maintainer, security officer, legal
+reviewer, key guardian, emergency approver, auditor, and service roles, plus a
+single-maintainer fallback that still records explicit approvals and evidence.
 
 Before key hierarchy work proceeds beyond metadata, the policy planner must
 close known scaffold timing leaks: policy-token comparison needs admitted

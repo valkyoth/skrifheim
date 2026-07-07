@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Reserved pre-1.0 milestones for admitted production digest and AEAD storage
+  encryption, early WAL/segment fuzzing, early storage/API performance and
+  integration smoke, approval-role modeling, and backup/schema compatibility.
+
 ## 0.18.1
 
 - Added `SovereigntyScope` in `skrifheim-policy` so query-result

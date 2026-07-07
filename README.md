@@ -84,11 +84,15 @@ It is not a usable database engine.
 | Quantum-aware digest policy | Scaffolded | SHA-3/SHAKE digest-strength profiles and full-width world/content/manifest digest types before compact IDs become durable storage authority. |
 | Immutable segment format | Scaffolded | `v0.17.0` adds policy-scoped immutable segment headers and footers with key epoch, encryption-domain, checksum, and algorithm-agile digest metadata. |
 | Immutable segment persistence | Scaffolded | `v0.18.0` adds fixed segment encoding plus host-file writer and reader scaffolds; manifests and indexes remain planned for `v0.19.0` through `v0.20.0`. |
+| Production digest and AEAD storage encryption | Planned | `v0.18.3` admits and wires the production SHA-3/SHAKE digest engine plus AEAD envelopes for WAL and segment bodies before manifests or recovery claim tamper resistance. |
+| Early WAL/segment fuzzing | Planned | `v0.18.4` adds deterministic fuzz smoke for the hand-written storage byte parsers; the broader fuzz/property baseline remains later. |
+| Early performance and API integration smoke | Planned | `v0.20.2`, `v0.23.2`, and `v0.24.2` collect storage, recovery, transaction, policy-token, and authenticated planner-boundary evidence while the design is still cheap to change. |
 | Strict serializable transactions | Planned | `v0.21.0` through `v0.23.0`. |
 | Native query parser and execution | Planned | `v0.25.0` through `v0.28.0`. |
+| Approval-role authority model | Planned | `v0.26.2` defines executable roles and single-maintainer fallback policy for break-glass, law-pack admission, key ceremonies, declassification, backup restore, and release operations. |
 | Rebuildable projections | Planned | `v0.29.0` through `v0.32.0`. |
 | Crypto-agile manifest signatures | Planned | `v0.33.0`. |
-| Audit proofs and backup/restore | Planned | `v0.34.0` through `v0.36.0`. |
+| Audit proofs and backup/restore | Planned | `v0.34.0` through `v0.36.0`, with `v0.35.1` reserved for backup-format evolution and schema compatibility before the full schema catalog. |
 | CMS release primitives | Planned | `v0.39.0` through `v0.40.0`. |
 | AI artifact provenance | Planned | `v0.41.0`. |
 | Distinctive security and truth features | Planned | Causal blast-radius invalidation, signed declassification proofs, AI derivation cones, and propagated confidence with mandatory access control are now tracked in the implementation and version plans. |

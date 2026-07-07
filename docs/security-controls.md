@@ -37,6 +37,7 @@ Status: baseline control map
 | Key hierarchy | Root trust, deployment, region, tenant, compartment, segment, and data key parent metadata with tenant deployment/region and segment/data compartment binding | Scaffolded | `skrifheim-crypto` |
 | Key lifecycle | Creation, activation, rotation preflight, strict epoch progression for key-material changes, planned separate event ordering for metadata-only compromise/quarantine/destruction states, unsafe-parent rejection, destruction, destruction-gated crypto-erasure metadata, and planned key-subtree revocation before real key-use paths | Scaffolded | `skrifheim-crypto`, `docs/encryption-architecture.md` |
 | Encryption domains | Tenant, region, classification, compartment, world, WAL, segment, projection, backup, export, AI artifact, WASM/plugin secret, and audit-log blast-radius boundaries with exact merge compatibility checks | Scaffolded | `skrifheim-crypto` |
+| Production AEAD and digest engine | WAL and segment bodies must move from structural CRC/unkeyed digest checks to admitted SHA-3/SHAKE digests plus AEAD authentication before manifests or recovery claim tamper resistance | Planned | `docs/VERSION_PLAN.md`, `docs/encryption-architecture.md` |
 | Index and projection encryption | Secondary, graph, search, vector, columnar, cache, and compaction projection surfaces must use classified projection encryption domains, require encryption at rest, disallow plaintext temporary files, reject incompatible domain mixing, and use redacted diagnostics with explicit structural comparison | Scaffolded | `skrifheim-crypto` |
 | Memory secrecy | Secret material enters crypto APIs through bounded non-clone redacted `SecretBytes` wrappers backed by admitted `sanitization` clear-on-drop storage | Scaffolded | `docs/memory-secrecy.md` |
 | Identity and audit events | Security-relevant actions require typed actor attribution, require trusted-clock audit-event construction with bounded lookback, reject stale/future attestation evidence, require expiring attested device/workload context for break-glass events, and bind event metadata to signed audit-log encryption domains | Scaffolded | `skrifheim-audit` |
@@ -46,6 +47,8 @@ Status: baseline control map
 | Sovereign placement | Placement and failover decisions constrained by jurisdiction, compliance, data category, and legal basis | Planned | `docs/hyve-cluster-and-compliance-roadmap.md` |
 | Cluster control plane | Future Hyve cells, control plane, policy-scoped tunnels, witness nodes, and compliance autopilot | Planned | `docs/hyve-cluster-and-compliance-roadmap.md` |
 | Tamper evidence | Current WAL/segment checks detect structural corruption only: CRC64 and unkeyed content digests are recomputable by a local disk writer. Production tamper resistance requires AEAD authentication, signed manifests, or another keyed integrity root before stored bytes are trusted against write-capable attackers | Planned | `docs/encryption-architecture.md`, `skrifheim-storage` |
+| Storage parser fuzzing | WAL and segment byte parsers get a dedicated early fuzz baseline before the broader fuzz/property milestone | Planned | `docs/VERSION_PLAN.md` |
+| Early performance and integration evidence | Storage/recovery, transaction durability, fixed-slot policy checks, mirrored-footer overhead, and authenticated request-context integration get smoke evidence before query/API design freezes | Planned | `docs/VERSION_PLAN.md` |
 | Segment encoding overhead | `v0.18.0` keeps full-width mirrored segment footers to preserve header/body/footer mismatch and trailing-byte detection; compact trailers may be reconsidered only after segment sizing and integrity roots are stronger | Scaffolded | `docs/VERSION_PLAN.md` |
 | Segment size bounds | Segment headers reject empty and oversized bodies before future segment readers allocate | Scaffolded | `skrifheim-storage` |
 | WAL frame format | Fixed-size append-only WAL frame headers validate magic, version, record kind, reserved bytes, encrypted-body length, non-zero body CRC presence, non-zero crypto epoch, encryption key, WAL encryption-domain tenant binding, and caller-provided expected domain matching before file I/O exists | Scaffolded | `skrifheim-storage` |
@@ -56,6 +59,7 @@ Status: baseline control map
 | AI authority | AI artifacts are derived, not truth | Planned | `docs/IMPLEMENTATION_PLAN.md` |
 | CMS isolation | Public/private world split | Planned | `docs/cms-1-0-target.md` |
 | Rootless container | Podman smoke path | Scaffolded | `scripts/podman_smoke.sh` |
+| Approval roles | Break-glass, law-pack admission, key ceremonies, declassification, backup restore, and release operations need executable local roles and single-maintainer fallback policy before threshold-approval language becomes enforceable | Planned | `docs/VERSION_PLAN.md` |
 
 ## Admission Rule
 

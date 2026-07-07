@@ -408,6 +408,57 @@ Deliverables:
 - update encryption architecture and security controls to describe the split
   between crypto epoch and lifecycle event ordering.
 
+## v0.18.3 - Production Digest And AEAD Engine Admission
+
+Goal: turn digest and encryption metadata into real cryptographic storage
+controls before manifests, checkpoints, or recovery can treat stored bytes as
+tamper-resistant.
+
+Deliverables:
+
+- dependency-admission decision for the production SHA-3/SHAKE digest engine
+  and AEAD implementation, including license, maintenance, advisory, `no_std`
+  fit, unsafe-code boundary, platform support, and test evidence,
+- configurable digest-strength policy wired to actual SHA3-256, SHA3-384,
+  SHA3-512, SHAKE256-256, and SHAKE256-512 computation,
+- production `ContentDigest`, `ManifestDigest`, and `WorldIdentityDigest`
+  computation APIs,
+- AEAD envelope format for WAL bodies and immutable segment bodies, including
+  algorithm ID, nonce strategy, associated-data binding, key ID, crypto epoch,
+  policy epoch, tenant, encryption domain, body length, and replay context,
+- domain-separated key derivation contract from the key hierarchy to WAL,
+  segment, projection, backup, export, AI artifact, and audit-log data keys,
+- nonce uniqueness and crash-recovery analysis for append-only WAL writes and
+  immutable segment writes,
+- associated-data tests proving ciphertext cannot be replayed across tenant,
+  compartment, world, WAL, segment, projection, backup, export, AI, or audit
+  domains,
+- corrupt ciphertext, swapped header/footer, wrong key, wrong epoch, wrong
+  domain, truncated body, and replay rejection tests,
+- explicit rule that CRC64 remains a structural corruption check only and that
+  AEAD authentication plus signed/keyed manifests are the production integrity
+  boundary,
+- release-gate check that no durable storage path can claim tamper resistance
+  unless the admitted digest and AEAD engine is in use.
+
+## v0.18.4 - WAL And Segment Fuzz Baseline
+
+Goal: fuzz the hand-written byte parsers immediately after WAL and segment
+encoding exist, rather than waiting for the general fuzz baseline.
+
+Deliverables:
+
+- fuzz harness for WAL frame header parsing,
+- fuzz harness for WAL replay frame sequences,
+- fuzz harness for segment header/footer parsing,
+- fuzz harness for segment file length/body/footer layout validation,
+- seed corpus from existing malformed WAL and segment fixtures,
+- bounded allocation assertions for body lengths and file lengths,
+- CI/local gate mode that runs a deterministic short fuzz smoke without
+  becoming flaky,
+- documentation that `v0.44.0` remains the broader fuzz/property baseline but
+  storage parser fuzzing is already required from this point forward.
+
 ## v0.19.0 - Manifest And Checkpoint Format
 
 Goal: record the durable storage root.
@@ -458,6 +509,24 @@ Deliverables:
 - encryption-domain equality timing evidence,
 - release-gate integration for timing-sensitive authorization and storage-root
   comparisons.
+
+## v0.20.2 - Early Storage Performance And Recovery Smoke
+
+Goal: collect lightweight performance and integration evidence while storage
+layout, mirrored footers, fixed-slot policy metadata, and recovery flow are
+still cheap to change.
+
+Deliverables:
+
+- microbenchmarks for WAL append/read, segment write/read, manifest selection,
+  and startup recovery over small, medium, and large fixture sets,
+- measurements for mirrored 256-byte segment footer overhead on very small
+  segments and normal segment sizes,
+- policy-token fixed-slot scan benchmark for common authority/label shapes,
+- rootless Podman recovery smoke with realistic persisted volume layout,
+- documented thresholds that are non-claims but catch obvious regressions,
+- decision record on whether footer layout, token-slot bounds, or recovery
+  sequencing need adjustment before transaction durability depends on them.
 
 ## v0.21.0 - In-Memory Transaction Model
 
@@ -544,6 +613,23 @@ Deliverables:
 - add documentation that v0.28.0 query execution must implement this model
   rather than inventing propagation semantics during execution work.
 
+## v0.23.2 - Transaction Storage Load And Crash Smoke
+
+Goal: test the storage and transaction path under realistic local load before
+query AST and execution decisions lock in planner assumptions.
+
+Deliverables:
+
+- write/read load smoke for transaction begin, fact batch, commit, abort, WAL
+  replay, manifest checkpoint, and segment rollover,
+- recovery-time measurements after clean shutdown, crash during append, crash
+  after prepare, crash after commit, and crash during checkpoint,
+- memory-use checks for transaction-local read-your-writes overlays,
+- early evidence for whether fixed-shape policy evaluation, storage footer
+  overhead, and sequential recovery are acceptable for 1.0 targets,
+- documented adjustment decision before v0.24 snapshot reads and v0.25 query
+  AST depend on the current storage/transaction shape.
+
 ## v0.24.0 - Fact Index And Snapshot Reads
 
 Goal: read facts by world and snapshot from recovered state.
@@ -585,6 +671,28 @@ Deliverables:
   future write/promote path authorizes it,
 - add documentation that `v0.25.0` must use the selected model when defining
   simulation query AST nodes.
+
+## v0.24.2 - Early Authenticated API And Planner Integration Smoke
+
+Goal: validate that subject, device, workload, transport identity, and planner
+context can be bound through a real request boundary before the native query
+AST and execution pipeline are locked in.
+
+Deliverables:
+
+- local authenticated API smoke endpoint for a minimal read-plan request,
+- authority-context extraction hook for subject, device, and workload identity,
+- mTLS, passkey, signed-local-token, or equivalent identity-binding decision
+  record for the future full API,
+- tests that forged device/workload context cannot be supplied directly to
+  policy evaluation through the API boundary,
+- constant-shape public error response fixture for unauthenticated,
+  unauthorized, redacted, and malformed requests,
+- integration test that runs legal/security/sovereignty/minimisation planning
+  stubs through the same request context shape the later query planner will
+  use,
+- documented decision on whether the planned seven-stage planner pipeline needs
+  restructuring before v0.25 and v0.27.
 
 ## v0.25.0 - Native Query AST
 
@@ -648,9 +756,32 @@ Deliverables:
   `evaluate_read` or query-planning policy,
 - add tests that stale attestation, missing workload context, overbroad target
   scope, expired approval, missing audit-log protection, reused one-time
-  capability, or AI-only identity verification deny access.
+  capability, or AI-only identity verification deny access,
 - add persisted one-time-use state so the same attestation evidence identifier
   or emergency capability cannot authorize multiple break-glass operations.
+
+## v0.26.2 - Approval Roles And Operational Authority Model
+
+Goal: make "human-approved", "authority-approved", and "threshold-approved"
+operations executable for a small deployment before break-glass, law-pack
+admission, key ceremonies, and release gates depend on those words.
+
+Deliverables:
+
+- actor role model for owner, maintainer, security officer, legal reviewer,
+  key guardian, emergency approver, auditor, and automated service,
+- single-maintainer fallback policy that can still represent separation of
+  duties through explicit self-approval records, time delay, hardware key, or
+  external reviewer evidence,
+- threshold approval metadata with required role set, quorum, validity window,
+  revocation, and audit-log binding,
+- approval request and approval proof skeleton shared by break-glass, law-pack
+  admission, key lifecycle, declassification, export, backup restore, and
+  release operations,
+- tests that missing approver role, stale approval, self-approval where not
+  allowed, reused approval nonce, and wrong tenant/policy epoch are rejected,
+- documentation that deployments with no legal authority or threshold group
+  must configure explicit local roles before enabling approval-gated features.
 
 ## v0.27.0 - Policy-Aware Query Planning
 
@@ -777,6 +908,26 @@ Deliverables:
 - policy epoch verification,
 - crypto epoch and key-domain verification,
 - restore rejection tests.
+
+## v0.35.1 - Backup Format Evolution And Schema Compatibility
+
+Goal: prevent the backup skeleton from becoming a durable format that cannot
+survive schema/catalog evolution.
+
+Deliverables:
+
+- backup-format version field and compatibility policy,
+- reserved schema-catalog root field even before the full `v0.45.0` catalog
+  exists,
+- predicate/model registry placeholder binding for restored facts,
+- restore preflight behavior for unknown schema roots, missing schema roots,
+  forward-incompatible backup versions, and intentionally schema-less scaffold
+  backups,
+- migration hook shape for future schema catalog upgrades,
+- tests that backup restore cannot silently treat unknown schema contracts as
+  compatible,
+- explicit note that `v0.35.0` remains a skeleton and v0.45.0 finalizes the
+  catalog-backed compatibility model.
 
 ## v0.36.0 - Compromise And Recovery Playbooks
 
@@ -946,9 +1097,10 @@ Deliverables:
 - policy/key-domain preserving compaction rules,
 - tests that compaction cannot erase required audit history.
 
-## v0.47.0 - Authenticated API Boundary
+## v0.47.0 - Authenticated API Boundary Hardening
 
-Goal: define the first server API boundary without exposing unauthenticated data paths.
+Goal: harden the authenticated server API boundary after the early v0.24.2
+integration smoke and before production hardening.
 
 Deliverables:
 
@@ -958,6 +1110,9 @@ Deliverables:
 - service/node identity hook,
 - break-glass request authentication and attestation binding using the
   `v0.26.1` access model,
+- approval proof binding using the `v0.26.2` operational authority model,
+- compatibility check against the v0.24.2 request-context shape so the full API
+  does not drift from planner assumptions,
 - constant-shape API errors,
 - tests for unauthenticated and unauthorized requests.
 
@@ -995,6 +1150,8 @@ Deliverables:
 - recovery benchmark harness,
 - policy-planner benchmark harness,
 - rootless Podman load smoke,
+- comparison against early v0.20.2 and v0.23.2 performance evidence to catch
+  regressions and validate earlier design decisions,
 - documented capacity non-claims.
 
 ## v0.51.0 - Production Hardening Candidate
