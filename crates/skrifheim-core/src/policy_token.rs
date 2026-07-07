@@ -1,4 +1,4 @@
-use alloc::{string::String, vec::Vec};
+use alloc::{boxed::Box, string::String, vec::Vec};
 use core::{array, fmt};
 
 use crate::{Result, SkrifheimError};
@@ -9,6 +9,12 @@ pub const POLICY_TOKEN_SET_MAX_ITEMS: usize = 64;
 const _: () = assert!(POLICY_TOKEN_MAX_BYTES <= u8::MAX as usize);
 const NOOP_POLICY_TOKEN: PolicyTokenSlot = PolicyTokenSlot::empty();
 const INVALID_POLICY_TOKEN_NEEDLE: PolicyTokenSlot = PolicyTokenSlot::invalid_needle();
+
+#[derive(Clone)]
+pub enum PolicyTokenUnion {
+    Exact(Box<PolicyTokenSet>),
+    Overflow,
+}
 
 #[derive(Clone)]
 pub struct PolicyTokenSet {
@@ -69,6 +75,18 @@ impl PolicyTokenSet {
         Ok(merged)
     }
 
+    #[must_use]
+    pub fn union_or_overflow(&self, other: &Self) -> PolicyTokenUnion {
+        let mut merged = Self::empty();
+        if merged.extend_from_or_overflow(self).is_err()
+            || merged.extend_from_or_overflow(other).is_err()
+        {
+            return PolicyTokenUnion::Overflow;
+        }
+        merged.sort_present_slots();
+        PolicyTokenUnion::Exact(Box::new(merged))
+    }
+
     /// Compares canonical token-set structure with ordinary equality.
     ///
     /// This is not constant-time. Access-control and policy decisions must use
@@ -102,6 +120,19 @@ impl PolicyTokenSet {
             if slot.present_mask() == 1 && !contains_policy_token_slot_ct(self, slot) {
                 if self.len == POLICY_TOKEN_SET_MAX_ITEMS {
                     return Err(SkrifheimError::InvalidSecurityToken);
+                }
+                self.slots[self.len] = slot;
+                self.len += 1;
+            }
+        }
+        Ok(())
+    }
+
+    fn extend_from_or_overflow(&mut self, other: &Self) -> core::result::Result<(), ()> {
+        for slot in other.slots {
+            if slot.present_mask() == 1 && !contains_policy_token_slot_ct(self, slot) {
+                if self.len == POLICY_TOKEN_SET_MAX_ITEMS {
+                    return Err(());
                 }
                 self.slots[self.len] = slot;
                 self.len += 1;

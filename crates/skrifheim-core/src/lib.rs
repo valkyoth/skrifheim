@@ -10,7 +10,7 @@ mod policy_token;
 
 pub use policy_token::{
     POLICY_TOKEN_MAX_BYTES, POLICY_TOKEN_SET_MAX_ITEMS, PolicyTokenSet, PolicyTokenSlot,
-    canonical_policy_set, canonical_policy_token, contains_policy_token_ct,
+    PolicyTokenUnion, canonical_policy_set, canonical_policy_token, contains_policy_token_ct,
     contains_policy_token_slot_ct,
 };
 

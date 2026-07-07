@@ -1,8 +1,8 @@
 use alloc::{boxed::Box, string::String, vec::Vec};
 use core::fmt;
 use skrifheim_core::{
-    Classification, POLICY_TOKEN_SET_MAX_ITEMS, PolicyTokenSet, Result, SecurityLabel,
-    SkrifheimError, canonical_policy_set, canonical_policy_token,
+    Classification, POLICY_TOKEN_SET_MAX_ITEMS, PolicyTokenSet, PolicyTokenUnion, Result,
+    SecurityLabel, SkrifheimError, canonical_policy_set, canonical_policy_token,
 };
 
 pub const RESULT_CLASSIFICATION_INPUT_MAX_ITEMS: usize = 64;
@@ -154,13 +154,11 @@ impl SovereigntyScope {
             (SovereigntyScopeKind::MultiJurisdiction, _)
             | (_, SovereigntyScopeKind::MultiJurisdiction) => Ok(Self::multi_jurisdiction()),
             (SovereigntyScopeKind::Exact(left), SovereigntyScopeKind::Exact(right)) => {
-                let union = left.union(right);
-                match union {
-                    Ok(tokens) => Ok(Self {
-                        kind: SovereigntyScopeKind::Exact(Box::new(tokens)),
+                match left.union_or_overflow(right) {
+                    PolicyTokenUnion::Exact(tokens) => Ok(Self {
+                        kind: SovereigntyScopeKind::Exact(tokens),
                     }),
-                    Err(SkrifheimError::InvalidSecurityToken) => Ok(Self::multi_jurisdiction()),
-                    Err(error) => Err(error),
+                    PolicyTokenUnion::Overflow => Ok(Self::multi_jurisdiction()),
                 }
             }
         }

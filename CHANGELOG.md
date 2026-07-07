@@ -25,6 +25,8 @@
 - Resolved the `0.18.1` pentest retest by keeping overlapping sovereignty
   scopes exact when their true unique union still fits the bounded set, and by
   fixing the release-gate self-check for the bare-containment guard.
+- Removed the remaining sovereignty overflow error-overload trade-off by
+  adding typed policy-token union overflow reporting in `skrifheim-core`.
 - Updated the pinned stable Rust toolchain from `1.96.0` to `1.96.1` after
   checking the official Rust release announcement.
 - Bumped workspace and internal crate dependency versions to `0.18.1`.

@@ -157,6 +157,30 @@ fn policy_token_union_rejects_overflow() -> Result<()> {
 }
 
 #[test]
+fn policy_token_union_or_overflow_reports_capacity_without_error_overload() -> Result<()> {
+    let left = PolicyTokenSet::new(vec![String::from("eu"), String::from("se")])?;
+    let right = PolicyTokenSet::new(vec![String::from("SE"), String::from("no")])?;
+    let merged = match left.union_or_overflow(&right) {
+        PolicyTokenUnion::Exact(merged) => merged,
+        PolicyTokenUnion::Overflow => return Err(SkrifheimError::InvalidSecurityToken),
+    };
+    assert_eq!(merged.len(), 3);
+    assert!(merged.contains("NO"));
+
+    let mut full = Vec::new();
+    for index in 0..POLICY_TOKEN_SET_MAX_ITEMS {
+        full.push(alloc::format!("TOKEN-{index}"));
+    }
+    let full = PolicyTokenSet::new(full)?;
+    let extra = PolicyTokenSet::new(vec![String::from("EXTRA")])?;
+    assert!(matches!(
+        full.union_or_overflow(&extra),
+        PolicyTokenUnion::Overflow
+    ));
+    Ok(())
+}
+
+#[test]
 fn debug_redacts_security_labels_policy_tokens_and_values() -> Result<()> {
     let label = SecurityLabel::new(
         Classification::TopSecret,

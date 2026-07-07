@@ -44,6 +44,8 @@ processing, and legal/compliance decisions.
   exact when their true unique union still fits the bounded set.
 - Fixed the `0.18.1` release gate self-check for the
   `SovereigntyScope::contains` ban.
+- Added typed `PolicyTokenSet` union overflow reporting so sovereignty scope
+  joins no longer interpret `InvalidSecurityToken` as capacity overflow.
 
 ## Verification
 
