@@ -9,6 +9,10 @@
   snapshot-root facts, locked archive/recovery worlds, policy-checked restore
   modes, protected compaction references, and explicit purge/crypto-erasure
   authority.
+- Reserved `v0.18.5` and `v0.52.6` for release evidence hardening:
+  SBOM validation, dependency-tree snapshots, runtime/optional-boundary policy,
+  gate tests, and source-lock evidence for external legal, compliance,
+  cryptographic, storage-format, parser, and conformance claims.
 - Reserved `v0.33.1` for the threshold-signature or bounded quorum
   multi-signature proof model before approval-sensitive production workflows.
 - Added pre-1.0 source-state backend milestones for compliance-forge

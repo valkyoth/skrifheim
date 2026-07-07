@@ -8,6 +8,8 @@ Status: baseline control map
 | Release arithmetic | Release profile keeps overflow checks enabled | Active | `Cargo.toml` |
 | Core runtime | Core library crates are `no_std` | Active | `scripts/validate-engineering-policy.sh` |
 | Dependency policy | License, source, advisory, and duplicate checks | Configured | `deny.toml` |
+| Release evidence | Release candidates must carry committed release notes, permanent pentest digest, SBOM, dependency-tree snapshots where relevant, current tool/crate review evidence, and gate tests before tagging | Planned | `docs/VERSION_PLAN.md`, `docs/supply-chain-security.md` |
+| External source lock | Legal, compliance, cryptographic, storage-format, parser, and conformance claims must pin exact external sources, hashes, dates, licenses, and non-claims before implementation evidence is accepted | Planned | `docs/VERSION_PLAN.md`, `docs/supply-chain-security.md` |
 | Security reporting | Private-first vulnerability handling | Configured | `SECURITY.md` |
 | Unsafe code | Forbidden in scaffold | Active | `scripts/validate-security-policy.sh` |
 | Modularity | Focused crates and file-size gate | Active | `docs/modularity-policy.md` |

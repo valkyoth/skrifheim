@@ -478,6 +478,30 @@ Deliverables:
 - documentation that `v0.44.0` remains the broader fuzz/property baseline but
   storage parser fuzzing is already required from this point forward.
 
+## v0.18.5 - Release Evidence And Dependency Tree Baseline
+
+Goal: make release evidence stricter before manifests, recovery, and
+cryptographic storage boundaries become durable claims.
+
+Deliverables:
+
+- release-readiness gate that requires committed release notes, committed
+  permanent pentest digest, clean root `PENTEST.md` removal, current tag
+  absence, and reviewed-commit binding for final report commits,
+- SBOM generation and non-empty SBOM validation in the release gate,
+- normal, all-features, and security-relevant feature dependency tree snapshots
+  for every release where feature gates or dependency sets change,
+- runtime/host dependency policy that proves `no_std` core crates do not gain
+  network, filesystem, clock, TLS, parser, database, or process-runtime
+  dependencies by accident,
+- optional-boundary policy that proves parser, host-I/O, crypto-provider,
+  container, and future network/API features stay opt-in and do not leak into
+  default core builds,
+- current-tool and current-crate check evidence recorded in release notes
+  whenever dependency, toolchain, or GitHub Actions versions change,
+- tests for the release-readiness gate and dependency-policy scripts so the
+  gate itself cannot silently regress.
+
 ## v0.19.0 - Manifest And Checkpoint Format
 
 Goal: record the durable storage root.
@@ -1848,6 +1872,34 @@ Deliverables:
   declassification, and plugin metadata cannot request plaintext or key access
   by default.
 
+## v0.52.6 - External Source Lock And Evidence Model
+
+Goal: prevent legal, compliance, cryptographic, storage-format, and external
+conformance claims from being implemented from memory or shifting upstream
+sources.
+
+Deliverables:
+
+- source-lock manifest format for external standards, law packs, compliance
+  packs, cryptographic specifications, file-format references, fixture
+  repositories, and imported conformance suites,
+- exact source metadata for issuer, jurisdiction or standards body, URL,
+  revision/tag/date, hash, license, validity window, local reference-store
+  location, and whether the source is normative, advisory, test-only, or
+  deprecated,
+- policy that a milestone changing law-pack, legal-operation, storage-format,
+  crypto-format, parser, or conformance behavior must pin the consulted source
+  material before implementation and name it in release notes,
+- local reference-store sync/check script shape that can verify pinned external
+  materials without vendoring large upstream repositories into the main repo,
+- ambiguity workflow requiring deny/defer/more-evidence decisions when sources
+  conflict, are stale, or lack test fixtures,
+- source-matrix documentation mapping each external claim to tests, fixtures,
+  implemented version, non-claims, and next-review trigger,
+- tests that release validation fails when source-lock entries are missing,
+  stale, malformed, or not referenced by the relevant law-pack/compliance or
+  parser/conformance milestone.
+
 ## v0.53.0 - Law Pack Metadata And Admission
 
 Goal: define how signed legal and compliance policy packs enter the system.
@@ -1927,6 +1979,7 @@ Deliverables:
 - observability without secret leakage,
 - performance and load evidence,
 - tamper-evident manifests,
+- SBOM, dependency-tree, source-lock, and release-evidence gates,
 - local snapshot and rollback retention with locked archive/recovery worlds,
 - rootless Podman deployment,
 - backup/restore,

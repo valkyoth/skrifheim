@@ -14,6 +14,12 @@ Dependency and tooling changes require deliberate review.
 - Run `cargo deny check` and `cargo audit` before release tagging.
 - Git dependencies must be pinned to a revision and approved.
 - Generated artifacts and vendored code need documented origin and update flow.
+- Release gates must produce enough evidence to audit what was actually
+  shipped: release notes, pentest digest, SBOM, relevant dependency tree
+  snapshots, and current tool/crate review when versions change.
+- External standards, laws, compliance packs, cryptographic specifications,
+  file-format references, and conformance fixtures must be source-locked before
+  `skrifheim` claims behavior derived from them.
 
 ## Special Rules
 

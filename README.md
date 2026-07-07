@@ -86,6 +86,7 @@ It is not a usable database engine.
 | Immutable segment persistence | Scaffolded | `v0.18.0` adds fixed segment encoding plus host-file writer and reader scaffolds; manifests and indexes remain planned for `v0.19.0` through `v0.20.0`. |
 | Production digest and AEAD storage encryption | Planned | `v0.18.3` admits and wires the production SHA-3/SHAKE digest engine plus AEAD envelopes for WAL and segment bodies before manifests or recovery claim tamper resistance. |
 | Early WAL/segment fuzzing | Planned | `v0.18.4` adds deterministic fuzz smoke for the hand-written storage byte parsers; the broader fuzz/property baseline remains later. |
+| Release evidence hardening | Planned | `v0.18.5` adds SBOM validation, dependency-tree snapshots, runtime/optional-boundary policy, and release-gate tests before durable storage claims harden. |
 | Early performance and API integration smoke | Planned | `v0.20.2`, `v0.23.2`, and `v0.24.2` collect storage, recovery, transaction, policy-token, and authenticated planner-boundary evidence while the design is still cheap to change. |
 | Strict serializable transactions | Planned | `v0.21.0` through `v0.23.0`. |
 | Native query parser and execution | Planned | `v0.25.0` through `v0.28.0`. |
@@ -100,7 +101,7 @@ It is not a usable database engine.
 | Distinctive security and truth features | Planned | Causal blast-radius invalidation, signed declassification proofs, AI derivation cones, and propagated confidence with mandatory access control are now tracked in the implementation and version plans. |
 | Local-first worlds, mission capsules, source-state, and extension/import support | Planned | `v0.42.0` through `v0.43.6`, including source-state object/bundle admission, resource-budgeted verification, operation/event/explanation/context records, sealed private realms, plugin/theme capability boundaries, and dry-run import planning. |
 | Fuzz/property baseline, operations, and hardening | Planned | `v0.44.0` through `v0.51.0`. |
-| Standalone legal/compliance passports and placement foundations | Planned | `v0.52.0` through `v0.55.0`, with privacy-rights workflows, E2EE message metadata, cross-product export/deletion orchestration, searchable encrypted mailbox boundaries, and server-blind collaboration envelopes reserved in `v0.52.1` through `v0.52.5`. |
+| Standalone legal/compliance passports and placement foundations | Planned | `v0.52.0` through `v0.55.0`, with privacy-rights workflows, E2EE message metadata, cross-product export/deletion orchestration, searchable encrypted mailbox boundaries, server-blind collaboration envelopes, and external source-lock evidence reserved in `v0.52.1` through `v0.52.6`. |
 | Production release candidate | Planned | `v0.56.0`. |
 | Hyve multi-cell cluster fabric | Planned | `v1.1.0` and later. |
 

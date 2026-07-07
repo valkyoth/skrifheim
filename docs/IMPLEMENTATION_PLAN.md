@@ -27,6 +27,12 @@ write, explicit legal basis where needed, encryption domains for protected
 surfaces, bounded verification, tamper-evident audit, redacted diagnostics, and
 rebuildable projections.
 
+External authority inputs are also requirement sources, not memory-based
+implementation shortcuts. Legal rules, compliance standards, cryptographic
+specifications, storage formats, parser fixtures, and conformance suites must
+be pinned to exact source revisions, hashes, dates, licenses, and non-claims
+before `skrifheim` treats them as behavior evidence.
+
 Multi-application deployments are a first-class planning constraint. The
 database must support strict separation between identity authority, shared
 account/profile data, operator identity, support identity, service identity,
@@ -69,6 +75,9 @@ or client-provided evidence path is used.
   only for non-secret identifiers until the production digest boundary lands.
   Durable storage authority must use admitted SHA-3/SHAKE full-width digests
   with a configurable strength profile.
+- Release evidence is part of the product. A release is not complete unless its
+  pentest digest, release notes, SBOM, relevant dependency-tree snapshots, and
+  source-lock evidence are committed where the release gate can verify them.
 
 ## Workspace Shape
 
