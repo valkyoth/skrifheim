@@ -28,27 +28,27 @@ if ! grep -R "parse_for_domain" crates/skrifheim-storage/src/segment.rs >/dev/nu
     exit 1
 fi
 
-if ! grep -R "SegmentFileWriter" host/skrifheim-storage-host/src/lib.rs >/dev/null; then
+if ! grep -R "SegmentFileWriter" crates/skrifheim-storage-host/src/lib.rs >/dev/null; then
     echo "0.18 requires host segment writer" >&2
     exit 1
 fi
 
-if ! grep -R "SegmentFileReader" host/skrifheim-storage-host/src/lib.rs >/dev/null; then
+if ! grep -R "SegmentFileReader" crates/skrifheim-storage-host/src/lib.rs >/dev/null; then
     echo "0.18 requires host segment reader" >&2
     exit 1
 fi
 
-if ! grep -R "SegmentContentVerifier" host/skrifheim-storage-host/src/lib.rs >/dev/null; then
+if ! grep -R "SegmentContentVerifier" crates/skrifheim-storage-host/src/lib.rs >/dev/null; then
     echo "0.18 requires explicit segment content verifier boundary" >&2
     exit 1
 fi
 
-if ! grep -R "verify_segment_file_len" host/skrifheim-storage-host/src/lib.rs >/dev/null; then
+if ! grep -R "verify_segment_file_len" crates/skrifheim-storage-host/src >/dev/null; then
     echo "0.18 requires exact segment file-length validation" >&2
     exit 1
 fi
 
-if ! grep -R "fsync_parent_dir" host/skrifheim-storage-host/src/lib.rs >/dev/null; then
+if ! grep -R "fsync_parent_dir" crates/skrifheim-storage-host/src >/dev/null; then
     echo "0.18 requires parent-directory fsync after new host file creation" >&2
     exit 1
 fi

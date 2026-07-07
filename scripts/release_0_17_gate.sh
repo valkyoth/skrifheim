@@ -43,7 +43,7 @@ if ! grep -R "BodyChecksum::Present(0)" crates/skrifheim-storage/src/segment cra
     exit 1
 fi
 
-if grep -R -E "const O_NOFOLLOW_FLAG: i32 = 0;" host/skrifheim-storage-host/src >/dev/null; then
+if grep -R -E "const O_NOFOLLOW_FLAG: i32 = 0;" crates/skrifheim-storage-host/src >/dev/null; then
     echo "0.17 requires unknown Unix WAL targets to fail closed instead of disabling O_NOFOLLOW" >&2
     exit 1
 fi
@@ -53,7 +53,7 @@ if ! grep -R "structurally_equal_ct(&expected_domain)" crates/skrifheim-storage/
     exit 1
 fi
 
-if ! grep -R "usize::try_from(header.encrypted_body_len())" host/skrifheim-storage-host/src >/dev/null; then
+if ! grep -R "usize::try_from(header.encrypted_body_len())" crates/skrifheim-storage-host/src >/dev/null; then
     echo "0.17 requires checked WAL body allocation length conversion" >&2
     exit 1
 fi

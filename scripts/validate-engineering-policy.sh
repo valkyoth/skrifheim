@@ -4,6 +4,11 @@ set -eu
 failed=0
 
 for lib in crates/*/src/lib.rs; do
+    case "$lib" in
+    crates/skrifheim-storage-host/src/lib.rs)
+        continue
+        ;;
+    esac
     if ! grep -q '#!\[no_std\]' "$lib"; then
         echo "$lib must use #![no_std]" >&2
         failed=1
@@ -14,8 +19,8 @@ for lib in crates/*/src/lib.rs; do
     fi
 done
 
-if rg -n '\bstd::|extern crate std|use std' crates --glob '*.rs' --glob '!*/src/main.rs'; then
-    echo "core crates must not import std; use core/alloc or move host-only code outside core libraries" >&2
+if rg -n '\bstd::|extern crate std|use std' crates --glob '*.rs' --glob '!*/src/main.rs' --glob '!crates/skrifheim-storage-host/**'; then
+    echo "core crates must not import std; use core/alloc or move host-only code into an explicit host-boundary crate" >&2
     failed=1
 fi
 

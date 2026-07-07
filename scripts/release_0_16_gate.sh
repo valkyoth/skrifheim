@@ -23,17 +23,17 @@ if ! grep -R "WAL_REPLAY_MAX_TRANSACTIONS" crates/skrifheim-storage/src >/dev/nu
     exit 1
 fi
 
-if ! grep -R "wal_body_crc64" crates/skrifheim-storage/src host/skrifheim-storage-host/src >/dev/null; then
+if ! grep -R "wal_body_crc64" crates/skrifheim-storage/src crates/skrifheim-storage-host/src >/dev/null; then
     echo "0.16 requires WAL body CRC verification helpers" >&2
     exit 1
 fi
 
-if ! grep -R "O_NOFOLLOW" host/skrifheim-storage-host/src >/dev/null; then
+if ! grep -R "O_NOFOLLOW" crates/skrifheim-storage-host/src >/dev/null; then
     echo "0.16 requires Unix WAL symlink rejection" >&2
     exit 1
 fi
 
-if ! grep -R "wal_reader_rejects_symlink_paths" host/skrifheim-storage-host/src >/dev/null; then
+if ! grep -R "wal_reader_rejects_symlink_paths" crates/skrifheim-storage-host/src >/dev/null; then
     echo "0.16 requires WAL reader symlink rejection coverage" >&2
     exit 1
 fi

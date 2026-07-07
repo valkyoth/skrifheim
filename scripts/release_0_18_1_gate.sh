@@ -48,7 +48,7 @@ if ! grep -R "bare boolean containment" scripts/validate-security-policy.sh >/de
     exit 1
 fi
 
-if ! grep -R "#\\[cfg(not(unix))\\]" host/skrifheim-storage-host/src/lib.rs >/dev/null; then
+if ! grep -R "#\\[cfg(not(unix))\\]" crates/skrifheim-storage-host/src >/dev/null; then
     echo "0.18.1 requires host storage to fail closed on unsupported non-Unix targets" >&2
     exit 1
 fi

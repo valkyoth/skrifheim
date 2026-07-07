@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Moved `skrifheim-storage-host` under `crates/` as an explicit host-boundary
+  crate so all Rust crates live in one workspace crate directory.
 - Reserved pre-1.0 milestones for admitted production digest and AEAD storage
   encryption, early WAL/segment fuzzing, early storage/API performance and
   integration smoke, approval-role modeling, and backup/schema compatibility.
