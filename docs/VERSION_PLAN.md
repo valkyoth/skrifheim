@@ -43,6 +43,16 @@ source object formats, and moderation policy text belong in the consuming
 application. `skrifheim` provides the secure, auditable, compliance-aware
 foundation those applications adapt to.
 
+Application-inspired verticals must not be folded into the mandatory core
+database unless they are genuinely generic primitives. When a feature is mainly
+needed to support a product family, it should land as an optional extension
+crate such as `skrifheim-ext-social`, `skrifheim-ext-messaging`, or
+`skrifheim-ext-forge`. Extension crates may depend on stable core crates, but
+core crates must not depend on extension crates. Each extension crate needs its
+own release gate, pentest handoff, dependency admission, legal/compliance
+review, and proof that it cannot bypass core policy, encryption-domain,
+provenance, or audit rules.
+
 ## Clean Stop And Pentest Rule
 
 Each version has a deliberate clean stop. When implementation criteria are done,
@@ -960,6 +970,32 @@ Deliverables:
 - rebuild tests,
 - no cross-compartment mixing tests.
 
+## v0.31.1 - Optional Extension Crate Boundary
+
+Goal: keep application-family support out of the mandatory database core unless
+the feature is truly generic.
+
+Deliverables:
+
+- extension-crate policy for product-family primitives, including naming,
+  dependency direction, default-build behavior, release gates, and pentest
+  requirements,
+- workspace layout plan for optional crates such as `skrifheim-ext-social`,
+  `skrifheim-ext-messaging`, `skrifheim-ext-forge`, and future application
+  families,
+- rule that extension crates depend on `skrifheim` core APIs and may not cause
+  any core crate to depend on an extension crate,
+- rule that extension crates cannot redefine authorization, legal/compliance,
+  encryption-domain, key-lifecycle, provenance, audit, or release-evidence
+  semantics; they can only compose them,
+- gate proving default core builds remain independent of application-family
+  extension crates,
+- tests or compile checks proving extension crates can be omitted by a
+  deployment that does not need that product family,
+- documentation review that rewrites app-specific schema names into generic
+  relationship, object, workflow, projection, and policy-extension primitives
+  before implementation starts.
+
 ## v0.32.0 - Vector And AI Projection Encryption Boundary
 
 Goal: make vector and AI-derived projections safe before AI artifacts become useful.
@@ -974,31 +1010,33 @@ Deliverables:
 - no lower-domain embedding of higher-domain facts,
 - tests for denied vector/AI projection writes.
 
-## v0.32.1 - Social Graph Visibility And Timeline Projection Model
+## v0.32.1 - Optional Relationship Graph Visibility And Feed Projection Extension
 
-Goal: define policy-bound primitives for high-volume social-feed workloads
-without letting feeds, search, counters, or caches bypass viewer-specific
-authorization, legal basis, encryption-domain, or moderation policy.
+Goal: define optional extension-crate primitives for high-volume relationship
+graphs and feed-like projections without letting feeds, search, counters, or
+caches bypass viewer-specific authorization, legal basis, encryption-domain, or
+moderation policy.
 
 Deliverables:
 
-- social graph edge model for follow, follow request, block, mute, list
-  membership, community membership, reply, quote, repost, like, bookmark, and
-  report relationships,
-- viewer-context visibility planner for public, unlisted, followers-only,
-  close-circle, subscriber/group, community-only, deleted, tombstoned, and
-  visibility-reduced content states,
-- protected-account, block, mute, muted-word, reply-control, and community-role
-  policy hooks,
+- optional `skrifheim-ext-social` or equivalent extension crate plan,
+- generic relationship edge classes for subscription, membership, denial,
+  preference, interaction, reference, endorsement, collection, and report-like
+  signals without making any product's schema canonical,
+- viewer-context visibility planner for public, limited-audience, group-scoped,
+  member-scoped, deleted, tombstoned, and visibility-reduced content states,
+- policy hooks for relationship denial, audience restriction, user preference,
+  content-control, and scoped-role decisions without embedding product-specific
+  moderation text,
 - timeline projection metadata for pull feeds, materialized hot timelines,
   lazy fanout, notification timelines, and rebuildable replay,
 - durable timeline-item record shape with source fact range, viewer or audience
   scope, policy epoch, consistency watermark, and rebuild command,
-- deterministic counter model for replies, reposts, quotes, likes, bookmarks,
-  shares, and privacy-preserving view counts,
-- tests that search, profile feeds, home feeds, thread reads, media feeds,
-  notification reads, counters, and cached timelines all apply the same
-  viewer-context visibility rules, legal constraints, and policy epochs.
+- deterministic counter model for relationship-derived interactions and
+  privacy-preserving aggregate views,
+- tests that search projections, actor feeds, audience feeds, thread reads,
+  media feeds, notification reads, counters, and cached timelines all apply the
+  same viewer-context visibility rules, legal constraints, and policy epochs.
 
 ## v0.32.2 - Media Object Authorization And Processing State Model
 
@@ -1027,17 +1065,17 @@ Deliverables:
   post visibility change, asset deletion, moderation state change, legal hold,
   expired consent, or key-domain mismatch.
 
-## v0.32.3 - Social Realtime, Notification, And Rebuildable Event Streams
+## v0.32.3 - Optional Realtime Hint, Notification, And Rebuildable Event Extension
 
-Goal: model realtime-adjacent social features as rebuildable projections and
+Goal: model realtime-adjacent extension features as rebuildable projections and
 metadata-only events, not as a second source of truth.
 
 Deliverables:
 
-- notification fact and projection model for follows, follow requests,
-  mentions, replies, reposts, quotes, likes, bookmarks, DMs, poll results,
-  community events, moderation decisions, security events, and compliance
-  workflows,
+- generic notification fact and projection model for relationship changes,
+  references, interactions, private-channel signals, voting/response signals,
+  group events, moderation decisions, security events, and compliance
+  workflows without embedding a product event taxonomy in core,
 - read/unread, clear/delete, snooze, priority, request-inbox, and per-account
   notification filter state,
 - realtime hint event shape for WebSocket/SSE gateways that carries only
@@ -1045,28 +1083,27 @@ Deliverables:
 - replay-after-disconnect cursor and watermark model,
 - rebuild contract for notification counts, presence/typing hints, hot
   timelines, search indexes, and counters from canonical facts/events,
-- tests that realtime hints never expose private content, DMs, post bodies,
-  media metadata, account PII, or authorization decisions not visible through a
-  normal API read, and that replay after policy changes re-evaluates
-  visibility before delivery.
+- tests that realtime hints never expose private content, private-channel
+  ciphertext, content bodies, media metadata, account PII, or authorization
+  decisions not visible through a normal API read, and that replay after policy
+  changes re-evaluates visibility before delivery.
 
-## v0.32.4 - Social Moderation, Appeals, And Safety Labels
+## v0.32.4 - Optional Moderation, Appeals, And Safety-Label Extension
 
-Goal: make moderation and user-safety state first-class policy inputs before
-social applications depend on timeline/search visibility.
+Goal: make moderation and user-safety state available as optional policy inputs
+before extension crates depend on feed/search visibility.
 
 Deliverables:
 
-- moderation report, appeal, trusted-flagger notice, policy label, visibility
-  reduction, account restriction, post restriction, and community moderation
-  record shapes,
+- generic report, appeal, trusted-notice, policy label, visibility reduction,
+  subject restriction, object restriction, and scoped moderation record shapes,
 - statement-of-reasons proof model with actor, authority, target, policy
   version, legal basis where applicable, appeal status, and visibility effect,
 - stackable safety-label source model that can warn, hide, or reduce content
   without granting third parties raw private data or unrestricted enforcement
   authority,
-- user-selectable safety controls for hidden words, muted notification types,
-  quote/reply controls, sensitive-media labels, and community-note requests,
+- user-selectable safety controls for filtered terms, notification classes,
+  interaction controls, sensitive-object labels, and review-note requests,
 - deterministic appeal workflow state machine,
 - transparency aggregate fact model that avoids per-user exposure,
 - tests that moderation-hidden content cannot leak through search, timelines,
@@ -1086,7 +1123,7 @@ Deliverables:
 - separate consent purposes for necessary service operation, security logging,
   personalized ranking, behavioral measurement, personalized ads, and
   non-essential cookies/local tracking,
-- ranking explanation metadata for chronological, following-only, regional,
+- ranking explanation metadata for chronological, subscription-only, regional,
   contextual, and personalized feed modes,
 - ad transparency record model with sponsor identity, campaign/ad identifiers,
   creative reference, targeting category summary, placement, review state,
@@ -1768,11 +1805,11 @@ Deliverables:
   multi-jurisdiction scopes,
 - tests that unlabeled non-public data cannot be read, exported, indexed, processed by AI, backed up, or planned for movement.
 
-## v0.52.1 - Privacy Rights, Legal Hold, And Deletion Workflow Model
+## v0.52.1 - Optional Privacy Rights, Legal Hold, And Deletion Workflow Extension
 
-Goal: support social applications that need GDPR-style export, deletion,
-retention, deactivation, and legal-hold workflows without breaking immutable
-audit or provenance guarantees.
+Goal: support optional product-family crates that need GDPR-style export,
+deletion, retention, deactivation, and legal-hold workflows without breaking
+immutable audit or provenance guarantees.
 
 Deliverables:
 
@@ -1792,15 +1829,16 @@ Deliverables:
   users' private facts, and retention expiry cannot erase protected audit
   history.
 
-## v0.52.2 - End-To-End Encrypted Message Metadata Boundary
+## v0.52.2 - Optional End-To-End Encrypted Message Metadata Extension
 
-Goal: provide database support for E2EE direct-message products where the
-server stores ciphertext and minimal routing metadata only.
+Goal: provide optional extension-crate support for E2EE private-channel
+products where the server stores ciphertext and minimal routing metadata only.
 
 Deliverables:
 
-- DM thread, group membership, message ciphertext, attachment reference, read
-  receipt, reaction, typing/presence hint, and abuse-report metadata shapes,
+- private-channel thread, group membership, message ciphertext, attachment
+  reference, delivery/read signal, interaction signal, presence hint, and
+  abuse-report metadata shapes,
 - minimal routing metadata policy for sender, recipient, thread identifiers,
   timestamps, delivery state, and device/key epoch references,
 - encryption-domain and key-epoch metadata for message ciphertext, encrypted
@@ -1810,9 +1848,10 @@ Deliverables:
 - abuse-report evidence package model that can include user-authorized
   decrypted excerpts or client-provided proofs without making plaintext
   generally queryable,
-- tests that DM ciphertext is never indexed as plaintext, realtime events carry
-  no message content, exports respect participant visibility, and moderation
-  reports do not create a general server-side decrypt path.
+- tests that private-channel ciphertext is never indexed as plaintext,
+  realtime events carry no message content, exports respect participant
+  visibility, and moderation reports do not create a general server-side
+  decrypt path.
 
 ## v0.52.3 - Cross-Product Export And Deletion Orchestration Model
 
@@ -1841,9 +1880,9 @@ Deliverables:
   are idempotent, operators never see download tokens, and legal hold blocks
   destructive steps across all products.
 
-## v0.52.4 - Searchable Encrypted Mailbox And Support Thread Model
+## v0.52.4 - Optional Searchable Encrypted Mailbox And Support Thread Extension
 
-Goal: support mailbox-style messaging products that intentionally use
+Goal: support optional mailbox-style extension crates that intentionally use
 server-authorized decryption for search, folders, support communication, and
 abuse handling while remaining encrypted at rest with strict audit controls.
 

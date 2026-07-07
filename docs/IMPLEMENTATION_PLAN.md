@@ -93,6 +93,8 @@ or client-provided evidence path is used.
 - `skrifheim-query`: query intent, policy-aware planning, context-pack planning.
 - `skrifheim-compliance`: future legal/compliance passports, law-pack metadata, and legal transfer decisions.
 - `skrifheim-cluster`: future cell, control-plane, tunnel, placement, and failover planning primitives.
+- `skrifheim-ext-*`: future optional application-family extension crates that
+  depend on core crates but are not required for the mandatory database core.
 - `skrifheim`: CLI/server orchestration.
 - `xtask`: repeatable local automation.
 
@@ -391,16 +393,20 @@ downstream projection and artifact cone and mark it stale, quarantine it into a
 separate world, or make it eligible for crypto-erasure where the key hierarchy
 allows that response.
 
-High-volume social-feed workloads are a first-class target alongside CMS and
-source-state hosting. The database must provide reusable primitives for social
-applications without absorbing application-owned schema semantics:
+High-volume relationship-feed workloads are a first-class target alongside CMS
+and source-state hosting, but they must be implemented as optional extension
+crates unless a primitive is truly generic. The database core must provide
+reusable fact, world, policy, encryption, projection, and audit primitives; an
+extension crate such as `skrifheim-ext-social` composes those primitives for a
+product family without making that product family part of the mandatory core.
 
-- viewer-context visibility planning for public, unlisted, followers-only,
-  close-circle, subscriber/group, community-only, deleted, tombstoned, and
-  visibility-reduced content,
-- social graph policy edges for follows, follow requests, blocks, mutes,
-  muted words, list membership, community membership, replies, quotes,
-  reposts, likes, bookmarks, and reports,
+Those extension crates must express their needs through generic primitives:
+
+- viewer-context visibility planning for public, limited-audience,
+  member-scoped, group-scoped, deleted, tombstoned, and visibility-reduced
+  content,
+- relationship policy edges for subscription, membership, denial, preference,
+  interaction, reference, endorsement, collection, and report-like signals,
 - timeline projection metadata for pull feeds, materialized hot timelines,
   lazy fanout, notification timelines, and deterministic rebuild from
   canonical facts/events,
@@ -415,7 +421,7 @@ applications without absorbing application-owned schema semantics:
 - consent ledger, ranking explanation, ad-transparency, and ad-measurement
   metadata that can support EU-style non-personalized fallback and DSA-style
   explanations,
-- E2EE direct-message metadata boundaries where the server stores ciphertext
+- E2EE private-channel metadata boundaries where the server stores ciphertext
   and minimal routing metadata only,
 - server-blind collaboration envelope boundaries where workspaces, channels,
   memberships, invitations, device/key epochs, read cursors, delivery state,
@@ -426,6 +432,10 @@ applications without absorbing application-owned schema semantics:
 - mailbox-style encrypted-at-rest messaging boundaries where server-authorized
   search, folders, support threads, and abuse handling require explicit
   decrypt/index proofs, purpose limitation, key epochs, and audit binding.
+
+Core crates must not depend on those extension crates. A deployment that only
+needs CMS-style release primitives must be able to omit social, messaging,
+mailbox, forge, or collaboration extension crates from its trusted runtime.
 
 Hierarchical discussion workloads are also a first-class shape. The database
 must provide generic, policy-bound primitives for nested spaces, long-lived

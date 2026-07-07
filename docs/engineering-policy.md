@@ -26,6 +26,13 @@ Host-only code may use `std`:
 
 Host-only code still follows the dependency review rule.
 
+Application-family extension crates may exist under `crates/` or a future
+extension workspace, but they are not allowed to become hidden core
+dependencies. Core crates must not depend on `skrifheim-ext-*` crates, and
+extension crates must compose existing authorization, legal/compliance,
+encryption-domain, key-lifecycle, provenance, audit, and release-evidence
+semantics instead of redefining them.
+
 ## Portability Rules
 
 `skrifheim` must not become a Linux-only or x86-only database by accident.
