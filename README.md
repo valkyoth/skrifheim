@@ -93,6 +93,7 @@ It is not a usable database engine.
 | Rebuildable projections and social/community workload primitives | Planned | `v0.29.0` through `v0.32.7`, including graph/search/vector projections plus social graph visibility, timelines, media authorization, realtime notifications, moderation/safety labels, consent, ads transparency, ranking explanations, hierarchical discussion, scoped permissions, and moderation workflow simulation. |
 | Crypto-agile manifest and threshold signatures | Planned | `v0.33.0` signs manifests; `v0.33.1` defines the threshold-signature or bounded quorum multi-signature proof model before approval-sensitive operations depend on multi-party authority. |
 | Audit proofs and backup/restore | Planned | `v0.34.0` through `v0.36.0`, with `v0.35.1` reserved for backup-format evolution and schema compatibility before the full schema catalog. |
+| Secure bootstrap, public origins, descriptors, and scheduled operations | Planned | `v0.38.1` through `v0.38.3` define one-time bootstrap, origin/alias separation, public descriptors, scheduled operations, cache controls, and secret-free config export. |
 | CMS release primitives | Planned | `v0.39.0` through `v0.40.0`. |
 | AI artifact provenance | Planned | `v0.41.0`. |
 | Distinctive security and truth features | Planned | Causal blast-radius invalidation, signed declassification proofs, AI derivation cones, and propagated confidence with mandatory access control are now tracked in the implementation and version plans. |

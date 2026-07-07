@@ -26,7 +26,7 @@ The 1.0 database must be able to support a future Rust CMS as a thin typed appli
 - Plugin and theme execution must use capability-limited WASM when implemented.
 - AI cannot directly publish, declassify, or rewrite authoritative content.
 - Sensitive content requires approval workflows before release.
-- Collaborative text editing must use the selected `v0.38.1` convergence model;
+- Collaborative text editing must use the selected `v0.38.4` convergence model;
   the CMS layer must not invent independent OT/CRDT semantics outside the
   database plan.
 

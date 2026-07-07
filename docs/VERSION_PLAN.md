@@ -1156,8 +1156,14 @@ Deliverables:
   forward-incompatible backup versions, and intentionally schema-less scaffold
   backups,
 - migration hook shape for future schema catalog upgrades,
+- read-only configuration export shape that includes non-secret instance,
+  site, policy, storage, and recovery settings while excluding passkeys,
+  recovery codes, sessions, installer/bootstrap tokens, password hashes, key
+  material, wrapped secrets, and private metadata,
 - tests that backup restore cannot silently treat unknown schema contracts as
   compatible,
+- tests that configuration export never becomes a complete backup and never
+  leaks authentication or encryption material,
 - explicit note that `v0.35.0` remains a skeleton and v0.45.0 finalizes the
   catalog-backed compatibility model.
 
@@ -1199,7 +1205,87 @@ Deliverables:
 - diagnostics command,
 - invalid config tests.
 
-## v0.38.1 - Collaborative Text Convergence Model
+## v0.38.1 - First-Run Bootstrap And Instance Identity Model
+
+Goal: support secure installer/bootstrap workflows for consuming applications
+without accepting browser-submitted database secrets, reusable installer
+endpoints, or unsafe default administrator assumptions.
+
+Deliverables:
+
+- instance identity metadata with stable instance ID, schema version, setup
+  fingerprint, created/updated/completed timestamps, and install status,
+- bootstrap state machine for not-started, environment-ready, identity-pending,
+  policy-pending, complete, and locked states,
+- one-time bootstrap token proof model with keyed token hash, token source
+  metadata, expiry, single-use consumption, failed-attempt tracking, and
+  automatic lockout after completion,
+- bootstrap challenge metadata for first administrator or first owner
+  registration that binds to public origin, setup fingerprint, expiry, policy
+  epoch, device context, and single-use consumption,
+- rule that database credentials, passkey challenges, recovery secrets,
+  installer/bootstrap tokens, and TOTP or equivalent fallback secrets are never
+  stored as ordinary facts or audit payload,
+- environment validation record for storage readiness, key hierarchy readiness,
+  public origin, trusted proxy/header policy, HTTPS expectations, and migration
+  status,
+- audit events for bootstrap progress that never record secrets,
+- tests that completed installs cannot be re-run, bootstrap tokens cannot be
+  reused, insecure local fixtures require explicit local-only policy, default
+  administrator names are not assumed by the database, and bootstrap cannot
+  overwrite existing tenants, worlds, or users.
+
+## v0.38.2 - Site Identity, Public Origin, Alias, And Descriptor Model
+
+Goal: provide generic public-site identity and descriptor primitives while
+keeping administrative origins, passkey origins, and private mode policy
+separate from public rendering aliases.
+
+Deliverables:
+
+- site/instance identity settings for public title, tagline, language, locale,
+  timezone, date/time formats, reading/writing defaults, privacy state, and
+  public-safe logo/icon/asset references,
+- canonical public origin and explicit public alias origin metadata,
+- strict separation between public serving aliases and administrator,
+  passkey/WebAuthn, bootstrap, API, and trusted internal origins,
+- descriptor record model for robots, security contact metadata, feeds,
+  sitemaps, OpenSearch-style descriptors, web app manifests, and public asset
+  icon references,
+- private-site and maintenance-mode policy that forces conservative public
+  descriptors regardless of owner overrides,
+- audited narrow operations for enabling/disabling redirects, changing
+  canonical origin, updating descriptor overrides, and changing search
+  visibility,
+- tests that public aliases do not expand admin or passkey origins, private and
+  maintenance modes override public indexing, descriptor generation uses only
+  public-safe fields, and redirects cannot be changed without audit.
+
+## v0.38.3 - Scheduled Operation And Cache Control Model
+
+Goal: make scheduled publishing, descriptor rebuilds, cache purge/warm actions,
+and maintenance operations private, audited, policy-bound operations instead of
+public cron URLs or application-side shortcuts.
+
+Deliverables:
+
+- scheduled operation metadata with due time, limit, actor/service identity,
+  policy epoch, target scope, replay guard, and audit binding,
+- publish-due operation model that keeps scheduled content private until the
+  operation commits,
+- cache eligibility metadata for immutable public assets and public
+  projections, with explicit no-store policy for admin, auth, bootstrap,
+  preview, API, private, and sensitive responses,
+- cache purge/warm operation records for one URL, one asset, related public
+  URLs after publish, public media, or all eligible public projections,
+- trusted reverse-proxy/header context metadata for operations that depend on
+  public origin or cache status,
+- tests that scheduled operations require private authenticated authority,
+  cannot publish early, cannot execute twice, cannot expose previews to public
+  indexes, and cache operations never apply to admin/auth/bootstrap/private
+  responses.
+
+## v0.38.4 - Collaborative Text Convergence Model
 
 Goal: choose the collaborative text model before CMS release primitives and
 local-first world metadata depend on merge semantics.
@@ -1233,7 +1319,7 @@ Goal: support the first CMS-style atomic publishing model.
 Deliverables:
 
 - public/private world split,
-- CMS content field model follows the `v0.38.1` collaborative text decision,
+- CMS content field model follows the `v0.38.4` collaborative text decision,
 - release object,
 - publish preflight,
 - atomic promote/rollback,
@@ -1275,7 +1361,7 @@ Deliverables:
 - device-bound world metadata,
 - sync cursor model,
 - encrypted sync envelope metadata,
-- collaborative text field metadata using the selected `v0.38.1` convergence
+- collaborative text field metadata using the selected `v0.38.4` convergence
   model,
 - policy-filtered sync tests.
 
@@ -1314,7 +1400,7 @@ Deliverables:
 - quarantine world/state metadata for imported but untrusted bundles,
 - tests for object-type confusion, digest-algorithm confusion, stale alias
   rollback, missing object references, and importing without proof material,
-- documentation that application-specific source object formats remain owned by
+- documentation that application-owned source object formats remain owned by
   the consuming application, while `skrifheim` provides durable,
   policy-aware, compliance-aware backend primitives.
 
@@ -1688,6 +1774,10 @@ Deliverables:
 - tamper-evident manifests,
 - rootless Podman deployment,
 - backup/restore,
+- secure first-run bootstrap and instance identity primitives,
+- public origin, alias, descriptor, scheduled operation, and cache-control
+  primitives,
+- read-only secret-free configuration export,
 - CMS release primitives,
 - public/private world split,
 - render dependency tracking,

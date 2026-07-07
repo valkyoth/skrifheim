@@ -366,7 +366,7 @@ applications without absorbing application-owned schema semantics:
 Hierarchical discussion workloads are also a first-class shape. The database
 must provide generic, policy-bound primitives for nested spaces, long-lived
 threads, rich moderation, and safe extensibility without owning an
-application-specific discussion schema:
+application-owned discussion schema:
 
 - hierarchical containers with scoped capabilities, inheritance,
   trust-level hooks, ownership checks, temporary grants, and escalation
@@ -473,6 +473,27 @@ Support offline, collaborative, CMS, and source-state worlds:
 - operation and event ledgers for application workflows,
 - auditable explanation objects,
 - bounded context packs.
+
+Operational CMS-style deployments need secure bootstrap and public-site
+metadata primitives, but `skrifheim` must keep them generic and policy-bound:
+
+- first-run bootstrap state with one-time token proofs, setup fingerprints,
+  public-origin validation, trusted-proxy/header policy, migration readiness,
+  key-hierarchy readiness, and automatic lockout after completion,
+- first-owner or first-administrator challenge metadata that binds to origin,
+  device context, policy epoch, expiry, and single-use consumption without
+  storing setup secrets as ordinary facts or audit payloads,
+- site/instance identity settings, public origins, public aliases, descriptor
+  metadata, private/maintenance mode, and search visibility as audited facts
+  under `skrifheim` policy,
+- strict separation between public serving aliases and administrative,
+  passkey/WebAuthn, bootstrap, API, and trusted internal origins,
+- scheduled operations such as publish-due, descriptor rebuilds, cache purge or
+  warm actions, and maintenance tasks as private authenticated operations with
+  replay guards and audit binding,
+- read-only configuration export that helps recovery while explicitly excluding
+  credentials, sessions, bootstrap tokens, recovery codes, key material, and
+  other secrets.
 
 The collaborative text model must be selected before CMS publish/release
 primitives depend on it. `skrifheim` must choose between Operational Transform,

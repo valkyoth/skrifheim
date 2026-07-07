@@ -18,6 +18,9 @@
   scoped permissions, sanitized-content provenance, read/watch projections,
   moderation workflow simulation, plugin/theme capability boundaries, and
   dry-run migration planning.
+- Added pre-1.0 operational CMS bootstrap milestones: one-time bootstrap,
+  public-origin and alias separation, public descriptors, scheduled operations,
+  cache controls, and secret-free configuration export.
 
 ## 0.18.1
 
