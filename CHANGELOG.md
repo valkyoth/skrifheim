@@ -10,6 +10,10 @@
 - Added pre-1.0 source-state backend milestones for Sagnir-style forge
   workloads: proof-carrying bundles, resource-budgeted verification,
   operation/event/explanation/context records, and sealed private realms.
+- Added pre-1.0 social-feed backend milestones for high-volume applications:
+  social graph visibility, timeline projections, media authorization,
+  realtime/notification rebuilds, moderation/safety labels, consent, ads
+  transparency, privacy-rights workflows, and E2EE message metadata boundaries.
 
 ## 0.18.1
 

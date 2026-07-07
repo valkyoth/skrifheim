@@ -312,6 +312,10 @@ Canonical facts drive projections:
 - columnar analytics,
 - realtime subscriptions,
 - CMS render graphs,
+- social timelines and notification feeds,
+- privacy-preserving counters,
+- media authorization indexes,
+- moderation and safety-label indexes,
 - AI artifacts and context packs.
 
 Every projection records its source fact range, consistency level, policy boundary, and rebuild command.
@@ -321,6 +325,33 @@ worker, model, or key is compromised, `skrifheim` must be able to find the
 downstream projection and artifact cone and mark it stale, quarantine it into a
 separate world, or make it eligible for crypto-erasure where the key hierarchy
 allows that response.
+
+High-volume social-feed workloads are a first-class target alongside CMS and
+source-state hosting. The database must provide reusable primitives for social
+applications without becoming an application-specific product schema:
+
+- viewer-context visibility planning for public, unlisted, followers-only,
+  close-circle, subscriber/group, community-only, deleted, tombstoned, and
+  visibility-reduced content,
+- social graph policy edges for follows, follow requests, blocks, mutes,
+  muted words, list membership, community membership, replies, quotes,
+  reposts, likes, bookmarks, and reports,
+- timeline projection metadata for pull feeds, materialized hot timelines,
+  lazy fanout, notification timelines, and deterministic rebuild from
+  canonical facts/events,
+- privacy-preserving counter and analytics models that do not expose per-viewer
+  identities unless a product feature has explicit consent and legal basis,
+- media metadata records for encrypted object references, variants, captions,
+  takedowns, short-lived access grants, and processing states while keeping raw
+  media blobs outside the database,
+- moderation, appeal, trusted-flagger, statement-of-reasons, and stackable
+  safety-label records that are policy inputs for search, feeds, media,
+  notifications, and counters,
+- consent ledger, ranking explanation, ad-transparency, and ad-measurement
+  metadata that can support EU-style non-personalized fallback and DSA-style
+  explanations,
+- E2EE direct-message metadata boundaries where the server stores ciphertext
+  and minimal routing metadata only.
 
 ## Phase 8: Query Language And Context Packs
 

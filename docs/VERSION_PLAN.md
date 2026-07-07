@@ -871,6 +871,128 @@ Deliverables:
 - no lower-domain embedding of higher-domain facts,
 - tests for denied vector/AI projection writes.
 
+## v0.32.1 - Social Graph Visibility And Timeline Projection Model
+
+Goal: support high-volume social-feed workloads without letting feeds, search,
+counters, or caches bypass viewer-specific policy.
+
+Deliverables:
+
+- social graph edge model for follow, follow request, block, mute, list
+  membership, community membership, reply, quote, repost, like, bookmark, and
+  report relationships,
+- viewer-context visibility planner for public, unlisted, followers-only,
+  close-circle, subscriber/group, community-only, deleted, tombstoned, and
+  visibility-reduced content states,
+- protected-account, block, mute, muted-word, reply-control, and community-role
+  policy hooks,
+- timeline projection metadata for pull feeds, materialized hot timelines,
+  lazy fanout, notification timelines, and rebuildable replay,
+- durable timeline-item record shape with source fact range, viewer or audience
+  scope, policy epoch, consistency watermark, and rebuild command,
+- deterministic counter model for replies, reposts, quotes, likes, bookmarks,
+  shares, and privacy-preserving view counts,
+- tests that search, profile feeds, home feeds, thread reads, media feeds,
+  notification reads, counters, and cached timelines all apply the same
+  viewer-context visibility rules.
+
+## v0.32.2 - Media Object Authorization And Processing State Model
+
+Goal: provide database primitives for encrypted media metadata, normalized
+variants, captions, takedowns, and short-lived access grants without storing or
+serving raw blobs from `skrifheim`.
+
+Deliverables:
+
+- media asset, variant, caption/subtitle, processing job, takedown, and
+  access-grant record shapes,
+- encryption-domain and key metadata for original uploads, normalized display
+  variants, captions, subtitles, transcripts, filenames, alt text, and
+  moderation notes,
+- processing-state model for quarantined, scanning, normalizing, ready, failed,
+  rejected, deleted, and takedown states,
+- short-lived media access-grant proof model with hashed token storage,
+  expiration, viewer binding, asset state, and post/account visibility
+  re-check requirements,
+- object-reference policy that prevents account IDs, handles, filenames, email
+  addresses, or local paths from leaking through storage keys,
+- metadata-only event contract for upload sessions, processing state changes,
+  takedowns, and delivery grants; binary media, object keys, wrapped keys,
+  hashes, captions, alt text, and user text must not enter event streams,
+- tests that stale grants fail after takedown, block, protected-account change,
+  post visibility change, asset deletion, or moderation state change.
+
+## v0.32.3 - Social Realtime, Notification, And Rebuildable Event Streams
+
+Goal: model realtime-adjacent social features as rebuildable projections and
+metadata-only events, not as a second source of truth.
+
+Deliverables:
+
+- notification fact and projection model for follows, follow requests,
+  mentions, replies, reposts, quotes, likes, bookmarks, DMs, poll results,
+  community events, moderation decisions, security events, and compliance
+  workflows,
+- read/unread, clear/delete, snooze, priority, request-inbox, and per-account
+  notification filter state,
+- realtime hint event shape for WebSocket/SSE gateways that carries only
+  identifiers, state, watermarks, and coarse event kinds,
+- replay-after-disconnect cursor and watermark model,
+- rebuild contract for notification counts, presence/typing hints, hot
+  timelines, search indexes, and counters from canonical facts/events,
+- tests that realtime hints never expose private content, DMs, post bodies,
+  media metadata, account PII, or authorization decisions not visible through a
+  normal API read.
+
+## v0.32.4 - Social Moderation, Appeals, And Safety Labels
+
+Goal: make moderation and user-safety state first-class policy inputs before
+social applications depend on timeline/search visibility.
+
+Deliverables:
+
+- moderation report, appeal, trusted-flagger notice, policy label, visibility
+  reduction, account restriction, post restriction, and community moderation
+  record shapes,
+- statement-of-reasons proof model with actor, authority, target, policy
+  version, legal basis where applicable, appeal status, and visibility effect,
+- stackable safety-label source model that can warn, hide, or reduce content
+  without granting third parties raw private data or unrestricted enforcement
+  authority,
+- user-selectable safety controls for hidden words, muted notification types,
+  quote/reply controls, sensitive-media labels, and community-note requests,
+- deterministic appeal workflow state machine,
+- transparency aggregate fact model that avoids per-user exposure,
+- tests that moderation-hidden content cannot leak through search, timelines,
+  media reads, notifications, counters, exports without policy, or cached
+  projections.
+
+## v0.32.5 - Consent, Ads Transparency, And Ranking Explanation Model
+
+Goal: support social applications that must explain ranking and advertising
+decisions while respecting EU consent, privacy, and DSA-style transparency
+constraints.
+
+Deliverables:
+
+- consent ledger model with purpose, version, grant/withdrawal state, timestamp,
+  actor, device context, and legal basis,
+- separate consent purposes for necessary service operation, security logging,
+  personalized ranking, behavioral measurement, personalized ads, and
+  non-essential cookies/local tracking,
+- ranking explanation metadata for chronological, following-only, regional,
+  contextual, and personalized feed modes,
+- ad transparency record model with sponsor identity, campaign/ad identifiers,
+  creative reference, targeting category summary, placement, review state,
+  political-ad marker, and "why shown" explanation,
+- policy hooks that reject sensitive-category targeting, minor profiling,
+  consent-dark-pattern assumptions, and personalized delivery after withdrawal,
+- aggregate advertiser reporting model that does not expose per-user ad
+  histories to advertisers,
+- tests for consent withdrawal, non-personalized fallback, ranking explanation
+  redaction, political-ad disabled/default-deny behavior, and ad-label
+  propagation into API-visible result metadata.
+
 ## v0.33.0 - Crypto-Agile Manifest Signatures
 
 Goal: sign manifests without locking the project to one permanent algorithm.
@@ -1313,6 +1435,52 @@ Deliverables:
   multi-jurisdiction scopes,
 - tests that unlabeled non-public data cannot be read, exported, indexed, processed by AI, backed up, or planned for movement.
 
+## v0.52.1 - Privacy Rights, Legal Hold, And Deletion Workflow Model
+
+Goal: support social applications that need GDPR-style export, deletion,
+retention, deactivation, and legal-hold workflows without breaking immutable
+audit or provenance guarantees.
+
+Deliverables:
+
+- privacy export job, delete job, deactivation job, retention job, and legal
+  hold record shapes,
+- subject-access export proof model that records scope, actor, requester,
+  policy epoch, legal basis, redactions, excluded third-party data, and
+  generated artifact metadata,
+- deletion/tombstone/crypto-erasure decision model separating public removal,
+  account deactivation, account deletion, retention-required audit state,
+  legal hold, and irreversible key destruction,
+- progress and failure-state metadata for long-running export, delete,
+  retention, and breach-response jobs,
+- processor-log and breach-response evidence record shapes,
+- tests that legal hold blocks destructive erasure, deletion removes user
+  visibility while preserving required audit facts, export does not leak other
+  users' private facts, and retention expiry cannot erase protected audit
+  history.
+
+## v0.52.2 - End-To-End Encrypted Message Metadata Boundary
+
+Goal: provide database support for E2EE direct-message products where the
+server stores ciphertext and minimal routing metadata only.
+
+Deliverables:
+
+- DM thread, group membership, message ciphertext, attachment reference, read
+  receipt, reaction, typing/presence hint, and abuse-report metadata shapes,
+- minimal routing metadata policy for sender, recipient, thread identifiers,
+  timestamps, delivery state, and device/key epoch references,
+- encryption-domain and key-epoch metadata for message ciphertext, encrypted
+  attachments, and client-managed key material references,
+- search and analytics exclusion rules for message plaintext, private message
+  bodies, and protected attachment metadata,
+- abuse-report evidence package model that can include user-authorized
+  decrypted excerpts or client-provided proofs without making plaintext
+  generally queryable,
+- tests that DM ciphertext is never indexed as plaintext, realtime events carry
+  no message content, exports respect participant visibility, and moderation
+  reports do not create a general server-side decrypt path.
+
 ## v0.53.0 - Law Pack Metadata And Admission
 
 Goal: define how signed legal and compliance policy packs enter the system.
@@ -1397,6 +1565,11 @@ Deliverables:
 - CMS release primitives,
 - public/private world split,
 - render dependency tracking,
+- social graph visibility and timeline projection primitives,
+- media metadata authorization and processing-state model,
+- social moderation, safety-label, consent, ad-transparency, and ranking
+  explanation primitives,
+- privacy rights, legal-hold, deletion, and E2EE message metadata boundaries,
 - source-state object and proof-carrying bundle backend primitives,
 - resource-budgeted verification modes,
 - operation, event, explanation, and context-pack records,

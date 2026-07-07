@@ -90,7 +90,7 @@ It is not a usable database engine.
 | Strict serializable transactions | Planned | `v0.21.0` through `v0.23.0`. |
 | Native query parser and execution | Planned | `v0.25.0` through `v0.28.0`. |
 | Approval-role authority model | Planned | `v0.26.2` defines executable roles and single-maintainer fallback policy for break-glass, law-pack admission, key ceremonies, declassification, backup restore, and release operations. |
-| Rebuildable projections | Planned | `v0.29.0` through `v0.32.0`. |
+| Rebuildable projections and social workload primitives | Planned | `v0.29.0` through `v0.32.5`, including graph/search/vector projections plus social graph visibility, timelines, media authorization, realtime notifications, moderation/safety labels, consent, ads transparency, and ranking explanations. |
 | Crypto-agile manifest and threshold signatures | Planned | `v0.33.0` signs manifests; `v0.33.1` defines the threshold-signature or bounded quorum multi-signature proof model before approval-sensitive operations depend on multi-party authority. |
 | Audit proofs and backup/restore | Planned | `v0.34.0` through `v0.36.0`, with `v0.35.1` reserved for backup-format evolution and schema compatibility before the full schema catalog. |
 | CMS release primitives | Planned | `v0.39.0` through `v0.40.0`. |
@@ -98,7 +98,7 @@ It is not a usable database engine.
 | Distinctive security and truth features | Planned | Causal blast-radius invalidation, signed declassification proofs, AI derivation cones, and propagated confidence with mandatory access control are now tracked in the implementation and version plans. |
 | Local-first worlds, mission capsules, and source-state backend support | Planned | `v0.42.0` through `v0.43.4`, including source-state object/bundle admission, resource-budgeted verification, operation/event/explanation/context records, and sealed private realm support for forge-style applications. |
 | Fuzz/property baseline, operations, and hardening | Planned | `v0.44.0` through `v0.51.0`. |
-| Standalone legal/compliance passports and placement foundations | Planned | `v0.52.0` through `v0.55.0`. |
+| Standalone legal/compliance passports and placement foundations | Planned | `v0.52.0` through `v0.55.0`, with privacy-rights workflows and E2EE message metadata boundaries reserved in `v0.52.1` and `v0.52.2`. |
 | Production release candidate | Planned | `v0.56.0`. |
 | Hyve multi-cell cluster fabric | Planned | `v1.1.0` and later. |
 
