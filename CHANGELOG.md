@@ -24,17 +24,18 @@
 - Added pre-1.0 source-state backend milestones for compliance-forge
   workloads: proof-carrying bundles, resource-budgeted verification,
   operation/event/explanation/context records, and sealed private realms.
-- Added pre-1.0 social-feed backend milestones for high-volume applications:
-  social graph visibility, timeline projections, media authorization,
-  realtime/notification rebuilds, moderation/safety labels, consent, ads
-  transparency, privacy-rights workflows, and E2EE message metadata boundaries.
+- Added pre-1.0 optional relationship/feed extension milestones for high-volume
+  applications: relationship visibility, timeline projections, media
+  authorization, realtime/notification rebuilds, moderation/safety labels,
+  consent, transparency, privacy-rights workflows, and private-channel metadata
+  boundaries.
 - Added pre-1.0 hierarchical discussion and extension/import milestones:
   scoped permissions, sanitized-content provenance, read/watch projections,
   moderation workflow simulation, plugin/theme capability boundaries, and
   dry-run migration planning.
-- Added pre-1.0 operational CMS bootstrap milestones: one-time bootstrap,
-  public-origin and alias separation, public descriptors, scheduled operations,
-  cache controls, and secret-free configuration export.
+- Added pre-1.0 operational application bootstrap milestones: one-time
+  bootstrap, public-origin and alias separation, public descriptors, scheduled
+  operations, cache controls, and secret-free configuration export.
 - Added pre-1.0 platform identity and product-boundary milestones: separated
   identity/account/operator/support/service/guardian authorities, minimal
   derived claims, cross-product export/deletion orchestration, and searchable

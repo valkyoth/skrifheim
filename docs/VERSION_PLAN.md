@@ -92,7 +92,8 @@ Deliverables:
 - Focused workspace crates.
 - `scripts/checks.sh`.
 - CI, dependency policy, security policy, release notes.
-- Implementation, version, modularity, threat-model, toolchain, and CMS target docs.
+- Implementation, version, modularity, threat-model, toolchain, and optional
+  publishing extension target docs.
 
 Verification:
 
@@ -1110,11 +1111,11 @@ Deliverables:
   media reads, notifications, counters, exports without policy, or cached
   projections, and that appeal outcomes preserve immutable moderation history.
 
-## v0.32.5 - Consent, Ads Transparency, And Ranking Explanation Model
+## v0.32.5 - Optional Consent, Transparency, And Ranking Explanation Extension
 
-Goal: support social applications that must explain ranking and advertising
-decisions while respecting EU consent, privacy, and DSA-style transparency
-constraints.
+Goal: support optional relationship/feed extensions that must explain ranking,
+advertising, recommendation, or promoted-content decisions while respecting EU
+consent, privacy, and DSA-style transparency constraints.
 
 Deliverables:
 
@@ -1445,8 +1446,8 @@ Deliverables:
 
 ## v0.38.4 - Collaborative Text Convergence Model
 
-Goal: choose the collaborative text model before CMS release primitives and
-local-first world metadata depend on merge semantics.
+Goal: choose the collaborative text model before optional publishing extension
+release primitives and local-first world metadata depend on merge semantics.
 
 Deliverables:
 
@@ -1467,25 +1468,29 @@ Deliverables:
   compacted CRDT state, or a signed projection,
 - add fixtures for concurrent insert/delete, offline edit replay, actor
   ordering, tombstone retention, and malicious operation rejection,
-- update CMS and local-first milestones to use the selected model rather than
-  generic "CRDT fields" language.
+- update optional publishing and local-first milestones to use the selected
+  model rather than generic "CRDT fields" language.
 
-## v0.39.0 - CMS World And Release Primitives
+## v0.39.0 - Optional Publishing World And Release Extension
 
-Goal: support the first CMS-style atomic publishing model.
+Goal: support the first optional publishing-style atomic release extension
+without making CMS semantics part of the mandatory world database core.
 
 Deliverables:
 
+- optional `skrifheim-ext-publishing` or equivalent extension crate plan,
 - public/private world split,
-- CMS content field model follows the `v0.38.4` collaborative text decision,
-- release object,
+- content field model follows the `v0.38.4` collaborative text decision
+  without making a CMS schema canonical,
+- generic release object,
 - publish preflight,
 - atomic promote/rollback,
 - tests for no half-published state.
 
-## v0.40.0 - CMS Render Dependency Graph
+## v0.40.0 - Optional Publishing Render Dependency Graph Extension
 
-Goal: track causal dependencies for rendered public output.
+Goal: track causal dependencies for rendered public output in an optional
+publishing extension crate.
 
 Deliverables:
 
@@ -1540,7 +1545,8 @@ Deliverables:
 ## v0.43.1 - Source-State Object And Bundle Backend Model
 
 Goal: define policy-bound primitives for source-state and forge-style
-applications without treating CMS publishing as the only application shape.
+applications without treating publishing as the only application extension
+shape.
 
 Deliverables:
 
@@ -1995,7 +2001,8 @@ Deliverables:
 - legal-basis proof skeleton,
 - safe alternative suggestions such as redacted, aggregate, hash-witness, remote-query, and compute-to-data,
 - deterministic denial-shape tests,
-- tests for denied CMS reads from disallowed request contexts.
+- tests for denied optional publishing-extension reads from disallowed request
+  contexts.
 
 ## v0.55.0 - Sovereign Placement Intent Compiler
 
@@ -2018,10 +2025,10 @@ Deliverables:
 - release-candidate notes,
 - complete security review checklist,
 - rootless Podman release gate,
-- final CMS integration checklist,
+- final optional extension integration checklist,
 - no new feature work without explicit deferral decision.
 
-## v1.0.0 - Production World Database For CMS Integration
+## v1.0.0 - Production World Database
 
 Goal: first serious production-ready `skrifheim`.
 
@@ -2057,26 +2064,28 @@ Deliverables:
 - public origin, alias, descriptor, scheduled operation, and cache-control
   primitives,
 - read-only secret-free configuration export,
-- CMS release primitives,
-- public/private world split,
-- render dependency tracking,
-- social graph visibility and timeline projection primitives,
-- media metadata authorization and processing-state model,
-- social moderation, safety-label, consent, ad-transparency, and ranking
-  explanation primitives,
-- hierarchical discussion, scoped permission, sanitized-content provenance,
-  read-state, watch/subscription, and moderation workflow primitives,
-- privacy rights, legal-hold, deletion, and E2EE message metadata boundaries,
+- optional publishing release primitives, public/private world split, and render
+  dependency tracking as extension-layer proof of the core API,
+- optional relationship/feed extension primitives for visibility, timelines,
+  media metadata authorization, processing state, moderation, safety labels,
+  consent, transparency, and ranking explanations,
+- optional forum/discussion extension primitives for hierarchical discussion,
+  scoped permission, sanitized-content provenance, read state,
+  watch/subscription, and moderation workflow,
+- optional privacy-rights, legal-hold, deletion, and private-channel metadata
+  extension boundaries,
 - platform identity, shared-account, product-boundary, guardian-consent, and
   derived-claim primitives,
-- cross-product export/deletion orchestration, searchable encrypted mailbox
-  support-thread boundaries, and server-blind encrypted collaboration envelope
-  support,
-- source-state object and proof-carrying bundle backend primitives,
+- optional cross-product export/deletion orchestration, searchable encrypted
+  mailbox support-thread boundaries, and server-blind encrypted collaboration
+  envelope support,
+- optional source-state object and proof-carrying bundle backend extension
+  primitives,
 - resource-budgeted verification modes,
 - operation, event, explanation, and context-pack records,
 - sealed private realm and blind remote backend model,
-- extension/theme capability boundary and import/migration dry-run model,
+- extension/theme capability boundary and import/migration dry-run model for
+  optional application-family crates,
 - AI artifact provenance,
 - complete release runbook,
 - security review PASS for exact commit.
@@ -2176,9 +2185,9 @@ Deliverables:
 - compliance incident record,
 - tests for law-pack, node-passport, and certification drift.
 
-### v1.7.0 - Multi-Region CMS Operation
+### v1.7.0 - Multi-Region Publishing Extension Operation
 
-Goal: serve CMS-style public reads locally while keeping private data and publishing controls lawful.
+Goal: serve publishing-style public reads locally while keeping private data and publishing controls lawful.
 
 Deliverables:
 

@@ -69,7 +69,8 @@ must remain possible by avoiding architecture-specific assumptions.
 - query language parser and planner,
 - manifest and audit-proof formats,
 - crypto-agile envelope metadata,
-- CMS release/dependency primitives.
+- generic release, projection, and dependency primitives used by optional
+  application-family extension crates.
 
 External crates can be safer for some standards or host-only tooling, but they must not quietly import a different authority model, runtime model, parser behavior, allocator assumption, or unsafe trusted boundary.
 

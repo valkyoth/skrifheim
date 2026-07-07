@@ -14,7 +14,7 @@ Status: baseline
 - signatures,
 - evidence references,
 - manifests,
-- CMS public/private separation,
+- optional publishing-extension public/private separation,
 - AI artifact provenance.
 
 ## Initial Threats

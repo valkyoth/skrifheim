@@ -5,13 +5,15 @@ Status: planning document
 Database name: `skrifheim`
 
 1.0 target: a production-ready causal world-state database for
-security/compliance-first application backends, including CMS-style
-applications that use facts, worlds, policies, atomic releases, sanitized
-public projections, and AI artifacts with provenance.
+security/compliance-first application backends. CMS, messenger, forum, forge,
+collaboration, and other application-family support must be optional
+compiled-in extension crates that compose facts, worlds, policies, releases,
+projections, audit, and AI artifact provenance without becoming mandatory core
+database semantics.
 
 ## Core Position
 
-`skrifheim` stores signed, versioned, policy-bound facts about worlds. It is not a SQL compatibility project and not a generic multi-model database. Relational, document, graph, vector, search, CMS render graphs, AI context packs, and analytics are projections over canonical facts.
+`skrifheim` stores signed, versioned, policy-bound facts about worlds. It is not a SQL compatibility project and not a generic multi-model database. Relational, document, graph, vector, search, render graphs, AI context packs, and analytics are projections over canonical facts.
 
 The canonical layer must be boring, durable, testable, and auditable. The
 futuristic behavior comes from world overlays, causal invalidation,
@@ -376,8 +378,8 @@ Canonical facts drive projections:
 - vector indexes,
 - columnar analytics,
 - realtime subscriptions,
-- CMS render graphs,
-- social timelines and notification feeds,
+- publishing extension render graphs,
+- relationship/feed extension timelines and notification feeds,
 - privacy-preserving counters,
 - media authorization indexes,
 - moderation and safety-label indexes,
@@ -393,12 +395,13 @@ downstream projection and artifact cone and mark it stale, quarantine it into a
 separate world, or make it eligible for crypto-erasure where the key hierarchy
 allows that response.
 
-High-volume relationship-feed workloads are a first-class target alongside CMS
-and source-state hosting, but they must be implemented as optional extension
-crates unless a primitive is truly generic. The database core must provide
-reusable fact, world, policy, encryption, projection, and audit primitives; an
-extension crate such as `skrifheim-ext-social` composes those primitives for a
-product family without making that product family part of the mandatory core.
+High-volume relationship-feed workloads are a first-class target alongside
+publishing and source-state hosting, but they must be implemented as optional
+extension crates unless a primitive is truly generic. The database core must
+provide reusable fact, world, policy, encryption, projection, and audit
+primitives; an extension crate such as `skrifheim-ext-social` composes those
+primitives for a product family without making that product family part of the
+mandatory core.
 
 Those extension crates must express their needs through generic primitives:
 
@@ -434,8 +437,9 @@ Those extension crates must express their needs through generic primitives:
   decrypt/index proofs, purpose limitation, key epochs, and audit binding.
 
 Core crates must not depend on those extension crates. A deployment that only
-needs CMS-style release primitives must be able to omit social, messaging,
-mailbox, forge, or collaboration extension crates from its trusted runtime.
+needs the base world database must be able to omit publishing, social,
+messaging, mailbox, forge, forum, or collaboration extension crates from its
+trusted runtime.
 
 Hierarchical discussion workloads are also a first-class shape. The database
 must provide generic, policy-bound primitives for nested spaces, long-lived
@@ -533,9 +537,11 @@ engine, policy planner, and key hierarchy are in place:
   sensitive results can be redacted or rejected even when the requester has
   clearance.
 
-## Phase 9: Local-First And CMS Support
+## Phase 9: Local-First And Optional Application Extensions
 
-Support offline, collaborative, CMS, and source-state worlds:
+Support offline, collaborative, publishing, forum-style, messenger-style,
+forge-style, and source-state worlds through generic core primitives plus
+optional extension crates:
 
 - draft worlds,
 - CRDT fields for collaborative text,
@@ -548,7 +554,7 @@ Support offline, collaborative, CMS, and source-state worlds:
 - auditable explanation objects,
 - bounded context packs.
 
-Operational CMS-style deployments need secure bootstrap and public-site
+Operational application deployments need secure bootstrap and public-origin
 metadata primitives, but `skrifheim` must keep them generic and policy-bound:
 
 - first-run bootstrap state with one-time token proofs, setup fingerprints,
@@ -569,20 +575,21 @@ metadata primitives, but `skrifheim` must keep them generic and policy-bound:
   credentials, sessions, bootstrap tokens, recovery codes, key material, and
   other secrets.
 
-The collaborative text model must be selected before CMS publish/release
-primitives depend on it. `skrifheim` must choose between Operational Transform,
-an established CRDT family such as RGA, LOGOOT, or YATA, or a documented custom
-model. The decision must define operation/state representation, actor and
-device identity, causal clocks, tombstones, compaction, policy boundaries, and
-whether releases store materialized text, operation history, compacted state, or
-signed projections.
+The collaborative text model must be selected before optional publishing,
+forum, messenger, or collaboration extension crates depend on it. `skrifheim`
+must choose between Operational Transform, an established CRDT family such as
+RGA, LOGOOT, or YATA, or a documented custom model. The decision must define
+operation/state representation, actor and device identity, causal clocks,
+tombstones, compaction, policy boundaries, and whether releases store
+materialized text, operation history, compacted state, or signed projections.
 
-CMS publishing uses world promotion, not mutable published flags.
+Publishing extensions use world promotion, not mutable published flags.
 
-Source-state and compliance-forge hosting are first-class workload shapes
-alongside CMS use. `skrifheim` should not own a consuming project's source
-object format, diff algorithm, or local CLI semantics, but it must provide
-durable backend primitives for policy-bound hosted source workflows:
+Source-state and compliance-forge hosting are first-class optional extension
+shapes alongside publishing, forum, messenger, and collaboration support.
+`skrifheim` should not own a consuming project's source object format, diff
+algorithm, or local CLI semantics, but it must provide durable backend
+primitives for policy-bound hosted source workflows:
 
 - application object identity domains that include object type, algorithm tag,
   canonical format version, tenant, and world scope,

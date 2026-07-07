@@ -27,9 +27,10 @@
 
 The 1.0 target is a serious production-ready causal world-state database for
 applications that need signed, versioned, policy-bound facts; branchable worlds;
-provenance; classification-aware planning; tamper-evident storage; and CMS
-integration through typed facts, atomic releases, sanitized projections, and AI
-artifacts with provenance.
+provenance; classification-aware planning; and tamper-evident storage.
+CMS-style publishing, messenger, forum, forge, and other application-family
+support is planned as optional compiled-in extension crates over the core world
+database primitives.
 
 The project is currently at the `v0.18.1` implementation stop, pending pentest.
 It is not a usable database engine.
@@ -98,7 +99,7 @@ It is not a usable database engine.
 | Crypto-agile manifest and threshold signatures | Planned | `v0.33.0` signs manifests; `v0.33.1` defines the threshold-signature or bounded quorum multi-signature proof model before approval-sensitive operations depend on multi-party authority. |
 | Audit proofs, backup/restore, and local rollback | Planned | `v0.34.0` through `v0.36.0`, with `v0.35.1` reserved for backup-format evolution and schema compatibility, and `v0.35.2` reserved for local snapshot/rollback retention with locked archive and recovery worlds. |
 | Secure bootstrap, public origins, descriptors, and scheduled operations | Planned | `v0.38.1` through `v0.38.3` define one-time bootstrap, origin/alias separation, public descriptors, scheduled operations, cache controls, and secret-free config export. |
-| CMS release primitives | Planned | `v0.39.0` through `v0.40.0`. |
+| Optional publishing/release extension primitives | Planned | `v0.39.0` through `v0.40.0` keep CMS-style publishing support as optional extension-layer release and render-graph primitives. |
 | AI artifact provenance | Planned | `v0.41.0`. |
 | Distinctive security and truth features | Planned | Causal blast-radius invalidation, signed declassification proofs, AI derivation cones, and propagated confidence with mandatory access control are now tracked in the implementation and version plans. |
 | Local-first worlds, mission capsules, source-state, and extension/import support | Planned | `v0.42.0` through `v0.43.6`, including source-state object/bundle admission, resource-budgeted verification, operation/event/explanation/context records, sealed private realms, plugin/theme capability boundaries, and dry-run import planning. |
@@ -117,9 +118,9 @@ It is not a usable database engine.
   redaction, and rejection are database planning concerns, not application-side
   decoration.
 - **Compliance-aware direction**: future instance, data, and operation
-  passports let standalone reads, CMS access, exports, indexing, backup, AI
-  processing, placement, replication, and failover respect signed law and
-  compliance packs.
+  passports let standalone reads, optional extension access, exports, indexing,
+  backup, AI processing, placement, replication, and failover respect signed law
+  and compliance packs.
 - **Tamper-evident direction**: WAL, immutable segments, manifests, signatures,
   and audit proofs are planned as the storage foundation.
 - **AI is not truth**: AI output is planned as derived artifact state with
@@ -130,8 +131,9 @@ It is not a usable database engine.
 - **Strict engineering posture**: core crates are `no_std`, unsafe code is
   forbidden, external crates require admission, and release stops require
   pentest review.
-- **Optional verticals**: product-family support belongs in extension crates
-  that depend on the secure core, not in the mandatory database runtime.
+- **Optional verticals**: CMS, messenger, forum, forge, collaboration, and
+  other product-family support belongs in extension crates that depend on the
+  secure core, not in the mandatory database runtime.
 
 ## Quick Start
 
@@ -224,6 +226,6 @@ Tags are created only when explicitly requested.
 - [Hyve Cluster And Compliance Roadmap](docs/hyve-cluster-and-compliance-roadmap.md)
 - [Security Controls](docs/security-controls.md)
 - [Threat Model](docs/threat-model.md)
-- [CMS 1.0 Target](docs/cms-1-0-target.md)
+- [Optional Publishing Extension Target](docs/cms-1-0-target.md)
 - [Toolchain Policy](docs/toolchain-policy.md)
 - [Release Runbook](docs/release-runbook.md)

@@ -14,10 +14,10 @@ not external deployment notes.
 Compliance-aware planning is a core database capability. It must work in a
 single standalone `skrifheim` instance before any multi-node cluster exists.
 
-The standalone model decides whether local reads, writes, CMS document access,
-exports, backups, search indexes, vector embeddings, AI summaries, admin
-queries, and public projections are lawful for the actor, purpose, data class,
-request context, and configured policy packs.
+The standalone model decides whether local reads, writes, optional
+publishing-extension document access, exports, backups, search indexes, vector
+embeddings, AI summaries, admin queries, and public projections are lawful for
+the actor, purpose, data class, request context, and configured policy packs.
 
 The cluster model extends the same planner to a set of sovereign cells
 coordinated by a control plane. The control plane can propose placement,
@@ -46,7 +46,7 @@ cluster node.
 
 Examples:
 
-- a CMS public gateway asks for a private draft as public content: deny,
+- a publishing public gateway asks for a private draft as public content: deny,
 - a request context is outside the approved region for an EEA-only tenant
   policy: deny, redact, or require stronger proof according to the policy pack,
 - an AI worker asks to summarize personal data without an allowed purpose:
@@ -322,7 +322,8 @@ Failover is per world, data class, and legal basis.
 
 Examples of planned behavior:
 
-- public CMS projections may fail over broadly when export policy permits,
+- public publishing projections may fail over broadly when export policy
+  permits,
 - ordinary personal data may fail over only to approved regional secondaries,
 - authentication secrets may require sealed regional mirrors,
 - protected infrastructure data may be limited to redacted or hash-witness

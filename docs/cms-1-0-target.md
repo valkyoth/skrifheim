@@ -1,13 +1,21 @@
-# skrifheim CMS 1.0 Target
+# skrifheim Optional Publishing Extension Target
 
 Status: planning document
 
-The 1.0 database must be able to support a future Rust CMS as a thin typed application layer over facts, worlds, policies, projections, publication releases, and AI artifacts.
+This document records requirements from a future CMS-style application family.
+Those requirements are inputs for optional publishing extension crates, not a
+definition of the mandatory `skrifheim` core database.
+
+The 1.0 database core must expose the generic facts, worlds, policies,
+projections, publication-release, and AI artifact primitives that make a future
+Rust CMS possible as a thin typed application layer. The CMS schema itself must
+live outside the core.
 
 ## Required Database Capabilities
 
 - content as signed, versioned facts,
-- site, content node, block, media, user, role, theme, plugin, release, and policy models,
+- optional extension-owned site, content node, block, media, user, role, theme,
+  plugin, release, and policy models,
 - draft worlds,
 - review worlds,
 - public-live world,
@@ -27,12 +35,13 @@ The 1.0 database must be able to support a future Rust CMS as a thin typed appli
 - AI cannot directly publish, declassify, or rewrite authoritative content.
 - Sensitive content requires approval workflows before release.
 - Collaborative text editing must use the selected `v0.38.4` convergence model;
-  the CMS layer must not invent independent OT/CRDT semantics outside the
-  database plan.
+  the optional publishing extension must not invent independent OT/CRDT
+  semantics outside the database plan.
 
 ## 1.0 Fit
 
-`skrifheim` 1.0 does not need a full CMS implementation, but it must expose the database primitives that make the CMS model possible:
+`skrifheim` 1.0 does not need a full CMS implementation. It must expose the
+database primitives that make an optional publishing extension possible:
 
 - create/fork/promote worlds,
 - store and query facts,
