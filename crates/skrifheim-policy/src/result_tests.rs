@@ -134,6 +134,43 @@ fn result_classification_saturates_sovereignty_overflow() -> Result<()> {
 }
 
 #[test]
+fn result_classification_keeps_overlapping_sovereignty_exact_when_unique_union_fits() -> Result<()>
+{
+    let mut first = Vec::new();
+    let mut second = Vec::new();
+    for index in 0..40 {
+        first.push(alloc::format!("JURISDICTION-{index}"));
+    }
+    for index in 20..60 {
+        second.push(alloc::format!("JURISDICTION-{index}"));
+    }
+    let result = derive_result_classification(&[
+        input(
+            Classification::Public,
+            first,
+            PiiMarker::NoPii,
+            AiProcessingEligibility::Eligible,
+            None,
+        )?,
+        input(
+            Classification::Public,
+            second,
+            PiiMarker::NoPii,
+            AiProcessingEligibility::Eligible,
+            None,
+        )?,
+    ])?;
+
+    assert!(result.sovereignty().is_exact());
+    assert_eq!(result.sovereignty().len(), 60);
+    assert_eq!(
+        result.sovereignty().containment("JURISDICTION-59"),
+        SovereigntyContainment::Present
+    );
+    Ok(())
+}
+
+#[test]
 fn single_input_sovereignty_overflow_saturates_after_validation() -> Result<()> {
     let mut tokens = Vec::new();
     for index in 0..=POLICY_TOKEN_SET_MAX_ITEMS {

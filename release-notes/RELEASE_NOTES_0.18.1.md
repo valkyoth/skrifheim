@@ -40,6 +40,10 @@ processing, and legal/compliance decisions.
 - Rejected oversized world fact batches before sorting.
 - Documented that `SecretBytes::with_secret` and `try_with_secret` closures
   must not retain secret-derived bytes.
+- Resolved retest feedback by keeping overlapping exact sovereignty scopes
+  exact when their true unique union still fits the bounded set.
+- Fixed the `0.18.1` release gate self-check for the
+  `SovereigntyScope::contains` ban.
 
 ## Verification
 
@@ -59,8 +63,8 @@ approval-required or deny.
 
 ## Pentest Status
 
-The first `0.18.1` pentest pass has been resolved locally. Root `PENTEST.md`
-has been removed after findings were resolved.
+The first `0.18.1` pentest pass and retest feedback have been resolved
+locally. Root `PENTEST.md` has been removed after findings were resolved.
 
 Residual planned boundary: break-glass single-use evidence binding requires
 persisted one-time-use state in the `v0.26.1` access model, and key-subtree

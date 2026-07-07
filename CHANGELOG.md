@@ -22,6 +22,9 @@
   scope input before scanning, requiring expiring break-glass attestation
   evidence, rejecting oversized world fact batches before sorting, and
   documenting the `SecretBytes` no-retention closure contract.
+- Resolved the `0.18.1` pentest retest by keeping overlapping sovereignty
+  scopes exact when their true unique union still fits the bounded set, and by
+  fixing the release-gate self-check for the bare-containment guard.
 - Updated the pinned stable Rust toolchain from `1.96.0` to `1.96.1` after
   checking the official Rust release announcement.
 - Bumped workspace and internal crate dependency versions to `0.18.1`.

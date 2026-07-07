@@ -154,12 +154,13 @@ impl SovereigntyScope {
             (SovereigntyScopeKind::MultiJurisdiction, _)
             | (_, SovereigntyScopeKind::MultiJurisdiction) => Ok(Self::multi_jurisdiction()),
             (SovereigntyScopeKind::Exact(left), SovereigntyScopeKind::Exact(right)) => {
-                if left.len().saturating_add(right.len()) > POLICY_TOKEN_SET_MAX_ITEMS {
-                    Ok(Self::multi_jurisdiction())
-                } else {
-                    Ok(Self {
-                        kind: SovereigntyScopeKind::Exact(Box::new(left.union(right)?)),
-                    })
+                let union = left.union(right);
+                match union {
+                    Ok(tokens) => Ok(Self {
+                        kind: SovereigntyScopeKind::Exact(Box::new(tokens)),
+                    }),
+                    Err(SkrifheimError::InvalidSecurityToken) => Ok(Self::multi_jurisdiction()),
+                    Err(error) => Err(error),
                 }
             }
         }

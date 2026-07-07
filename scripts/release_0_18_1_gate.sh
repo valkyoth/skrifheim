@@ -43,7 +43,7 @@ if ! grep -R "check_no_sensitive_derive .* SovereigntyScope" scripts/validate-se
     exit 1
 fi
 
-if ! grep -R "SovereigntyScope.*contains" scripts/validate-security-policy.sh >/dev/null; then
+if ! grep -R "bare boolean containment" scripts/validate-security-policy.sh >/dev/null; then
     echo "0.18.1 requires security-policy gate against bare sovereignty containment" >&2
     exit 1
 fi
