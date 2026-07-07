@@ -6,7 +6,8 @@ Status: hard rule
 
 ## Hard Rules
 
-Crates under `crates/` are core database crates. Their library targets must:
+Crates under `crates/` are core database crates unless they are explicitly
+listed as host-boundary crates in this document. Core library targets must:
 
 - use `#![no_std]`,
 - use `#![forbid(unsafe_code)]`,
@@ -17,12 +18,36 @@ Crates under `crates/` are core database crates. Their library targets must:
 
 Host-only code may use `std`:
 
+- `crates/skrifheim-storage-host`,
 - `crates/skrifheim/src/main.rs`,
 - `tools/xtask`,
 - shell scripts,
 - future fuzz, release, and test-only tools.
 
 Host-only code still follows the dependency review rule.
+
+## Portability Rules
+
+`skrifheim` must not become a Linux-only or x86-only database by accident.
+
+Core crates must stay OS-neutral and architecture-neutral:
+
+- no direct filesystem, network, process, clock, thread, or terminal APIs,
+- no `target_arch`, `target_feature`, `std::arch`, or `core::arch` fast paths
+  in core crates unless a portable baseline path is already present and the
+  optimization is admitted as optional,
+- no native-endian, pointer-width, alignment, page-size, or filesystem-ordering
+  assumptions in durable formats,
+- durable bytes must use explicit encodings, explicit endianness, explicit
+  length bounds, and checked integer conversions,
+- platform-specific behavior belongs behind host-boundary modules or crates
+  with fail-closed unsupported-platform behavior and tests.
+
+Supported production OS families are Linux, Windows, macOS, and BSD. Android
+and iOS are future targets where the sandbox and filesystem model can support
+the same security guarantees. Supported CPU families must include x86_64 and
+AArch64 from the first production support pass; RISC-V and other architectures
+must remain possible by avoiding architecture-specific assumptions.
 
 ## Build Our Own By Default
 

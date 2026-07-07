@@ -606,6 +606,14 @@ verification, legal/compliance controls, or provenance.
 - with portable file I/O on all supported OS families,
 - with Linux io_uring/direct-I/O only as an optional fast path.
 
+The production baseline must support Linux, Windows, macOS, and BSD without
+changing database semantics. Android and iOS remain future targets when their
+sandbox, storage, and attestation models can provide equivalent guarantees.
+Durable formats must be architecture-neutral and must not assume x86, native
+endianness, pointer width, alignment, or page size. x86_64 and AArch64 are
+first-pass production CPU targets; RISC-V and other targets must remain
+possible through portable core code and optional host adapters.
+
 ## Phase 11: Hyve Cluster Fabric
 
 Build cluster features only after the single-node database and legal planning

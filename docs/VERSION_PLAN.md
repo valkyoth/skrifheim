@@ -502,6 +502,37 @@ Deliverables:
 - tests for the release-readiness gate and dependency-policy scripts so the
   gate itself cannot silently regress.
 
+## v0.18.6 - Cross-Platform Portability Baseline
+
+Goal: prevent Linux-only, Unix-only, or x86-only assumptions from entering the
+storage and runtime design before manifests and recovery become durable.
+
+Deliverables:
+
+- explicit platform support matrix for Linux, Windows, macOS, BSD, Android,
+  iOS, x86_64, AArch64, RISC-V, and other realistic Rust targets,
+- CI or local-gate compile checks for OS-neutral `no_std` core crates on at
+  least Linux, Windows, macOS, and BSD-compatible targets where the toolchain
+  can run them,
+- CI or local-gate compile checks for architecture-neutral core crates on
+  x86_64 and AArch64, with RISC-V tracked as a non-blocking future target until
+  the runner/toolchain support is practical,
+- host-storage adapter plan that replaces the current Unix-only
+  `skrifheim-storage-host` scaffold with explicit Unix, Windows, and BSD/macOS
+  file-opening, permission, symlink/reparse-point, directory-sync, and atomicity
+  semantics,
+- fail-closed unsupported-platform behavior for any host adapter that cannot
+  provide equivalent security semantics,
+- release-gate check rejecting `target_arch`, `target_feature`, `std::arch`,
+  or `core::arch` use in database crates unless a portable baseline and
+  optional fast-path admission record exists,
+- durable-format review proving WAL, segment, manifest, backup, audit, export,
+  and future network encodings use explicit endianness, explicit lengths,
+  checked conversions, and no native pointer-width or alignment assumptions,
+- documentation that Linux-specific io_uring, direct-I/O, mmap, fsync variants,
+  or filesystem hints are optional performance paths only and never required
+  for correctness or security.
+
 ## v0.19.0 - Manifest And Checkpoint Format
 
 Goal: record the durable storage root.

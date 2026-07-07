@@ -24,6 +24,11 @@ if rg -n '\bstd::|extern crate std|use std' crates --glob '*.rs' --glob '!*/src/
     failed=1
 fi
 
+if rg -n 'target_arch|target_feature|std::arch|core::arch' crates --glob '*.rs'; then
+    echo "database crates must not add architecture-specific code paths without an admitted portable-baseline design" >&2
+    failed=1
+fi
+
 if rg -n 'zeroize' Cargo.toml Cargo.lock crates; then
     echo "zeroize is not admitted; use sanitization only after dependency review" >&2
     failed=1

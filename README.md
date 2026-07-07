@@ -87,6 +87,7 @@ It is not a usable database engine.
 | Production digest and AEAD storage encryption | Planned | `v0.18.3` admits and wires the production SHA-3/SHAKE digest engine plus AEAD envelopes for WAL and segment bodies before manifests or recovery claim tamper resistance. |
 | Early WAL/segment fuzzing | Planned | `v0.18.4` adds deterministic fuzz smoke for the hand-written storage byte parsers; the broader fuzz/property baseline remains later. |
 | Release evidence hardening | Planned | `v0.18.5` adds SBOM validation, dependency-tree snapshots, runtime/optional-boundary policy, and release-gate tests before durable storage claims harden. |
+| Cross-platform portability baseline | Planned | `v0.18.6` adds Linux, Windows, macOS, BSD, x86_64, AArch64, and future RISC-V portability checks before manifests and recovery depend on host I/O behavior. |
 | Early performance and API integration smoke | Planned | `v0.20.2`, `v0.23.2`, and `v0.24.2` collect storage, recovery, transaction, policy-token, and authenticated planner-boundary evidence while the design is still cheap to change. |
 | Strict serializable transactions | Planned | `v0.21.0` through `v0.23.0`. |
 | Native query parser and execution | Planned | `v0.25.0` through `v0.28.0`. |

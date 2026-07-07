@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added a cross-platform portability rule and reserved `v0.18.6` to prevent
+  Linux-only, Unix-only, or x86-only assumptions before manifests and recovery.
 - Moved `skrifheim-storage-host` under `crates/` as an explicit host-boundary
   crate so all Rust crates live in one workspace crate directory.
 - Reserved pre-1.0 milestones for admitted production digest and AEAD storage
