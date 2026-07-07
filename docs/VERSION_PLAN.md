@@ -883,6 +883,38 @@ Deliverables:
 - manifest signature validation API,
 - rejected unknown-algorithm tests.
 
+## v0.33.1 - Threshold Signature And Quorum Proof Model
+
+Goal: decide and implement the pre-1.0 threshold-signature posture before audit
+proofs, backups, law-pack admission, break-glass approval, and release
+operations depend on multi-party authority.
+
+Deliverables:
+
+- distinguish organizational threshold approval records from cryptographic
+  threshold signatures,
+- dependency-admission decision for any real threshold-signature implementation,
+  including `no_std` fit, unsafe boundary, license, maintenance, advisory,
+  quantum-resistance posture, test evidence, and platform support,
+- explicit fallback model if no threshold-signature crate is admitted: bounded
+  quorum multi-signature proofs using admitted signature envelopes,
+- threshold key metadata model covering authority scope, tenant, policy epoch,
+  crypto epoch, quorum size, participant identifiers, validity window,
+  revocation, and rotation,
+- rule that raw threshold key shares, recovery fragments, or guardian secrets
+  are never stored as ordinary database payloads,
+- quorum proof envelope for manifests, law-pack admission, key lifecycle
+  ceremonies, declassification, break-glass grants, backup restore, and release
+  operations,
+- validation API that rejects insufficient quorum, duplicated participants,
+  stale policy or crypto epoch, revoked participants, wrong tenant, wrong
+  authority scope, and mixed incompatible algorithms,
+- tests for threshold/quorum replay rejection, signer substitution, duplicate
+  share/signature attempts, and downgrade to single-signer authority,
+- documentation that the selected model is a pre-1.0 production requirement,
+  while advanced distributed key generation may remain post-1.0 if explicitly
+  deferred.
+
 ## v0.34.0 - Audit Proof Queries
 
 Goal: prove what was known, under which policy, and from which manifest.

@@ -5,6 +5,8 @@
 - Reserved pre-1.0 milestones for admitted production digest and AEAD storage
   encryption, early WAL/segment fuzzing, early storage/API performance and
   integration smoke, approval-role modeling, and backup/schema compatibility.
+- Reserved `v0.33.1` for the threshold-signature or bounded quorum
+  multi-signature proof model before approval-sensitive production workflows.
 
 ## 0.18.1
 

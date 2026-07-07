@@ -38,7 +38,7 @@ from truth.
 - `skrifheim-fact`: causal fact records, validation, evidence, confidence, supersession, invalidation.
 - `skrifheim-world`: production, draft, simulation, legal/audit, user-local, mission-capsule worlds.
 - `skrifheim-policy`: clearance lattice, compartment checks, releasability, planner decisions.
-- `skrifheim-crypto`: crypto-agile envelopes, epochs, algorithm identifiers, future threshold signatures.
+- `skrifheim-crypto`: crypto-agile envelopes, epochs, algorithm identifiers, threshold signatures, and quorum proofs.
 - `skrifheim-audit`: identities, attestation evidence references, audit events, and audit-log protection metadata.
 - `skrifheim-storage`: WAL, immutable segment metadata, Merkle manifests, content-addressed blobs.
 - `skrifheim-storage-host`: host-file WAL helpers that use `std` outside the
@@ -260,6 +260,7 @@ Build crypto-agile metadata before hard-coding any final algorithm:
 - audit-log protection metadata and actor attribution for dangerous
   control-plane operations,
 - threshold approval records,
+- threshold-signature or bounded quorum multi-signature proof model,
 - signed manifests,
 - encrypted and signed audit logs,
 - recovery and compromise playbooks,

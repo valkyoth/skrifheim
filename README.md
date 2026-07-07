@@ -91,7 +91,7 @@ It is not a usable database engine.
 | Native query parser and execution | Planned | `v0.25.0` through `v0.28.0`. |
 | Approval-role authority model | Planned | `v0.26.2` defines executable roles and single-maintainer fallback policy for break-glass, law-pack admission, key ceremonies, declassification, backup restore, and release operations. |
 | Rebuildable projections | Planned | `v0.29.0` through `v0.32.0`. |
-| Crypto-agile manifest signatures | Planned | `v0.33.0`. |
+| Crypto-agile manifest and threshold signatures | Planned | `v0.33.0` signs manifests; `v0.33.1` defines the threshold-signature or bounded quorum multi-signature proof model before approval-sensitive operations depend on multi-party authority. |
 | Audit proofs and backup/restore | Planned | `v0.34.0` through `v0.36.0`, with `v0.35.1` reserved for backup-format evolution and schema compatibility before the full schema catalog. |
 | CMS release primitives | Planned | `v0.39.0` through `v0.40.0`. |
 | AI artifact provenance | Planned | `v0.41.0`. |
