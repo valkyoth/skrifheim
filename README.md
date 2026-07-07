@@ -96,7 +96,7 @@ It is not a usable database engine.
 | CMS release primitives | Planned | `v0.39.0` through `v0.40.0`. |
 | AI artifact provenance | Planned | `v0.41.0`. |
 | Distinctive security and truth features | Planned | Causal blast-radius invalidation, signed declassification proofs, AI derivation cones, and propagated confidence with mandatory access control are now tracked in the implementation and version plans. |
-| Local-first worlds and mission capsules | Planned | `v0.42.0` through `v0.43.0`. |
+| Local-first worlds, mission capsules, and source-state backend support | Planned | `v0.42.0` through `v0.43.4`, including source-state object/bundle admission, resource-budgeted verification, operation/event/explanation/context records, and sealed private realm support for forge-style applications. |
 | Fuzz/property baseline, operations, and hardening | Planned | `v0.44.0` through `v0.51.0`. |
 | Standalone legal/compliance passports and placement foundations | Planned | `v0.52.0` through `v0.55.0`. |
 | Production release candidate | Planned | `v0.56.0`. |

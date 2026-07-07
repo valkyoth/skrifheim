@@ -7,6 +7,9 @@
   integration smoke, approval-role modeling, and backup/schema compatibility.
 - Reserved `v0.33.1` for the threshold-signature or bounded quorum
   multi-signature proof model before approval-sensitive production workflows.
+- Added pre-1.0 source-state backend milestones for Sagnir-style forge
+  workloads: proof-carrying bundles, resource-budgeted verification,
+  operation/event/explanation/context records, and sealed private realms.
 
 ## 0.18.1
 

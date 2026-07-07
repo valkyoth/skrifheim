@@ -1093,6 +1093,105 @@ Deliverables:
 - import verification preflight,
 - rejected downgrade tests.
 
+## v0.43.1 - Source-State Object And Bundle Backend Model
+
+Goal: support future source-state and forge-style applications, including
+Sagnir-backed hosting, without treating CMS publishing as the only application
+shape.
+
+Deliverables:
+
+- application object identity domain model with object type, hash/digest
+  algorithm tag, canonical format version, and tenant/world scope,
+- immutable source-state records for objects, state roots, changes, change
+  revisions, operations, proof reports, bundles, and releases,
+- mutable alias model that points human names such as project heads, review
+  worlds, or release channels to immutable state records through transactions,
+- proof-carrying bundle manifest model covering object ranges, fact ranges,
+  world heads, policy epoch, crypto epoch, schema version, and required
+  verification profile,
+- remote decision fact types for accept, deny, quarantine, and
+  more-evidence-required outcomes,
+- quarantine world/state metadata for imported but untrusted bundles,
+- tests for object-type confusion, digest-algorithm confusion, stale alias
+  rollback, missing object references, and importing without proof material,
+- documentation that application-specific object formats such as Sagnir objects
+  remain owned by that application, while `skrifheim` provides the durable,
+  policy-aware backend primitives.
+
+## v0.43.2 - Resource-Budgeted Verification Modes
+
+Goal: let hosted source-state applications verify large worlds and bundles
+without unbounded graph admission or all-or-nothing full-world scans.
+
+Deliverables:
+
+- verification profile model with bounded-batch, lazy-cone, and full-world
+  modes,
+- memory, object-count, edge-count, body-size, and parallelism budget metadata,
+- remote/bundle preflight that compares declared verification requirements
+  with local tenant and deployment budgets before trust or materialization,
+- changed-cone proof model for normal small updates,
+- full-world proof model for regulated or high-assurance worlds,
+- proof-cache metadata for unchanged object and fact subgraphs,
+- quarantine or no-materialization decision state when remote requirements
+  exceed local budgets,
+- tests for oversized manifests, cyclic graphs, missing references,
+  stronger-than-local remote verification requirements, proof-cache reuse, and
+  refusal to materialize untrusted state.
+
+## v0.43.3 - Operation, Event, Explanation, And Context Records
+
+Goal: support source-state applications that need append-only operations,
+bounded events, deterministic fact compilation, auditable explanations, and
+context packs in addition to ordinary query results.
+
+Deliverables:
+
+- operation record model for user-visible mutations, imports, promotions,
+  rollbacks, undo actions, vault actions, sync decisions, and administrative
+  changes,
+- bounded event envelope model that records command/runtime observations
+  without making them authoritative facts by itself,
+- deterministic event-to-fact compiler contract with missing-source rejection,
+  duplicate derivation behavior, and policy epoch binding,
+- undo/compensation model where reversing a user action creates a new operation
+  and never deletes immutable facts, objects, or history,
+- explanation object model with question, deterministic query plan, evidence
+  edges, missing evidence, redaction notices, confidence, policy proof,
+  optional AI-use marker, and signatures,
+- bounded context-pack model for diagnostics, hosted support, and optional AI
+  use that includes selected facts, object references, snippets, causal paths,
+  redactions, and missing-evidence markers,
+- tests that events cannot satisfy policy as facts until compiled, explanations
+  cannot hide missing evidence, context packs cannot include unrelated private
+  facts or secret material, and undo preserves immutable history.
+
+## v0.43.4 - Sealed Private Realm And Blind Remote Backend Model
+
+Goal: support encrypted source-state hosting where the backend may store,
+sync, and verify allowed metadata without learning protected source content.
+
+Deliverables:
+
+- sealed private realm metadata for locked, unlocked, and materialized states,
+- public storage ID over encrypted envelopes and private keyed object ID over
+  canonical plaintext for membership-leak resistance,
+- visible-versus-protected metadata policy for object paths, world names,
+  change titles, actor identity, facts, symbols, dependency graphs, and context
+  packs,
+- recipient slot and key-wrapping metadata compatible with the key hierarchy
+  and crypto epoch model,
+- encrypted bundle and pack envelope metadata for trusted, blind, and
+  split-trust remote modes,
+- leak-scan result fact model for plaintext worktree, cache, log, index, and
+  backup exposure findings,
+- explicit dangerous plaintext export and realm-disable proof model,
+- tests that public plaintext hashes are not exposed as storage IDs in sealed
+  private mode, protected metadata is not indexed into public projections,
+  recipient removal is not treated as retroactive revocation, and blind remote
+  imports are verified before decrypt or materialization.
+
 ## v0.44.0 - Fuzz And Property Test Baseline
 
 Goal: expand verification before production hardening.
@@ -1298,6 +1397,10 @@ Deliverables:
 - CMS release primitives,
 - public/private world split,
 - render dependency tracking,
+- source-state object and proof-carrying bundle backend primitives,
+- resource-budgeted verification modes,
+- operation, event, explanation, and context-pack records,
+- sealed private realm and blind remote backend model,
 - AI artifact provenance,
 - complete release runbook,
 - security review PASS for exact commit.

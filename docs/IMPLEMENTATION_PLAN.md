@@ -396,14 +396,18 @@ engine, policy planner, and key hierarchy are in place:
 
 ## Phase 9: Local-First And CMS Support
 
-Support offline and collaborative worlds:
+Support offline, collaborative, CMS, and source-state worlds:
 
 - draft worlds,
 - CRDT fields for collaborative text,
 - policy-filtered changefeeds,
 - encrypted sync cursors,
 - device-bound local replicas,
-- conflict review.
+- conflict review,
+- proof-carrying source-state bundles,
+- operation and event ledgers for application workflows,
+- auditable explanation objects,
+- bounded context packs.
 
 The collaborative text model must be selected before CMS publish/release
 primitives depend on it. `skrifheim` must choose between Operational Transform,
@@ -414,6 +418,34 @@ whether releases store materialized text, operation history, compacted state, or
 signed projections.
 
 CMS publishing uses world promotion, not mutable published flags.
+
+Sagnir-style source-state hosting is a first-class target alongside CMS use.
+`skrifheim` should not own a project's source object format, diff algorithm, or
+local CLI semantics, but it must provide durable backend primitives for a
+GitHub-like compliance forge:
+
+- application object identity domains that include object type, algorithm tag,
+  canonical format version, tenant, and world scope,
+- immutable source-state records for objects, state roots, changes, revisions,
+  proof reports, bundles, releases, and operation records,
+- mutable aliases that point human names such as project heads, review worlds,
+  and release channels to immutable state through transactions,
+- proof-carrying bundle manifests and remote decision facts that allow accept,
+  deny, quarantine, or more-evidence-required outcomes,
+- resource-budgeted verification modes: bounded-batch, lazy-cone, and
+  full-world, with explicit memory, graph, body-size, and parallelism budgets,
+- append-only operation and event records where events are observations, not
+  authoritative facts, until a deterministic fact compiler admits them,
+- explanation objects and context packs that cite facts, objects, policy
+  decisions, redactions, missing evidence, confidence, and optional AI use,
+- sealed private realm support with public ciphertext storage IDs, private
+  keyed plaintext IDs, protected metadata policy, recipient slots, blind remote
+  storage, split-trust metadata, and leak-scan result facts.
+
+The Sagnir-specific source object format and CLI remain in Sagnir. The database
+must provide generic, policy-aware, encrypted, tenant-scoped primitives so
+Sagnir and similar tools can build hosted workflows on top without weakening
+local-first verification.
 
 ## Phase 10: Rootless Podman And Production Runtime
 
