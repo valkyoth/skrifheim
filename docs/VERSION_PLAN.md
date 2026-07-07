@@ -1018,6 +1018,59 @@ Deliverables:
   application-owned ranking algorithms, campaign workflows, payment providers,
   and ad creative review rules stay outside the database core.
 
+## v0.32.6 - Hierarchical Discussion And Scoped Permission Model
+
+Goal: define generic primitives for nested discussion spaces, long-lived
+threads, read state, watches, and scoped moderation without absorbing
+application-owned discussion schema.
+
+Deliverables:
+
+- hierarchical container model for categories, forums, collections, channels,
+  or equivalent application-owned discussion spaces,
+- scoped role and capability grant model with inheritance, category/container
+  scope, ownership checks, temporary grants, trust-level hooks, and escalation
+  prevention,
+- content lifecycle model for draft, preview, published, edited, soft-deleted,
+  restored, locked, pinned, moved, merged, split, and visibility-reduced
+  discussion state,
+- sanitized-content provenance model that keeps source body, rendered body
+  digest, sanitizer policy/version, renderer policy/version, edit revision,
+  and author/actor attribution without making unsafe rendered output a trust
+  root,
+- read/unread and watch/subscription projection metadata for topics, threads,
+  tags, containers, and replies,
+- tests that scoped grants do not leak across containers, actors cannot grant
+  capabilities they do not hold, sanitized output can be regenerated from
+  canonical source and policy version, and soft-deleted or hidden content does
+  not leak through search, read-state, counters, or notifications.
+
+## v0.32.7 - Moderation Workflow Simulation And Delayed Action Model
+
+Goal: make moderation workflows auditable, replayable, and policy-bound before
+applications depend on reusable staff actions or delayed enforcement.
+
+Deliverables:
+
+- moderation queue, approval queue, warning/points, mute, ban, shadowban,
+  delayed job, and reusable action-sequence metadata expressed as generic
+  policy records,
+- transactional moderation action bundle model where partial failure leaves
+  queue, target, and audit state unchanged,
+- delayed moderation job model with due time, policy epoch, actor authority,
+  pending/completed/failed state, failure redaction, and single-execution
+  guarantees,
+- moderation replay/simulation model that previews how a rule, trust-level
+  change, or anti-abuse filter would affect recent facts without mutating
+  production worlds,
+- workload-routing metadata for language, category/container, severity,
+  conflict-of-interest, and staff availability without exposing private
+  content to unauthorized moderators,
+- tests that replay cannot mutate source worlds, delayed actions cannot execute
+  twice, failed bundles do not partially commit, shadow-hidden content remains
+  visible only where policy allows, and staff actions preserve previous/new
+  state in tamper-evident audit records.
+
 ## v0.33.0 - Crypto-Agile Manifest Signatures
 
 Goal: sign manifests without locking the project to one permanent algorithm.
@@ -1339,6 +1392,54 @@ Deliverables:
   recipient removal is not treated as retroactive revocation, and blind remote
   imports are verified before decrypt or materialization.
 
+## v0.43.5 - Extension, Theme, And Plugin Capability Boundary Model
+
+Goal: define database primitives for plugin/theme ecosystems without allowing
+extension code or templates to bypass policy, leak protected facts, or become
+implicit trusted code.
+
+Deliverables:
+
+- extension manifest metadata with version, compatibility window, declared
+  hooks, requested capabilities, tenant scope, world scope, data categories,
+  and policy epoch,
+- host-grant proof model for read, write, emit-event, render, query,
+  projection, and admin-like capabilities,
+- plugin capability simulator that evaluates requested grants against a
+  selected actor, tenant, world, data passport, law pack, and policy epoch
+  without mutating state,
+- hook invocation record model with bounded inputs, redacted outputs,
+  execution result, timeout/memory budget, and failure isolation state,
+- theme/template modification metadata with deterministic ordering, CSP/security
+  policy version, accessibility/check evidence, and rollback pointer,
+- tests that extension manifests cannot request undeclared authority, simulator
+  denial matches runtime denial, plugin failures cannot corrupt canonical
+  facts, template metadata cannot read arbitrary database state, and unsafe
+  render output is not stored as canonical truth.
+
+## v0.43.6 - Import, Migration, And Permission Gap Reporting Model
+
+Goal: support application migrations and legacy imports through dry-run,
+policy-checked planning rather than ad hoc direct writes.
+
+Deliverables:
+
+- import plan metadata for source system, schema version, actor mapping,
+  object/fact mapping, attachment/media mapping, timestamp policy, and
+  trust-level of imported evidence,
+- dry-run import report with expected writes, skipped records, conflicts,
+  malformed records, missing actors, permission gaps, policy gaps, and legal
+  basis gaps,
+- import quarantine world/state for accepted-but-untrusted imported data,
+- idempotent import checkpoint model that prevents duplicate writes and
+  supports resume after failure,
+- migration compatibility proof tying schema catalog version, law pack, policy
+  epoch, crypto epoch, and retention policy to the import result,
+- tests that dry-run produces no writes, permission gaps block promotion,
+  imported sanitized/rendered content is treated as untrusted until regenerated
+  or verified, duplicate import chunks are idempotent, and attachments/media do
+  not bypass encryption-domain policy.
+
 ## v0.44.0 - Fuzz And Property Test Baseline
 
 Goal: expand verification before production hardening.
@@ -1594,11 +1695,14 @@ Deliverables:
 - media metadata authorization and processing-state model,
 - social moderation, safety-label, consent, ad-transparency, and ranking
   explanation primitives,
+- hierarchical discussion, scoped permission, sanitized-content provenance,
+  read-state, watch/subscription, and moderation workflow primitives,
 - privacy rights, legal-hold, deletion, and E2EE message metadata boundaries,
 - source-state object and proof-carrying bundle backend primitives,
 - resource-budgeted verification modes,
 - operation, event, explanation, and context-pack records,
 - sealed private realm and blind remote backend model,
+- extension/theme capability boundary and import/migration dry-run model,
 - AI artifact provenance,
 - complete release runbook,
 - security review PASS for exact commit.

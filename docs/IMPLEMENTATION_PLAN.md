@@ -324,6 +324,8 @@ Canonical facts drive projections:
 - privacy-preserving counters,
 - media authorization indexes,
 - moderation and safety-label indexes,
+- hierarchical discussion indexes,
+- read-state and watch/subscription indexes,
 - AI artifacts and context packs.
 
 Every projection records its source fact range, consistency level, policy boundary, and rebuild command.
@@ -360,6 +362,30 @@ applications without absorbing application-owned schema semantics:
   explanations,
 - E2EE direct-message metadata boundaries where the server stores ciphertext
   and minimal routing metadata only.
+
+Hierarchical discussion workloads are also a first-class shape. The database
+must provide generic, policy-bound primitives for nested spaces, long-lived
+threads, rich moderation, and safe extensibility without owning an
+application-specific discussion schema:
+
+- hierarchical containers with scoped capabilities, inheritance,
+  trust-level hooks, ownership checks, temporary grants, and escalation
+  prevention,
+- content lifecycle and sanitized-content provenance that records source body,
+  rendered-body digest, sanitizer/renderer policy version, edit revision, and
+  actor attribution without making rendered HTML or template output a canonical
+  trust root,
+- read/unread and watch/subscription projections that rebuild from canonical
+  facts and re-check policy before notifications or counters,
+- moderation workflow records for queues, approvals, warning/point systems,
+  reusable action bundles, delayed jobs, replay/simulation, workload routing,
+  and immutable previous/new-state audit,
+- extension, plugin, and theme capability boundaries where manifests, host
+  grants, hook invocations, rendering metadata, CSP/security policy versions,
+  and simulator results are facts under `skrifheim` policy,
+- import and migration planning through dry-run reports, permission-gap
+  reporting, quarantine worlds, idempotent checkpoints, and schema/legal/policy
+  compatibility proofs.
 
 ## Phase 8: Query Language And Context Packs
 

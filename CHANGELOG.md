@@ -14,6 +14,10 @@
   social graph visibility, timeline projections, media authorization,
   realtime/notification rebuilds, moderation/safety labels, consent, ads
   transparency, privacy-rights workflows, and E2EE message metadata boundaries.
+- Added pre-1.0 hierarchical discussion and extension/import milestones:
+  scoped permissions, sanitized-content provenance, read/watch projections,
+  moderation workflow simulation, plugin/theme capability boundaries, and
+  dry-run migration planning.
 
 ## 0.18.1
 
