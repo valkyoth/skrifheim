@@ -16,6 +16,14 @@ policy-aware planning, cryptographic declassification, capability-scoped AI
 derivation, confidence propagation, and derived projections that can be rebuilt
 from truth.
 
+Application-specific plans are requirement sources, not architecture owners.
+`skrifheim` must not copy product schemas, workflow shortcuts, or service-stack
+assumptions from consuming projects. Those projects must adapt to
+`skrifheim`'s security and compliance model: facts first, policy before read or
+write, explicit legal basis where needed, encryption domains for protected
+surfaces, bounded verification, tamper-evident audit, redacted diagnostics, and
+rebuildable projections.
+
 ## Non-Negotiable Engineering Rules
 
 - Rust stable `1.96.1`, edition 2024, workspace resolver `3`.
@@ -328,7 +336,7 @@ allows that response.
 
 High-volume social-feed workloads are a first-class target alongside CMS and
 source-state hosting. The database must provide reusable primitives for social
-applications without becoming an application-specific product schema:
+applications without absorbing application-owned schema semantics:
 
 - viewer-context visibility planning for public, unlisted, followers-only,
   close-circle, subscriber/group, community-only, deleted, tombstoned, and
@@ -450,10 +458,10 @@ signed projections.
 
 CMS publishing uses world promotion, not mutable published flags.
 
-Sagnir-style source-state hosting is a first-class target alongside CMS use.
-`skrifheim` should not own a project's source object format, diff algorithm, or
-local CLI semantics, but it must provide durable backend primitives for a
-GitHub-like compliance forge:
+Source-state and compliance-forge hosting are first-class workload shapes
+alongside CMS use. `skrifheim` should not own a consuming project's source
+object format, diff algorithm, or local CLI semantics, but it must provide
+durable backend primitives for policy-bound hosted source workflows:
 
 - application object identity domains that include object type, algorithm tag,
   canonical format version, tenant, and world scope,
@@ -473,10 +481,10 @@ GitHub-like compliance forge:
   keyed plaintext IDs, protected metadata policy, recipient slots, blind remote
   storage, split-trust metadata, and leak-scan result facts.
 
-The Sagnir-specific source object format and CLI remain in Sagnir. The database
+Consuming applications own their object formats and workflows. The database
 must provide generic, policy-aware, encrypted, tenant-scoped primitives so
-Sagnir and similar tools can build hosted workflows on top without weakening
-local-first verification.
+hosted workflows can build on `skrifheim` without weakening local-first
+verification, legal/compliance controls, or provenance.
 
 ## Phase 10: Rootless Podman And Production Runtime
 

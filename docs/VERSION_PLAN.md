@@ -24,6 +24,25 @@ Every release must have:
 - release notes,
 - no hidden dependency on one developer machine.
 
+## Application Support Rule
+
+Application plans may inform database requirements, but they do not define
+`skrifheim` semantics. New application-facing features must be expressed as
+generic, tenant-scoped database primitives with:
+
+- fail-closed policy and authorization behavior,
+- legal/compliance passport compatibility,
+- encryption-domain and key-lifecycle boundaries,
+- bounded resource and parser behavior,
+- audit and provenance records,
+- redacted diagnostics and public error shapes,
+- deterministic tests for denial, quarantine, redaction, and rebuild paths.
+
+Product-specific schema, UI workflow, ranking choices, media processing tools,
+source object formats, and moderation policy text belong in the consuming
+application. `skrifheim` provides the secure, auditable, compliance-aware
+foundation those applications adapt to.
+
 ## Clean Stop And Pentest Rule
 
 Each version has a deliberate clean stop. When implementation criteria are done,
@@ -873,8 +892,9 @@ Deliverables:
 
 ## v0.32.1 - Social Graph Visibility And Timeline Projection Model
 
-Goal: support high-volume social-feed workloads without letting feeds, search,
-counters, or caches bypass viewer-specific policy.
+Goal: define policy-bound primitives for high-volume social-feed workloads
+without letting feeds, search, counters, or caches bypass viewer-specific
+authorization, legal basis, encryption-domain, or moderation policy.
 
 Deliverables:
 
@@ -894,7 +914,7 @@ Deliverables:
   shares, and privacy-preserving view counts,
 - tests that search, profile feeds, home feeds, thread reads, media feeds,
   notification reads, counters, and cached timelines all apply the same
-  viewer-context visibility rules.
+  viewer-context visibility rules, legal constraints, and policy epochs.
 
 ## v0.32.2 - Media Object Authorization And Processing State Model
 
@@ -920,7 +940,8 @@ Deliverables:
   takedowns, and delivery grants; binary media, object keys, wrapped keys,
   hashes, captions, alt text, and user text must not enter event streams,
 - tests that stale grants fail after takedown, block, protected-account change,
-  post visibility change, asset deletion, or moderation state change.
+  post visibility change, asset deletion, moderation state change, legal hold,
+  expired consent, or key-domain mismatch.
 
 ## v0.32.3 - Social Realtime, Notification, And Rebuildable Event Streams
 
@@ -942,7 +963,8 @@ Deliverables:
   timelines, search indexes, and counters from canonical facts/events,
 - tests that realtime hints never expose private content, DMs, post bodies,
   media metadata, account PII, or authorization decisions not visible through a
-  normal API read.
+  normal API read, and that replay after policy changes re-evaluates
+  visibility before delivery.
 
 ## v0.32.4 - Social Moderation, Appeals, And Safety Labels
 
@@ -965,7 +987,7 @@ Deliverables:
 - transparency aggregate fact model that avoids per-user exposure,
 - tests that moderation-hidden content cannot leak through search, timelines,
   media reads, notifications, counters, exports without policy, or cached
-  projections.
+  projections, and that appeal outcomes preserve immutable moderation history.
 
 ## v0.32.5 - Consent, Ads Transparency, And Ranking Explanation Model
 
@@ -991,7 +1013,10 @@ Deliverables:
   histories to advertisers,
 - tests for consent withdrawal, non-personalized fallback, ranking explanation
   redaction, political-ad disabled/default-deny behavior, and ad-label
-  propagation into API-visible result metadata.
+  propagation into API-visible result metadata,
+- documentation that ad and ranking primitives are compliance metadata only;
+  application-owned ranking algorithms, campaign workflows, payment providers,
+  and ad creative review rules stay outside the database core.
 
 ## v0.33.0 - Crypto-Agile Manifest Signatures
 
@@ -1217,9 +1242,8 @@ Deliverables:
 
 ## v0.43.1 - Source-State Object And Bundle Backend Model
 
-Goal: support future source-state and forge-style applications, including
-Sagnir-backed hosting, without treating CMS publishing as the only application
-shape.
+Goal: define policy-bound primitives for source-state and forge-style
+applications without treating CMS publishing as the only application shape.
 
 Deliverables:
 
@@ -1237,14 +1261,15 @@ Deliverables:
 - quarantine world/state metadata for imported but untrusted bundles,
 - tests for object-type confusion, digest-algorithm confusion, stale alias
   rollback, missing object references, and importing without proof material,
-- documentation that application-specific object formats such as Sagnir objects
-  remain owned by that application, while `skrifheim` provides the durable,
-  policy-aware backend primitives.
+- documentation that application-specific source object formats remain owned by
+  the consuming application, while `skrifheim` provides durable,
+  policy-aware, compliance-aware backend primitives.
 
 ## v0.43.2 - Resource-Budgeted Verification Modes
 
-Goal: let hosted source-state applications verify large worlds and bundles
-without unbounded graph admission or all-or-nothing full-world scans.
+Goal: let source-state applications verify large worlds and bundles through
+bounded, policy-declared verification modes without unbounded graph admission
+or all-or-nothing full-world scans.
 
 Deliverables:
 
@@ -1264,7 +1289,7 @@ Deliverables:
 
 ## v0.43.3 - Operation, Event, Explanation, And Context Records
 
-Goal: support source-state applications that need append-only operations,
+Goal: define generic records for applications that need append-only operations,
 bounded events, deterministic fact compilation, auditable explanations, and
 context packs in addition to ordinary query results.
 
