@@ -231,6 +231,11 @@ and authenticated with domain-separated associated data before manifests,
 checkpoints, or recovery can claim tamper resistance. CRC64 remains only a
 structural corruption check.
 
+Nonce, key, salt, replay nonce, and random identifier generation require an
+admitted entropy/CSPRNG provider before production crypto paths exist.
+Production builds must fail closed when entropy is unavailable, and
+deterministic test providers must stay test-only.
+
 The storage crypto boundary must also handle log splicing and metadata
 confidentiality. WAL frames need database/log generation, LSN, transaction
 ordinal, previous-frame digest, and commit-root binding so valid encrypted
@@ -246,6 +251,12 @@ transparency service, WORM/offline operator checkpoint, or threshold-held
 external checkpoint. Active startup must fail closed when local storage is
 older than the anchor; historical roots can be opened only through explicit
 recovery workflows.
+
+The storage directory itself needs an identity and single-writer lease. Two
+processes must not be able to advance the same WAL/manifest directory
+concurrently. Storage-format upgrades must be idempotent, signed, audited,
+downgrade-protected, and recoverable after interruption without partially
+trusted state.
 
 The database process must not become a god-mode key holder. Production key
 release must go through a scoped KMS, HSM, privilege-separated key service, or
@@ -319,6 +330,13 @@ budgets, minimum cohort sizes, contribution bounds, query-history differencing
 detection, consistent suppression, purpose-specific audit, and cross-session
 budget aggregation.
 
+Encryption and redaction do not hide every query side channel. The planner must
+classify access-pattern and query-shape leakage such as touched segments,
+indexes, response size, timing, cache hits, and repeated query forms.
+High-assurance profiles must either mitigate those leaks with padding,
+batching, private-query, delayed-response, or offline workflows, or reject the
+query shape with an explicit non-claim.
+
 Result sovereignty is represented as either an exact bounded jurisdiction set
 or a saturated multi-jurisdiction scope. The saturated scope is not a
 clearance, compartment, or releasability token. It is a most-restrictive signal
@@ -352,6 +370,12 @@ break-glass, key lifecycle, law-pack admission, declassification, backup, or
 release workflows. `v0.26.2` defines owner, maintainer, security officer, legal
 reviewer, key guardian, emergency approver, auditor, and service roles, plus a
 single-maintainer fallback that still records explicit approvals and evidence.
+
+API authentication needs credential and session lifecycle rules, not only a
+transport identity. Tokens, passkeys, service credentials, emergency
+capabilities, and future extension credentials must bind tenant, principal,
+device, workload, purpose, policy epoch, scope, expiry, replay nonce, and
+revocation epoch.
 
 Before key hierarchy work proceeds beyond metadata, the policy planner must
 close known scaffold timing leaks: policy-token comparison needs admitted
@@ -423,6 +447,12 @@ Required models:
 
 The database must not invent law. It consumes signed, reviewed, versioned packs
 and turns them into deterministic planning inputs.
+
+Law and policy packs must not become unbounded scripts. Evaluation must be
+deterministic, resource-bounded, side-effect-free, and independent of network,
+filesystem, random, wall-clock, or process state. Declarative data is preferred
+over executable policy code; any executable helper needs an explicit sandbox or
+compile-boundary admission.
 
 See [Hyve Cluster And Compliance Roadmap](hyve-cluster-and-compliance-roadmap.md).
 

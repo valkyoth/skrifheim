@@ -467,6 +467,11 @@ Deliverables:
 - dependency-admission decision for the production SHA-3/SHAKE digest engine
   and AEAD implementation, including license, maintenance, advisory, `no_std`
   fit, unsafe-code boundary, platform support, and test evidence,
+- entropy and CSPRNG provider admission for nonce generation, key generation,
+  randomized staging names, salts, replay nonces, and any future random
+  identifiers, including platform support, failure behavior, fork/VM rollback
+  considerations, test-only deterministic provider boundaries, and `no_std`
+  compatibility,
 - configurable digest-strength policy wired to actual SHA3-256, SHA3-384,
   SHA3-512, SHAKE256-256, and SHAKE256-512 computation,
 - production `ContentDigest`, `ManifestDigest`, and `WorldIdentityDigest`
@@ -502,6 +507,10 @@ Deliverables:
   segment, projection, backup, export, AI artifact, and audit-log data keys,
 - nonce uniqueness and crash-recovery analysis for append-only WAL writes and
   immutable segment writes,
+- tests proving production paths fail closed when entropy is unavailable,
+  deterministic test RNGs cannot be compiled into production profiles, and
+  generated nonces cannot repeat across restart/crash scenarios covered by the
+  storage model,
 - associated-data tests proving ciphertext cannot be replayed across tenant,
   compartment, world, WAL, segment, projection, backup, export, AI, or audit
   domains,
@@ -554,6 +563,12 @@ Deliverables:
   whenever dependency, toolchain, or GitHub Actions versions change,
 - tests for the release-readiness gate and dependency-policy scripts so the
   gate itself cannot silently regress.
+- signed release provenance and reproducibility plan covering source commit,
+  toolchain, dependency lockfile, container image digests, SBOM, release gate
+  output, and whether bit-for-bit reproducibility is required or explicitly
+  non-claimed for each release profile,
+- release-gate check that final release commits can produce machine-readable
+  provenance evidence without including secrets or local machine paths.
 
 ## v0.18.6 - Cross-Platform Portability Baseline
 
@@ -607,6 +622,9 @@ Deliverables:
   state, not freshness of the newest state by themselves,
 - recovery workflow distinction between active startup and historical rollback
   inspection,
+- crash-ordering rule for anchor advancement versus manifest publication,
+  including how to avoid accepting stale roots and how to recover from a crash
+  after one side advances but before the other side is durable,
 - rule that active startup must fail closed if the selected manifest generation
   is older than the anchor or if the anchor cannot be checked under a
   production profile,
@@ -682,6 +700,8 @@ Goal: record the durable storage root.
 Deliverables:
 
 - manifest structure,
+- storage-directory identity and single-writer lease contract so two database
+  processes cannot concurrently advance the same manifest/WAL directory,
 - checkpoint LSN,
 - segment list,
 - digest strength profile field,
@@ -692,13 +712,17 @@ Deliverables:
 - freshness-anchor generation and anchor digest fields from `v0.18.7`,
 - encryption domain inventory,
 - atomic manifest/checkpoint/WAL-pruning crash-ordering specification,
+- stale lease recovery rule bound to database identity, process identity,
+  storage generation, freshness anchor, and trusted time evidence,
 - world-id collision detection that rejects an existing `WorldId` for a
   different `(tenant_id, kind, depth, parent, name)` tuple,
 - rejection of manifests whose full-width digest profile does not match the
   active deployment policy,
 - rejection of manifests whose audit root, policy epoch, key-state digest, or
   freshness-anchor generation cannot be reconciled,
-- manifest validation tests.
+- manifest validation tests,
+- tests for concurrent opener rejection, stale lease recovery, wrong database
+  identity, wrong storage generation, and lease/anchor mismatch.
 
 ## v0.20.0 - Startup Recovery Integration
 
@@ -1073,6 +1097,26 @@ Deliverables:
 - tests for differencing attempts, repeated small cohorts, budget exhaustion,
   cross-device budget reuse, inconsistent suppression, and purpose mismatch.
 
+## v0.24.6 - Access-Pattern And Query-Shape Leakage Model
+
+Goal: explicitly classify and mitigate what encrypted storage and redacted
+results still leak through access patterns, response sizes, timing, and query
+shape before query execution and projections make those surfaces real.
+
+Deliverables:
+
+- leakage classification for touched worlds, segments, indexes, projections,
+  result counts, response sizes, execution time, cache hits, and repeated query
+  shapes,
+- decision record on which profiles accept access-pattern leakage and which
+  require padding, batching, fixed-size pages, private-query modes, delayed
+  responses, cover traffic, or offline/export-only workflows,
+- planner metadata that records the leakage profile used for a query plan,
+- tests that high-assurance profiles reject query shapes that would reveal
+  protected compartment existence, small cohort presence, or sensitive index
+  membership through access patterns,
+- explicit non-claim if ORAM-style protection is not implemented before 1.0.
+
 ## v0.25.0 - Native Query AST
 
 Goal: define the first native query representation without execution.
@@ -1218,6 +1262,7 @@ Deliverables:
   backup, AI processing, and legal/compliance decisions,
 - inference-budget planning from `v0.24.5` for aggregate and repeated-query
   surfaces,
+- access-pattern and query-shape leakage handling from `v0.24.6`,
 - confidence-aware allow/redact/reject policy hooks,
 - tests for denied plans.
 
@@ -1236,6 +1281,7 @@ Deliverables:
 - execution-time revalidation that the bound plan's snapshot root, policy
   epoch, proof, identity, expiry, purpose, and nonce are still valid,
 - inference-budget enforcement for aggregate query execution,
+- execution behavior that follows the selected `v0.24.6` leakage profile,
 - bounded result sets,
 - tests for authorized and denied reads.
 
@@ -1614,6 +1660,47 @@ Deliverables:
   graphs, forum/discussion, messenger, feed/media, mailbox, collaboration, and
   forge/source-state behavior starts after v1.0.0.
 
+## v0.39.0 - Storage Format Migration And Downgrade Protection
+
+Goal: make database upgrades, storage-format migrations, and downgrade
+attempts explicit before production hardening.
+
+Deliverables:
+
+- storage-format feature manifest for WAL, segment, manifest, audit, backup,
+  schema, and projection format versions,
+- migration plan model with preflight, dry-run, required source version,
+  target version, affected roots, expected duration class, rollback/restore
+  point, and operator authority,
+- downgrade policy that rejects opening newer storage with older binaries
+  unless an explicit read-only recovery profile supports it,
+- idempotent migration checkpointing so interrupted migrations resume or fail
+  closed without partial trust,
+- signed migration proof facts and audit events bound to manifest root,
+  freshness anchor, schema root, policy epoch, crypto epoch, and operator
+  approval,
+- tests for interrupted migration, replayed migration proof, downgrade attack,
+  unknown feature bit, partial projection migration, and rollback-protected
+  snapshot preservation.
+
+## v0.40.0 - Host Runtime Isolation And Resource Pools
+
+Goal: prevent optional host/runtime behavior from becoming an implicit shared
+privilege or noisy-neighbor side channel before API and projection execution.
+
+Deliverables:
+
+- tenant and classification-aware worker-pool model for queries, projection
+  rebuilds, compaction, backup, export, legal planning, and AI artifact jobs,
+- admission control for CPU, memory, file handles, temporary disk, queue depth,
+  and concurrent jobs before work starts,
+- fail-closed policy for high-classification or high-assurance work that cannot
+  run in a sufficiently isolated pool,
+- tests that one tenant cannot starve another tenant's mandatory audit,
+  recovery, or freshness-anchor work,
+- explicit non-claim for microarchitectural isolation unless a deployment uses
+  process, VM, hardware, or OS-level isolation profiles.
+
 ## v0.41.0 - AI Artifact Provenance
 
 Goal: store AI output as untrusted derived artifacts with provenance.
@@ -1733,6 +1820,25 @@ Deliverables:
 - constant-shape API errors,
 - tests for unauthenticated and unauthorized requests.
 
+## v0.47.1 - API Credential, Session, And Revocation Model
+
+Goal: make authenticated API credentials bounded, replay-resistant, revocable,
+and auditable before production clients rely on long-lived access.
+
+Deliverables:
+
+- credential/session model for mTLS identities, signed local tokens, passkeys,
+  service tokens, bootstrap tokens, emergency capabilities, and future
+  extension credentials,
+- binding to tenant, principal, device, workload, purpose, policy epoch,
+  allowed scopes, expiry, replay nonce, and revocation epoch,
+- revocation list or revocation root included in manifests, audit roots, and
+  freshness-anchor state where required,
+- session renewal and rotation policy that does not silently expand authority,
+- tests for replayed token, stale revocation epoch, wrong device/workload,
+  wrong purpose, expired credential, scope escalation, and reused bootstrap or
+  emergency capability.
+
 ## v0.48.0 - Resource Governance And Quotas
 
 Goal: prevent one tenant, world, query, or projection from exhausting the database.
@@ -1827,6 +1933,28 @@ Deliverables:
   stale, malformed, or not referenced by the relevant law-pack/compliance or
   parser/conformance milestone.
 
+## v0.52.2 - Policy And Law-Pack Evaluator Safety
+
+Goal: make legal/compliance and policy-pack execution deterministic, bounded,
+and non-privileged before signed packs can influence access decisions.
+
+Deliverables:
+
+- policy/law-pack evaluation model that is deterministic, resource-bounded,
+  side-effect-free, and independent of network, wall-clock, filesystem, random,
+  or process state during evaluation,
+- explicit decision on data format or language: declarative tables, bytecode,
+  embedded DSL, or compiled Rust admission, with a default preference for
+  declarative data over executable code,
+- gas, step, recursion, memory, input-size, and output-size limits for every
+  evaluator path,
+- versioned conformance test suite for allow, constrained-allow,
+  approval-required, deny, stale-pack, conflict, and ambiguity outcomes,
+- sandbox or compile-boundary rule for any future executable policy helper,
+- tests for nontermination attempts, oversized rules, recursive references,
+  conflicting packs, stale source locks, network/filesystem access attempts,
+  and nondeterministic output.
+
 ## v0.53.0 - Law Pack Metadata And Admission
 
 Goal: define how signed legal and compliance policy packs enter the system.
@@ -1895,6 +2023,7 @@ Deliverables:
 - full result security label propagation, including compartments and
   releasability/dissemination constraints,
 - query inference budgets and aggregation controls,
+- access-pattern and query-shape leakage model,
 - causal blast-radius invalidation and quarantine support,
 - key hierarchy and lifecycle,
 - scoped key release boundary so the main database process is not a god-mode
@@ -1907,20 +2036,26 @@ Deliverables:
   roots,
 - encrypted inner storage metadata with minimal plaintext outer framing,
 - explicit crypto-erasure granularity and key-slot deletion proofs,
+- admitted entropy/CSPRNG provider and nonce-generation policy,
 - query-result classification,
 - trusted time and monotonic sequence model,
 - legal/compliance passport foundations,
 - law-pack metadata admission,
+- deterministic bounded policy/law-pack evaluator safety,
 - legal operation and transfer decision skeleton,
 - sovereign placement intent compiler,
 - compromise and recovery playbooks,
 - schema catalog and versioned contracts,
 - retention, tombstone, and compaction policy,
 - authenticated API boundary,
+- API credential, session, and revocation model,
 - resource governance and quotas,
+- tenant/classification-aware runtime isolation and resource pools,
 - observability without secret leakage,
 - performance and load evidence,
 - tamper-evident manifests,
+- storage-directory single-writer lease and downgrade-protected format
+  migration model,
 - externally anchorable chained audit roots,
 - SBOM, dependency-tree, source-lock, and release-evidence gates,
 - local snapshot and rollback retention with locked archive/recovery worlds,

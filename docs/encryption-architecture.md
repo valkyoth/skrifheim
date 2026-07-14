@@ -97,6 +97,12 @@ identity, ciphertext integrity digest, and keyed equality-safe content
 references. One digest over encrypted bytes cannot simultaneously be a stable
 plaintext content address and a confidentiality-safe storage integrity marker.
 
+Nonce, salt, replay nonce, randomized staging name, key generation, and future
+random identifier generation require an admitted entropy/CSPRNG provider.
+Production profiles must fail closed when entropy is unavailable or the provider
+cannot meet the platform/security profile. Deterministic providers are allowed
+only behind test fixtures and must be release-gated out of production builds.
+
 ## Key Lifecycle
 
 The control plane must model:

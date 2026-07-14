@@ -23,6 +23,8 @@ Status: baseline
 - forged device or workload context supplied to policy evaluation,
 - write-down from high classification to lower outputs,
 - query inference through aggregation or repeated small queries,
+- access-pattern leakage through touched segments, indexes, response size,
+  timing, cache hits, or repeated query shape,
 - projection mixing incompatible compartments,
 - stale vector/search results leaking deleted or unauthorized facts,
 - AI artifact poisoning,
@@ -30,8 +32,14 @@ Status: baseline
 - rollback to a self-consistent old database directory containing old
   manifests, WAL, policies, credentials, key states, deleted facts, missing
   audit events, or reusable emergency approvals,
+- concurrent database processes advancing the same storage directory,
+- storage-format downgrade or partial migration attacks,
 - WAL or segment corruption,
+- weak entropy, nonce reuse, or test-only randomness entering production
+  crypto paths,
 - unauthorized export,
+- replayed, stale, or overbroad API credentials and sessions,
+- nondeterministic or overpowered policy/law-pack evaluators,
 - plugin capability escape.
 
 ## Design Responses
@@ -49,6 +57,8 @@ Status: baseline
   newest valid state by themselves,
 - fail closed on active startup when local storage is older than the freshness
   anchor, and open historical roots only through explicit recovery workflows,
+- admit a production entropy/CSPRNG provider before nonce, key, salt, replay
+  nonce, or random identifier generation is security-relevant,
 - scope keys by compartment and epoch,
 - release keys through scoped key-provider boundaries rather than giving the
   main database process unrestricted root or tenant key authority,
@@ -60,6 +70,14 @@ Status: baseline
   policy epoch, query digest, purpose, expiry, and replay nonce; public query
   requests must not provide the labels or result security metadata of stored
   facts,
+- model and gate access-pattern and query-shape leakage instead of assuming
+  encryption hides which data was touched,
+- reject concurrent writers, stale storage leases, storage-format downgrade
+  attempts, and partial migrations before durable roots are trusted,
+- make API credential/session revocation part of authenticated access, not an
+  application-side afterthought,
+- evaluate law and policy packs through deterministic bounded mechanisms with
+  no network, filesystem, random, wall-clock, or process side effects,
 - keep public web projections separate from private worlds,
 - treat AI output as untrusted until reviewed.
 

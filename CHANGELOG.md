@@ -8,6 +8,11 @@
   crypto-erasure granularity, canonical fact signing transcripts, early schema
   roots, immutable world revisions, causal truth-resolution algebra, trusted
   planner contexts, full result security labels, and query inference budgets.
+- Added follow-up architecture gates for entropy/CSPRNG admission, storage
+  single-writer leases, release provenance, access-pattern leakage,
+  storage-format migration and downgrade protection, host runtime isolation,
+  API credential/session revocation, and deterministic bounded policy/law-pack
+  evaluation.
 - Reworked the roadmap so `v1.0.0` is the core production world database,
   `v1.1.0` through `v1.6.0` are optional application-extension tracks, and
   Hyve clustering starts at `v2.0.0`.
