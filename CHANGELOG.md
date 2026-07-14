@@ -66,6 +66,16 @@
   binding segment kind into the mirrored footer, bounding in-memory segment
   reads, locking WAL writers, making parent-directory fsync fail closed for
   bare paths, and preserving WAL replay state on rejected close records.
+- Resolved the `0.18.2` retest chain by enforcing segment writer/read cap
+  symmetry, staging immutable segment publication, validating explicit parent
+  paths before file creation, fsyncing WAL parent directories after successful
+  writer opens, rejecting normal reads of legacy kind-unbound footers, adding
+  explicit publication outcomes, redacting post-publication durability
+  diagnostics, adding strict staged cleanup, preserving lookalike published
+  segment names, rejecting symlink cleanup paths, and reserving the staging
+  namespace before target-file creation.
+- Prepared `0.18.2` for signed tag creation after pentest retest passed;
+  GitHub verification remains the final pre-tag gate.
 
 ## 0.18.1
 

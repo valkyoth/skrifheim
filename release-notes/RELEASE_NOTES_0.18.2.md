@@ -1,6 +1,6 @@
 # skrifheim 0.18.2 Release Notes
 
-Status: first pentest pass and retest resolved locally.
+Status: release candidate prepared after clean pentest retest.
 
 ## Scope
 
@@ -70,7 +70,7 @@ or replacement actually introduces new material.
 - `cargo test -p skrifheim-storage-host segment`
 - `cargo test -p skrifheim-storage-host wal`
 - `scripts/checks.sh`
-- `scripts/release_0_18_2_gate.sh` after pentest evidence is committed
+- `scripts/release_0_18_2_gate.sh`
 
 ## Non-Claims
 
@@ -82,5 +82,6 @@ metadata; durable audit/event storage remains planned work.
 
 ## Pentest Status
 
-The first `0.18.2` pentest pass and retest have been resolved locally. Root
+All `0.18.2` pentest and retest findings have been resolved locally. The
+permanent digest is recorded at `security/pentest/v0.18.2.md`; root
 `PENTEST.md` has been removed after findings were resolved.
