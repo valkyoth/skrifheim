@@ -137,7 +137,7 @@ fn wal_writer_requires_explicit_parent_for_new_files() -> WalResult<()> {
     let result = WalFileWriter::open_append(&path, WalAppendOptions::new(false));
 
     assert!(matches!(result, Err(WalFileError::Io(_))));
-    let _ = fs::remove_file(path);
+    assert!(!std::path::Path::new(&path).exists());
     Ok(())
 }
 

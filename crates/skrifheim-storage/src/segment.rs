@@ -34,6 +34,12 @@ pub enum BodyChecksum {
     Present(u64),
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SegmentFooterKindBinding {
+    LegacyV1Unbound,
+    Bound(SegmentKind),
+}
+
 #[derive(Clone)]
 pub struct SegmentHeader {
     magic: [u8; 8],
@@ -106,7 +112,7 @@ impl fmt::Debug for SegmentHeaderInput {
 pub struct SegmentFooter {
     magic: [u8; 8],
     version: u16,
-    segment_kind: SegmentKind,
+    segment_kind: SegmentFooterKindBinding,
     tenant_id: TenantId,
     min_tx: TxId,
     max_tx: TxId,
@@ -310,7 +316,7 @@ impl SegmentFooter {
         let footer = Self {
             magic: SEGMENT_FOOTER_MAGIC,
             version: SEGMENT_FOOTER_VERSION_MAX,
-            segment_kind: input.segment_kind,
+            segment_kind: SegmentFooterKindBinding::Bound(input.segment_kind),
             tenant_id: input.tenant_id,
             min_tx: input.min_tx,
             max_tx: input.max_tx,
@@ -366,8 +372,21 @@ impl SegmentFooter {
     }
 
     #[must_use]
-    pub const fn segment_kind(&self) -> SegmentKind {
+    pub const fn segment_kind_binding(&self) -> SegmentFooterKindBinding {
         self.segment_kind
+    }
+
+    #[must_use]
+    pub const fn segment_kind(&self) -> Option<SegmentKind> {
+        match self.segment_kind {
+            SegmentFooterKindBinding::LegacyV1Unbound => None,
+            SegmentFooterKindBinding::Bound(kind) => Some(kind),
+        }
+    }
+
+    #[must_use]
+    pub const fn has_legacy_unbound_kind(&self) -> bool {
+        matches!(self.segment_kind, SegmentFooterKindBinding::LegacyV1Unbound)
     }
 
     #[must_use]
@@ -444,8 +463,12 @@ impl SegmentFooter {
     pub fn validate_against_header(&self, header: &SegmentHeader) -> Result<()> {
         self.validate()?;
         header.validate()?;
+        let kind_mismatch = match self.segment_kind {
+            SegmentFooterKindBinding::LegacyV1Unbound => false,
+            SegmentFooterKindBinding::Bound(kind) => kind != header.segment_kind,
+        };
         if self.tenant_id.get() != header.tenant_id.get()
-            || self.segment_kind != header.segment_kind
+            || kind_mismatch
             || self.min_tx.get() != header.min_tx.get()
             || self.max_tx.get() != header.max_tx.get()
             || self.policy_id.get() != header.policy_id.get()

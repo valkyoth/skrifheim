@@ -48,8 +48,13 @@ if ! grep -R "structurally_equal_ct" crates/skrifheim-storage/src/wal/replay.rs 
     exit 1
 fi
 
-if ! grep -q 'actions/checkout@v7' .github/workflows/ci.yml; then
-    echo "0.16 requires actions/checkout v7 series" >&2
+if ! grep -q 'actions/checkout v7.0.0 reviewed' .github/workflows/ci.yml; then
+    echo "0.16 requires reviewed actions/checkout v7 series evidence" >&2
+    exit 1
+fi
+
+if ! grep -q 'actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0' .github/workflows/ci.yml; then
+    echo "0.16 requires pinned actions/checkout v7.0.0 SHA" >&2
     exit 1
 fi
 

@@ -54,16 +54,20 @@ pub(crate) fn add_no_follow(options: &mut std::fs::OpenOptions) {
 }
 
 #[cfg(unix)]
-pub(crate) fn fsync_parent_dir(path: &Path) -> io::Result<()> {
-    let parent = path
-        .parent()
+pub(crate) fn require_explicit_parent(path: &Path) -> io::Result<&Path> {
+    path.parent()
         .filter(|parent| !parent.as_os_str().is_empty())
         .ok_or_else(|| {
             io::Error::new(
                 io::ErrorKind::InvalidInput,
                 "path must include an explicit parent directory for durable fsync",
             )
-        })?;
+        })
+}
+
+#[cfg(unix)]
+pub(crate) fn fsync_parent_dir(path: &Path) -> io::Result<()> {
+    let parent = require_explicit_parent(path)?;
     File::open(parent)?.sync_all()?;
     Ok(())
 }

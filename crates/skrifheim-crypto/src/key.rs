@@ -209,7 +209,8 @@ impl KeyMetadata {
         }
     }
 
-    pub fn reconstruct(
+    #[cfg(test)]
+    pub(crate) fn reconstruct(
         key_id: KeyId,
         parent: Option<KeyId>,
         scope: KeyScope,

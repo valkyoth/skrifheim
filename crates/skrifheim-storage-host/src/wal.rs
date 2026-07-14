@@ -15,7 +15,7 @@ use skrifheim_core::SkrifheimError;
 use skrifheim_crypto::EncryptionDomain;
 use skrifheim_storage::{WAL_FRAME_HEADER_BYTES, WalFrameHeader, wal_body_crc64};
 
-use crate::common::{add_no_follow, fsync_parent_dir};
+use crate::common::{add_no_follow, fsync_parent_dir, require_explicit_parent};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct WalAppendOptions {
@@ -81,7 +81,8 @@ pub struct WalFileWriter {
 impl WalFileWriter {
     pub fn open_append(path: impl AsRef<Path>, options: WalAppendOptions) -> Result<Self> {
         let path = path.as_ref();
-        let (file, created) = open_wal_for_append(path)?;
+        require_explicit_parent(path)?;
+        let file = open_wal_for_append(path)?;
         if !file.metadata()?.is_file() {
             return Err(WalFileError::Io(io::Error::other(
                 "WAL path must be a regular file",
@@ -91,9 +92,7 @@ impl WalFileWriter {
         #[cfg(unix)]
         {
             file.set_permissions(Permissions::from_mode(0o600))?;
-            if created {
-                fsync_parent_dir(path)?;
-            }
+            fsync_parent_dir(path)?;
         }
         Ok(Self { file, options })
     }
@@ -199,7 +198,7 @@ fn verify_body_crc(
     Ok(())
 }
 
-fn open_wal_for_append(path: &Path) -> Result<(File, bool)> {
+fn open_wal_for_append(path: &Path) -> Result<File> {
     let mut create_options = OpenOptions::new();
     create_options.create_new(true).read(true).append(true);
     add_no_follow(&mut create_options);
@@ -207,15 +206,12 @@ fn open_wal_for_append(path: &Path) -> Result<(File, bool)> {
     create_options.mode(0o600);
 
     match create_options.open(path) {
-        Ok(file) => Ok((file, true)),
+        Ok(file) => Ok(file),
         Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
             let mut existing_options = OpenOptions::new();
             existing_options.read(true).append(true);
             add_no_follow(&mut existing_options);
-            existing_options
-                .open(path)
-                .map(|file| (file, false))
-                .map_err(WalFileError::Io)
+            existing_options.open(path).map_err(WalFileError::Io)
         }
         Err(error) => Err(WalFileError::Io(error)),
     }

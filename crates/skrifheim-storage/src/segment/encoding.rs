@@ -5,8 +5,8 @@ use skrifheim_crypto::{
 };
 
 use super::{
-    BodyChecksum, SEGMENT_FOOTER_BYTES, SEGMENT_HEADER_BYTES, SegmentFooter, SegmentHeader,
-    SegmentKind, validation::invalid_segment,
+    BodyChecksum, SEGMENT_FOOTER_BYTES, SEGMENT_HEADER_BYTES, SegmentFooter,
+    SegmentFooterKindBinding, SegmentHeader, SegmentKind, validation::invalid_segment,
 };
 
 const VERSION_OFFSET: usize = 8;
@@ -90,7 +90,11 @@ pub(super) fn parse_footer(bytes: &[u8]) -> Result<SegmentFooter> {
     let mut magic = [0_u8; 8];
     magic.copy_from_slice(&bytes[..8]);
     let version = u16::from_le_bytes(read_array(bytes, VERSION_OFFSET)?);
-    let segment_kind = segment_kind_from_code(bytes[KIND_OFFSET])?;
+    let segment_kind = match version {
+        1 if bytes[KIND_OFFSET] == 0 => SegmentFooterKindBinding::LegacyV1Unbound,
+        2 => SegmentFooterKindBinding::Bound(segment_kind_from_code(bytes[KIND_OFFSET])?),
+        _ => return Err(invalid_segment("unsupported segment footer version")),
+    };
     let metadata = parse_common_metadata(bytes)?;
     let footer = SegmentFooter {
         magic,
@@ -116,7 +120,10 @@ pub(super) fn encode_footer(footer: &SegmentFooter) -> [u8; SEGMENT_FOOTER_BYTES
     let mut bytes = [0_u8; SEGMENT_FOOTER_BYTES];
     bytes[..8].copy_from_slice(&footer.magic);
     bytes[VERSION_OFFSET..KIND_OFFSET].copy_from_slice(&footer.version.to_le_bytes());
-    bytes[KIND_OFFSET] = segment_kind_code(footer.segment_kind);
+    bytes[KIND_OFFSET] = match footer.segment_kind {
+        SegmentFooterKindBinding::LegacyV1Unbound => 0,
+        SegmentFooterKindBinding::Bound(kind) => segment_kind_code(kind),
+    };
     write_common_metadata(
         &mut bytes,
         CommonSegmentMetadataRef {

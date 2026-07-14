@@ -13,6 +13,11 @@ Dependency and tooling changes require deliberate review.
 - Discuss and document any external dependency before use.
 - Run `cargo deny check` and `cargo audit` before release tagging.
 - Git dependencies must be pinned to a revision and approved.
+- GitHub Actions must use reviewed immutable SHAs with the reviewed upstream
+  version documented in comments or release notes.
+- Cargo-installed CI tools must use reviewed exact versions with `--locked`.
+- Container base images must use reviewed immutable digests, and container
+  builds must use `cargo build --locked`.
 - Generated artifacts and vendored code need documented origin and update flow.
 - Release gates must produce enough evidence to audit what was actually
   shipped: release notes, pentest digest, SBOM, relevant dependency tree

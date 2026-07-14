@@ -1,6 +1,6 @@
 # skrifheim 0.18.2 Release Notes
 
-Status: first pentest pass resolved locally, retest pending.
+Status: first pentest pass and retest resolved locally.
 
 ## Scope
 
@@ -32,12 +32,19 @@ or replacement actually introduces new material.
   quarantined, destroyed, and crypto-erased parent keys.
 - Updated encryption architecture and security controls to describe the split
   between crypto-material epochs and lifecycle event ordering.
-- Resolved the first pentest pass by replacing arbitrary public key lifecycle
-  reconstruction with checked reconstruction, computing crypto-erasure sequence
-  once, binding segment kind into the footer, adding an in-memory segment read
-  cap, enforcing exclusive WAL writers, rejecting bare new-file paths that
-  cannot durably fsync an explicit parent directory, and making rejected WAL
-  close records non-destructive.
+- Resolved the first pentest pass by removing public arbitrary key lifecycle
+  reconstruction, computing crypto-erasure sequence once, binding segment kind
+  into the footer, adding an in-memory segment read cap, enforcing exclusive
+  WAL writers, rejecting bare new-file paths that cannot durably fsync an
+  explicit parent directory, and making rejected WAL close records
+  non-destructive.
+- Resolved the retest by enforcing the same host in-memory body cap on segment
+  writes and reads, staging immutable segment writes in the target directory
+  before no-overwrite publication, validating explicit parent paths before file
+  creation, fsyncing WAL parent directories for every successful writer open,
+  parsing `v0.18.0`/`v0.18.1` footers as explicit legacy kind-unbound metadata,
+  and pinning CI/container supply-chain inputs to reviewed versions or digests
+  for both the runtime and Alpine smoke container definitions.
 
 ## Verification
 
@@ -45,6 +52,8 @@ or replacement actually introduces new material.
 - `cargo test -p skrifheim-storage segment`
 - `cargo test -p skrifheim-storage replay`
 - `cargo test -p skrifheim-storage-host`
+- `cargo test -p skrifheim-storage-host segment`
+- `cargo test -p skrifheim-storage-host wal`
 - `scripts/checks.sh`
 - `scripts/release_0_18_2_gate.sh` after pentest evidence is committed
 
@@ -58,5 +67,5 @@ metadata; durable audit/event storage remains planned work.
 
 ## Pentest Status
 
-The first `0.18.2` pentest pass has been resolved locally. Root `PENTEST.md`
-has been removed after findings were resolved.
+The first `0.18.2` pentest pass and retest have been resolved locally. Root
+`PENTEST.md` has been removed after findings were resolved.

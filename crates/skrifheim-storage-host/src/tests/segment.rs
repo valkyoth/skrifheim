@@ -44,7 +44,7 @@ fn segment_writer_rejects_body_length_mismatch() -> SegmentResult<()> {
     let result = writer.write_segment(&segment_header(&[1, 2, 3, 4])?, &[1, 2, 3], &AcceptDigest);
 
     assert!(matches!(result, Err(SegmentFileError::BodyLengthMismatch)));
-    fs::remove_file(path)?;
+    assert!(!path.exists());
     Ok(())
 }
 
@@ -61,6 +61,56 @@ fn segment_writer_requires_content_digest_verifier() -> SegmentResult<()> {
             SkrifheimError::InvalidDigest
         ))
     ));
+    assert!(!path.exists());
+    Ok(())
+}
+
+#[test]
+fn segment_writer_does_not_publish_until_complete_write() -> SegmentResult<()> {
+    let path = temp_path("segment-stage-before-publish").map_err(wal_to_segment_error)?;
+    {
+        let _writer = SegmentFileWriter::create(&path, SegmentWriteOptions::new(false))?;
+        assert!(!path.exists());
+    }
+    assert!(!path.exists());
+    Ok(())
+}
+
+#[test]
+fn segment_writer_rejects_oversized_body_before_publishing() -> SegmentResult<()> {
+    let path = temp_path("segment-write-oversized").map_err(wal_to_segment_error)?;
+    let body = [1_u8; 4];
+    let mut input = segment_header_input(&body)?;
+    input.body_len = MAX_IN_MEMORY_SEGMENT_BYTES + 1;
+    let header = skrifheim_storage::SegmentHeader::new(input)?;
+    let writer = SegmentFileWriter::create(&path, SegmentWriteOptions::new(false))?;
+    let result = writer.write_segment(&header, &body, &AcceptDigest);
+
+    assert!(matches!(
+        result,
+        Err(SegmentFileError::ResourceLimitExceeded)
+    ));
+    assert!(!path.exists());
+    Ok(())
+}
+
+#[test]
+fn segment_writer_and_reader_round_trip_max_in_memory_body() -> SegmentResult<()> {
+    let path = temp_path("segment-max-host-body").map_err(wal_to_segment_error)?;
+    let body_len = usize::try_from(MAX_IN_MEMORY_SEGMENT_BYTES)
+        .map_err(|_| SegmentFileError::ResourceLimitExceeded)?;
+    let body = vec![42_u8; body_len];
+    let header = segment_header(&body)?;
+    {
+        let writer = SegmentFileWriter::create(&path, SegmentWriteOptions::new(false))?;
+        writer.write_segment(&header, &body, &AcceptDigest)?;
+    }
+
+    let mut reader = SegmentFileReader::open(&path, segment_domain()?)?;
+    let segment = reader.read_segment(&AcceptDigest)?;
+
+    assert_eq!(segment.encrypted_body().len(), body_len);
+    assert_eq!(segment.header().body_len(), MAX_IN_MEMORY_SEGMENT_BYTES);
     fs::remove_file(path)?;
     Ok(())
 }
@@ -263,7 +313,7 @@ fn segment_writer_requires_explicit_parent_for_new_files() -> SegmentResult<()> 
     let result = SegmentFileWriter::create(&path, SegmentWriteOptions::new(false));
 
     assert!(matches!(result, Err(SegmentFileError::Io(_))));
-    let _ = fs::remove_file(path);
+    assert!(!std::path::Path::new(&path).exists());
     Ok(())
 }
 

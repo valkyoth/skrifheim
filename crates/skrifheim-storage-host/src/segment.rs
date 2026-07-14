@@ -1,8 +1,9 @@
 use std::{
     fmt,
-    fs::{File, OpenOptions},
+    fs::{self, File, OpenOptions},
     io::{self, Read, Write},
-    path::Path,
+    path::{Path, PathBuf},
+    sync::atomic::{AtomicU64, Ordering},
 };
 
 #[cfg(unix)]
@@ -18,9 +19,10 @@ use skrifheim_storage::{
     wal_body_crc64,
 };
 
-use crate::common::{add_no_follow, fsync_parent_dir};
+use crate::common::{add_no_follow, fsync_parent_dir, require_explicit_parent};
 
 pub const MAX_IN_MEMORY_SEGMENT_BYTES: u64 = 16 * 1024 * 1024;
+static STAGED_SEGMENT_COUNTER: AtomicU64 = AtomicU64::new(1);
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct SegmentWriteOptions {
@@ -109,18 +111,29 @@ pub trait SegmentContentVerifier {
 
 pub struct SegmentFileWriter {
     file: File,
+    staged_path: PathBuf,
+    target_path: PathBuf,
     options: SegmentWriteOptions,
+    published: bool,
 }
 
 impl SegmentFileWriter {
     pub fn create(path: impl AsRef<Path>, options: SegmentWriteOptions) -> SegmentResult<Self> {
         let path = path.as_ref();
+        let _parent = require_explicit_parent(path)?;
+        if path.try_exists()? {
+            return Err(SegmentFileError::Io(io::Error::new(
+                io::ErrorKind::AlreadyExists,
+                "segment path already exists",
+            )));
+        }
+        let staged_path = staged_segment_path(path)?;
         let mut open_options = OpenOptions::new();
         open_options.create_new(true).write(true);
         add_no_follow(&mut open_options);
         #[cfg(unix)]
         open_options.mode(0o600);
-        let file = open_options.open(path)?;
+        let file = open_options.open(&staged_path)?;
         if !file.metadata()?.is_file() {
             return Err(SegmentFileError::Io(io::Error::other(
                 "segment path must be a regular file",
@@ -129,9 +142,14 @@ impl SegmentFileWriter {
         #[cfg(unix)]
         {
             file.set_permissions(Permissions::from_mode(0o600))?;
-            fsync_parent_dir(path)?;
         }
-        Ok(Self { file, options })
+        Ok(Self {
+            file,
+            staged_path,
+            target_path: path.to_path_buf(),
+            options,
+            published: false,
+        })
     }
 
     pub fn write_segment(
@@ -140,8 +158,9 @@ impl SegmentFileWriter {
         encrypted_body: &[u8],
         verifier: &impl SegmentContentVerifier,
     ) -> SegmentResult<()> {
-        validate_segment_body_len(header, encrypted_body)?;
         header.validate()?;
+        enforce_host_body_limit(header)?;
+        validate_segment_body_len(header, encrypted_body)?;
         verify_segment_body_crc(header, encrypted_body)?;
         verifier
             .verify_content_digest(header, encrypted_body)
@@ -153,7 +172,21 @@ impl SegmentFileWriter {
         if self.options.sync_on_write() {
             self.file.sync_all()?;
         }
+        self.file.sync_all()?;
+        fs::hard_link(&self.staged_path, &self.target_path)?;
+        fsync_parent_dir(&self.target_path)?;
+        fs::remove_file(&self.staged_path)?;
+        fsync_parent_dir(&self.target_path)?;
+        self.published = true;
         Ok(())
+    }
+}
+
+impl Drop for SegmentFileWriter {
+    fn drop(&mut self) {
+        if !self.published {
+            let _ = fs::remove_file(&self.staged_path);
+        }
     }
 }
 
@@ -256,6 +289,31 @@ fn validate_segment_body_len(header: &SegmentHeader, encrypted_body: &[u8]) -> S
         return Err(SegmentFileError::BodyLengthMismatch);
     }
     Ok(())
+}
+
+fn enforce_host_body_limit(header: &SegmentHeader) -> SegmentResult<()> {
+    if header.body_len() > MAX_IN_MEMORY_SEGMENT_BYTES {
+        return Err(SegmentFileError::ResourceLimitExceeded);
+    }
+    Ok(())
+}
+
+fn staged_segment_path(path: &Path) -> SegmentResult<PathBuf> {
+    let parent = require_explicit_parent(path)?;
+    let file_name = path.file_name().ok_or_else(|| {
+        SegmentFileError::Io(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "segment path must include a file name",
+        ))
+    })?;
+    let unique = STAGED_SEGMENT_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let staged_name = format!(
+        ".{}.skrifheim-stage-{}-{}",
+        file_name.to_string_lossy(),
+        std::process::id(),
+        unique
+    );
+    Ok(parent.join(staged_name))
 }
 
 fn verify_segment_body_crc(header: &SegmentHeader, encrypted_body: &[u8]) -> SegmentResult<()> {

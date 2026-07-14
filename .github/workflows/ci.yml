@@ -22,7 +22,8 @@ jobs:
     timeout-minutes: 45
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        # actions/checkout v7.0.0 reviewed on 2026-07-14.
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
 
       - name: Install Rust toolchain
         run: rustup show
@@ -32,8 +33,8 @@ jobs:
 
       - name: Install security tools
         run: |
-          cargo install --locked cargo-deny
-          cargo install --locked cargo-audit
+          cargo install --locked --version 0.20.2 cargo-deny
+          cargo install --locked --version 0.22.2 cargo-audit
 
       - name: Check dependency policy
         run: cargo deny check

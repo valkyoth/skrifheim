@@ -9,7 +9,8 @@ mod wal;
 pub use segment::{
     BodyChecksum, SEGMENT_BODY_MAX_BYTES, SEGMENT_FOOTER_BYTES, SEGMENT_FOOTER_MAGIC,
     SEGMENT_FOOTER_VERSION_MAX, SEGMENT_HEADER_BYTES, SEGMENT_MAGIC, SEGMENT_VERSION_MAX,
-    SegmentFooter, SegmentFooterInput, SegmentHeader, SegmentHeaderInput, SegmentKind,
+    SegmentFooter, SegmentFooterInput, SegmentFooterKindBinding, SegmentHeader, SegmentHeaderInput,
+    SegmentKind,
 };
 pub use wal::{
     WAL_BODY_CRC64_ECMA_POLY, WAL_FRAME_BODY_MAX_BYTES, WAL_FRAME_HEADER_BYTES, WAL_FRAME_MAGIC,

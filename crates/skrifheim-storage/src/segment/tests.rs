@@ -61,7 +61,8 @@ fn valid_footer_passes_and_matches_header() -> Result<()> {
     assert_eq!(footer.validate_against_header(&header), Ok(()));
     assert_eq!(footer.magic(), SEGMENT_FOOTER_MAGIC);
     assert_eq!(footer.version(), SEGMENT_FOOTER_VERSION_MAX);
-    assert_eq!(footer.segment_kind(), SegmentKind::Fact);
+    assert_eq!(footer.segment_kind(), Some(SegmentKind::Fact));
+    assert!(!footer.has_legacy_unbound_kind());
     Ok(())
 }
 
@@ -129,7 +130,7 @@ fn header_and_footer_round_trip_fixed_bytes() -> Result<()> {
     assert_eq!(header_bytes.len(), SEGMENT_HEADER_BYTES);
     assert_eq!(footer_bytes.len(), SEGMENT_FOOTER_BYTES);
     assert_eq!(parsed_header.segment_kind(), SegmentKind::Fact);
-    assert_eq!(parsed_footer.segment_kind(), SegmentKind::Fact);
+    assert_eq!(parsed_footer.segment_kind(), Some(SegmentKind::Fact));
     assert_eq!(parsed_header.tenant_id().get(), header.tenant_id().get());
     assert_eq!(parsed_header.min_tx().get(), header.min_tx().get());
     assert_eq!(parsed_header.max_tx().get(), header.max_tx().get());
@@ -188,6 +189,26 @@ fn parsers_reject_malformed_segment_metadata() -> Result<()> {
         SegmentFooter::parse(&footer_bytes),
         Err(SkrifheimError::InvalidStorageHeader(_))
     ));
+    Ok(())
+}
+
+#[test]
+fn legacy_v1_footer_keeps_kind_unbound_explicit() -> Result<()> {
+    let header = header()?;
+    let mut footer_bytes = SegmentFooter::from_header(&header)?.encode();
+    footer_bytes[8..10].copy_from_slice(&1_u16.to_le_bytes());
+    footer_bytes[10] = 0;
+
+    let legacy_footer = SegmentFooter::parse(&footer_bytes)?;
+
+    assert_eq!(legacy_footer.version(), 1);
+    assert_eq!(
+        legacy_footer.segment_kind_binding(),
+        SegmentFooterKindBinding::LegacyV1Unbound
+    );
+    assert_eq!(legacy_footer.segment_kind(), None);
+    assert!(legacy_footer.has_legacy_unbound_kind());
+    assert_eq!(legacy_footer.validate_against_header(&header), Ok(()));
     Ok(())
 }
 

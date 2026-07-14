@@ -64,7 +64,7 @@ It is not a usable database engine.
 | Memory secrecy boundary | Scaffolded | Secret material enters crypto APIs through bounded non-clone redacted `SecretBytes` wrappers backed by admitted `sanitization` clear-on-drop storage. |
 | Identity and audit events | Scaffolded | Typed identities, attestation evidence references, break-glass event shape, signed/encrypted audit-log metadata, and actor-attribution checks. |
 | Crypto-agile envelopes | Scaffolded | Algorithm IDs, crypto epochs, lifecycle event sequences, bounded signature sets, key hierarchy metadata, key lifecycle metadata, encryption-domain metadata, and SHA-3/SHAKE digest policy skeletons exist without locking the database to one permanent algorithm. |
-| Storage metadata | Scaffolded | Immutable segment headers and footers validate magic, version, transaction range, policy, encryption key, crypto epoch, encryption domain, body length, CRC presence, and content digest presence; fixed segment encoding, host-file write/read, CRC verification, footer/header binding, and verifier injection exist for opaque encrypted segment bodies; WAL frame headers validate fixed append-only encrypted-frame metadata, non-zero CRC presence, expected-domain binding, host-file append/read smoke coverage, and header-driven replay/recovery state transitions. |
+| Storage metadata | Scaffolded | Immutable segment headers and footers validate magic, version, transaction range, policy, encryption key, crypto epoch, encryption domain, body length, CRC presence, and content digest presence; fixed segment encoding, host-file staged write/read, CRC verification, v2 footer/header kind binding, explicit v1 legacy-unbound footer parsing, host memory caps, and verifier injection exist for opaque encrypted segment bodies; WAL frame headers validate fixed append-only encrypted-frame metadata, non-zero CRC presence, expected-domain binding, host-file append/read smoke coverage, and header-driven replay/recovery state transitions. |
 | Query planning primitives | Scaffolded | Query requests become policy decision plans for early read, causality, simulation, and context intents. |
 
 ### Tooling And Verification
@@ -73,7 +73,7 @@ It is not a usable database engine.
 | --- | --- | --- |
 | Local gate | Active | `scripts/checks.sh` runs formatting, shell syntax, doc links, release metadata, engineering policy, modularity, security policy, clippy, and tests. |
 | Release gate | Active | `scripts/checks.sh` is the normal local gate. Version release gates run after pentest findings are resolved and the permanent pentest digest is committed. |
-| Rootless Podman | Active | `Containerfile` builds and runs the current CLI in a non-root runtime image. |
+| Rootless Podman | Active | `Containerfile` builds with pinned reviewed image digests, `cargo build --locked`, and a non-root runtime image. |
 | Pentest stop rule | Active | Every version has a clean implementation stop before tagging. Root `PENTEST.md` is temporary findings input and must be removed after resolution. |
 | Modularity gate | Active | Non-generated Rust files over 500 lines fail the local gate. |
 | Engineering gate | Active | Core libraries must stay `no_std`, forbid unsafe code, and avoid `std` imports. |
