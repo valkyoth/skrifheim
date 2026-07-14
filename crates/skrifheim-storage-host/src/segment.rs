@@ -325,11 +325,11 @@ pub(crate) type SegmentResult<T> = core::result::Result<T, SegmentFileError>;
 /// with active segment writers in the same directory.
 pub fn cleanup_staged_segments(dir: impl AsRef<Path>) -> SegmentResult<usize> {
     let dir = dir.as_ref();
-    let dir_metadata = fs::metadata(dir)?;
-    if !dir_metadata.is_dir() {
+    let dir_metadata = fs::symlink_metadata(dir)?;
+    if dir_metadata.file_type().is_symlink() || !dir_metadata.is_dir() {
         return Err(SegmentFileError::Io(io::Error::new(
             io::ErrorKind::InvalidInput,
-            "segment staging cleanup path must be a directory",
+            "segment staging cleanup path must be a non-symlink directory",
         )));
     }
     let mut removed = 0_usize;
@@ -414,16 +414,23 @@ fn staged_segment_path(path: &Path) -> SegmentResult<PathBuf> {
 }
 
 fn is_strict_staged_segment_file_name(file_name: &str) -> bool {
-    let Some((prefix, unique)) = file_name.rsplit_once('-') else {
+    let Some(rest) = file_name.strip_prefix('.') else {
         return false;
     };
-    if unique.is_empty() || !unique.bytes().all(|byte| byte.is_ascii_digit()) {
-        return false;
-    }
-    let Some((_target_name, nonce)) = prefix.rsplit_once(".skrifheim-stage-") else {
+    let Some((target, suffix)) = rest.rsplit_once(".skrifheim-stage-") else {
         return false;
     };
-    !nonce.is_empty() && nonce.len() == 16 && nonce.bytes().all(|byte| byte.is_ascii_hexdigit())
+    let Some((nonce, counter)) = suffix.split_once('-') else {
+        return false;
+    };
+    !target.is_empty()
+        && nonce.len() == 16
+        && nonce
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+        && counter
+            .parse::<u64>()
+            .is_ok_and(|value| value != 0 && value.to_string() == counter)
 }
 
 fn validate_staged_cleanup_candidate(owner_uid: u32, path: &Path) -> SegmentResult<()> {

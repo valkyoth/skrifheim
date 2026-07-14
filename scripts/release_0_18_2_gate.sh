@@ -99,23 +99,37 @@ if ! grep -R "PublishedDurabilityUnknown" crates/skrifheim-storage-host/src/segm
 fi
 
 if ! cargo test -p skrifheim-storage-host --quiet \
-    tests::segment::published_durability_error_does_not_disclose_storage_path \
+    tests::segment_cleanup::published_durability_error_does_not_disclose_storage_path \
     -- --exact >/dev/null; then
     echo "0.18.2 requires redacted post-publication durability diagnostics" >&2
     exit 1
 fi
 
 if ! cargo test -p skrifheim-storage-host --quiet \
-    tests::segment::cleanup_staged_segments_removes_owned_strict_candidates_only \
+    tests::segment_cleanup::cleanup_staged_segments_removes_owned_strict_candidates_only \
     -- --exact >/dev/null; then
     echo "0.18.2 requires strict staged segment cleanup coverage" >&2
     exit 1
 fi
 
 if ! cargo test -p skrifheim-storage-host --quiet \
-    tests::segment::cleanup_staged_segments_rejects_symlink_candidates \
+    tests::segment_cleanup::cleanup_staged_segments_rejects_symlink_candidates \
     -- --exact >/dev/null; then
     echo "0.18.2 requires staged segment cleanup symlink rejection coverage" >&2
+    exit 1
+fi
+
+if ! cargo test -p skrifheim-storage-host --quiet \
+    tests::segment_cleanup::cleanup_staged_segments_preserves_published_staging_like_segment_name \
+    -- --exact >/dev/null; then
+    echo "0.18.2 requires staged cleanup to preserve published staging-like names" >&2
+    exit 1
+fi
+
+if ! cargo test -p skrifheim-storage-host --quiet \
+    tests::segment_cleanup::cleanup_staged_segments_rejects_symlink_directory \
+    -- --exact >/dev/null; then
+    echo "0.18.2 requires staged cleanup symlink directory rejection coverage" >&2
     exit 1
 fi
 

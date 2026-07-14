@@ -12,7 +12,7 @@ use skrifheim_storage::{SEGMENT_FOOTER_BYTES, SEGMENT_HEADER_BYTES, SegmentFoote
 
 use crate::{
     MAX_IN_MEMORY_SEGMENT_BYTES, SegmentFileError, SegmentFileReader, SegmentFileWriter,
-    SegmentPublishOutcome, SegmentWriteOptions, cleanup_staged_segments,
+    SegmentPublishOutcome, SegmentWriteOptions,
 };
 
 use super::helpers::*;
@@ -98,32 +98,6 @@ fn segment_writer_rejects_oversized_body_before_publishing() -> SegmentResult<()
 }
 
 #[test]
-fn published_durability_error_does_not_disclose_storage_path() -> SegmentResult<()> {
-    let path = temp_path("tenant-secret-compartment").map_err(wal_to_segment_error)?;
-    let parent = path
-        .parent()
-        .and_then(|parent| parent.file_name())
-        .and_then(|name| name.to_str())
-        .ok_or_else(|| SegmentFileError::Io(std::io::Error::other("missing temp parent")))?;
-    let file_name = path
-        .file_name()
-        .and_then(|name| name.to_str())
-        .ok_or_else(|| SegmentFileError::Io(std::io::Error::other("missing temp file name")))?;
-    let error = SegmentFileError::PublishedDurabilityUnknown {
-        source: std::io::Error::other("fsync failed"),
-    };
-    let display = error.to_string();
-    let debug = format!("{error:?}");
-
-    assert!(!display.contains(file_name));
-    assert!(!display.contains(parent));
-    assert!(!debug.contains(file_name));
-    assert!(!debug.contains(parent));
-    assert!(std::error::Error::source(&error).is_some());
-    Ok(())
-}
-
-#[test]
 fn segment_writer_and_reader_round_trip_max_in_memory_body() -> SegmentResult<()> {
     let path = temp_path("segment-max-host-body").map_err(wal_to_segment_error)?;
     let body_len = usize::try_from(MAX_IN_MEMORY_SEGMENT_BYTES)
@@ -144,49 +118,6 @@ fn segment_writer_and_reader_round_trip_max_in_memory_body() -> SegmentResult<()
     assert_eq!(segment.encrypted_body().len(), body_len);
     assert_eq!(segment.header().body_len(), MAX_IN_MEMORY_SEGMENT_BYTES);
     fs::remove_file(path)?;
-    Ok(())
-}
-
-#[cfg(unix)]
-#[test]
-fn cleanup_staged_segments_removes_owned_strict_candidates_only() -> SegmentResult<()> {
-    let dir = temp_path("segment-cleanup-dir").map_err(wal_to_segment_error)?;
-    fs::create_dir(&dir)?;
-    let staged = dir.join(".target.seg.skrifheim-stage-0123456789abcdef-1");
-    let ignored = dir.join(".target.seg.skrifheim-stage-nothex-1");
-    fs::write(&staged, [])?;
-    fs::set_permissions(&staged, fs::Permissions::from_mode(0o600))?;
-    fs::write(&ignored, [])?;
-    fs::set_permissions(&ignored, fs::Permissions::from_mode(0o600))?;
-
-    assert_eq!(cleanup_staged_segments(&dir)?, 1);
-    assert!(!staged.exists());
-    assert!(ignored.exists());
-
-    fs::remove_file(ignored)?;
-    fs::remove_dir(dir)?;
-    Ok(())
-}
-
-#[cfg(unix)]
-#[test]
-fn cleanup_staged_segments_rejects_symlink_candidates() -> SegmentResult<()> {
-    let dir = temp_path("segment-cleanup-symlink-dir").map_err(wal_to_segment_error)?;
-    fs::create_dir(&dir)?;
-    let target = dir.join("target");
-    let staged_link = dir.join(".target.seg.skrifheim-stage-0123456789abcdef-2");
-    fs::write(&target, [])?;
-    symlink(&target, &staged_link)?;
-
-    assert!(matches!(
-        cleanup_staged_segments(&dir),
-        Err(SegmentFileError::Io(_))
-    ));
-    assert!(staged_link.exists());
-
-    fs::remove_file(staged_link)?;
-    fs::remove_file(target)?;
-    fs::remove_dir(dir)?;
     Ok(())
 }
 

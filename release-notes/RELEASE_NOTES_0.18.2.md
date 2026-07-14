@@ -54,6 +54,10 @@ or replacement actually introduces new material.
   cleanup-pending publication state, removing storage paths from durability
   error diagnostics, exposing the underlying I/O error through `source()`, and
   adding a maintenance cleanup API for strict owned staging files.
+- Resolved the fourth retest by making staged cleanup match only the exact
+  writer-created reserved filename namespace, preserving published
+  staging-like names, rejecting symlink cleanup directories, and adding
+  regression tests for lookalike names.
 
 ## Verification
 
