@@ -50,6 +50,10 @@ or replacement actually introduces new material.
   adding a v2-to-v1 downgrade regression test, returning explicit segment
   publication outcomes, reporting post-publication durability uncertainty as a
   distinct error, and retrying staged file creation with randomized names.
+- Resolved the third retest by separating target-durability uncertainty from
+  cleanup-pending publication state, removing storage paths from durability
+  error diagnostics, exposing the underlying I/O error through `source()`, and
+  adding a maintenance cleanup API for strict owned staging files.
 
 ## Verification
 

@@ -12,7 +12,7 @@ use std::{
 #[cfg(unix)]
 use std::{
     fs::Permissions,
-    os::unix::fs::{OpenOptionsExt, PermissionsExt},
+    os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt},
 };
 
 use skrifheim_core::{Result as SkrifheimResult, SkrifheimError};
@@ -65,7 +65,7 @@ pub enum SegmentFileError {
     PartialSegment,
     ResourceLimitExceeded,
     ContentDigestRejected(SkrifheimError),
-    PublishedDurabilityUnknown { target: PathBuf, source: io::Error },
+    PublishedDurabilityUnknown { source: io::Error },
 }
 
 impl fmt::Display for SegmentFileError {
@@ -80,16 +80,25 @@ impl fmt::Display for SegmentFileError {
             Self::ContentDigestRejected(error) => {
                 write!(f, "segment content digest verification failed: {error}")
             }
-            Self::PublishedDurabilityUnknown { target, source } => write!(
-                f,
-                "segment target {} is visible but durability is uncertain: {source}",
-                target.display()
-            ),
+            Self::PublishedDurabilityUnknown { .. } => {
+                write!(f, "segment target is visible but durability is uncertain")
+            }
         }
     }
 }
 
-impl std::error::Error for SegmentFileError {}
+impl std::error::Error for SegmentFileError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Io(error) | Self::PublishedDurabilityUnknown { source: error } => Some(error),
+            Self::InvalidSegment(_) | Self::ContentDigestRejected(_) => None,
+            Self::BodyLengthMismatch
+            | Self::FileLengthMismatch
+            | Self::PartialSegment
+            | Self::ResourceLimitExceeded => None,
+        }
+    }
+}
 
 impl From<io::Error> for SegmentFileError {
     fn from(error: io::Error) -> Self {
@@ -195,21 +204,15 @@ impl SegmentFileWriter {
         self.file.sync_all()?;
         fs::hard_link(&self.staged_path, &self.target_path)?;
         self.published = true;
-        fsync_parent_dir(&self.target_path).map_err(|source| {
-            SegmentFileError::PublishedDurabilityUnknown {
-                target: self.target_path.clone(),
-                source,
-            }
-        })?;
-        if fs::remove_file(&self.staged_path).is_err() {
+        fsync_parent_dir(&self.target_path)
+            .map_err(|source| SegmentFileError::PublishedDurabilityUnknown { source })?;
+        let cleanup_pending = match fs::remove_file(&self.staged_path) {
+            Ok(()) => fsync_parent_dir(&self.target_path).is_err(),
+            Err(_) => true,
+        };
+        if cleanup_pending {
             return Ok(SegmentPublishOutcome::PublishedWithCleanupPending);
         }
-        fsync_parent_dir(&self.target_path).map_err(|source| {
-            SegmentFileError::PublishedDurabilityUnknown {
-                target: self.target_path.clone(),
-                source,
-            }
-        })?;
         Ok(SegmentPublishOutcome::Published)
     }
 }
@@ -316,6 +319,40 @@ impl SegmentFileSegment {
 
 pub(crate) type SegmentResult<T> = core::result::Result<T, SegmentFileError>;
 
+/// Removes owned stale segment staging files from a database directory.
+///
+/// This is a startup or maintenance operation. It must not run concurrently
+/// with active segment writers in the same directory.
+pub fn cleanup_staged_segments(dir: impl AsRef<Path>) -> SegmentResult<usize> {
+    let dir = dir.as_ref();
+    let dir_metadata = fs::metadata(dir)?;
+    if !dir_metadata.is_dir() {
+        return Err(SegmentFileError::Io(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "segment staging cleanup path must be a directory",
+        )));
+    }
+    let mut removed = 0_usize;
+    for entry in fs::read_dir(dir)? {
+        let entry = entry?;
+        let file_name = entry.file_name();
+        let Some(file_name) = file_name.to_str() else {
+            continue;
+        };
+        if !is_strict_staged_segment_file_name(file_name) {
+            continue;
+        }
+        let path = entry.path();
+        validate_staged_cleanup_candidate(dir_metadata.uid(), &path)?;
+        fs::remove_file(&path)?;
+        removed += 1;
+    }
+    if removed != 0 {
+        File::open(dir)?.sync_all()?;
+    }
+    Ok(removed)
+}
+
 fn validate_segment_body_len(header: &SegmentHeader, encrypted_body: &[u8]) -> SegmentResult<()> {
     if encrypted_body.len() as u64 != header.body_len() {
         return Err(SegmentFileError::BodyLengthMismatch);
@@ -374,6 +411,48 @@ fn staged_segment_path(path: &Path) -> SegmentResult<PathBuf> {
         unique
     );
     Ok(parent.join(staged_name))
+}
+
+fn is_strict_staged_segment_file_name(file_name: &str) -> bool {
+    let Some((prefix, unique)) = file_name.rsplit_once('-') else {
+        return false;
+    };
+    if unique.is_empty() || !unique.bytes().all(|byte| byte.is_ascii_digit()) {
+        return false;
+    }
+    let Some((_target_name, nonce)) = prefix.rsplit_once(".skrifheim-stage-") else {
+        return false;
+    };
+    !nonce.is_empty() && nonce.len() == 16 && nonce.bytes().all(|byte| byte.is_ascii_hexdigit())
+}
+
+fn validate_staged_cleanup_candidate(owner_uid: u32, path: &Path) -> SegmentResult<()> {
+    let symlink_metadata = fs::symlink_metadata(path)?;
+    if symlink_metadata.file_type().is_symlink() {
+        return Err(SegmentFileError::Io(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "segment staging cleanup refuses symlink candidates",
+        )));
+    }
+    if !symlink_metadata.is_file() {
+        return Err(SegmentFileError::Io(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "segment staging cleanup refuses non-file candidates",
+        )));
+    }
+    if symlink_metadata.uid() != owner_uid {
+        return Err(SegmentFileError::Io(io::Error::new(
+            io::ErrorKind::PermissionDenied,
+            "segment staging cleanup refuses files with unexpected owner",
+        )));
+    }
+    if symlink_metadata.permissions().mode() & 0o777 != 0o600 {
+        return Err(SegmentFileError::Io(io::Error::new(
+            io::ErrorKind::PermissionDenied,
+            "segment staging cleanup refuses files with unexpected permissions",
+        )));
+    }
+    Ok(())
 }
 
 fn verify_segment_body_crc(header: &SegmentHeader, encrypted_body: &[u8]) -> SegmentResult<()> {

@@ -99,6 +99,27 @@ if ! grep -R "PublishedDurabilityUnknown" crates/skrifheim-storage-host/src/segm
 fi
 
 if ! cargo test -p skrifheim-storage-host --quiet \
+    tests::segment::published_durability_error_does_not_disclose_storage_path \
+    -- --exact >/dev/null; then
+    echo "0.18.2 requires redacted post-publication durability diagnostics" >&2
+    exit 1
+fi
+
+if ! cargo test -p skrifheim-storage-host --quiet \
+    tests::segment::cleanup_staged_segments_removes_owned_strict_candidates_only \
+    -- --exact >/dev/null; then
+    echo "0.18.2 requires strict staged segment cleanup coverage" >&2
+    exit 1
+fi
+
+if ! cargo test -p skrifheim-storage-host --quiet \
+    tests::segment::cleanup_staged_segments_rejects_symlink_candidates \
+    -- --exact >/dev/null; then
+    echo "0.18.2 requires staged segment cleanup symlink rejection coverage" >&2
+    exit 1
+fi
+
+if ! cargo test -p skrifheim-storage-host --quiet \
     tests::segment::segment_writer_requires_explicit_parent_for_new_files \
     -- --exact >/dev/null; then
     echo "0.18.2 requires segment bare-path error atomicity coverage" >&2
