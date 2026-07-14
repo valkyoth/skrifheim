@@ -4,7 +4,7 @@ Status: baseline control map
 
 | Area | Control | Current Status | Evidence |
 | --- | --- | --- | --- |
-| Toolchain | Rust stable `1.96.1` pinned | Active | `rust-toolchain.toml` |
+| Toolchain | Rust stable `1.97.0` pinned | Active | `rust-toolchain.toml` |
 | Release arithmetic | Release profile keeps overflow checks enabled | Active | `Cargo.toml` |
 | Core runtime | Core library crates are `no_std` | Active | `scripts/validate-engineering-policy.sh` |
 | Portability baseline | Core crates avoid OS and architecture APIs, durable formats use explicit encodings and endianness, host-specific behavior stays behind explicit adapters, and architecture-specific fast paths require a portable baseline first | Active / Planned | `docs/engineering-policy.md`, `docs/VERSION_PLAN.md` |
@@ -52,7 +52,7 @@ Status: baseline control map
 | Query proof construction | Planner decisions and policy proofs are constructed inside `skrifheim-policy`; proof construction masks non-allow result metadata, and public callers inspect aggregate state but cannot forge non-allow proofs with sensitive result metadata | Scaffolded | `skrifheim-policy`, `scripts/validate-security-policy.sh` |
 | Crypto agility | Algorithm and signature envelopes | Scaffolded | `skrifheim-crypto` |
 | Key hierarchy | Root trust, deployment, region, tenant, compartment, segment, and data key parent metadata with tenant deployment/region and segment/data compartment binding | Scaffolded | `skrifheim-crypto` |
-| Key lifecycle | Creation, activation, rotation preflight, strict epoch progression for key-material changes, planned separate event ordering for metadata-only compromise/quarantine/destruction states, unsafe-parent rejection, destruction, destruction-gated crypto-erasure metadata, and planned key-subtree revocation before real key-use paths | Scaffolded | `skrifheim-crypto`, `docs/encryption-architecture.md` |
+| Key lifecycle | Creation, activation, rotation preflight, strict epoch progression for key-material changes, separate lifecycle event ordering for metadata-only compromise/quarantine/destruction/erasure states, unsafe-parent rejection, destruction, destruction-gated crypto-erasure metadata, and planned key-subtree revocation before real key-use paths | Scaffolded | `skrifheim-crypto`, `docs/encryption-architecture.md` |
 | Encryption domains | Tenant, region, classification, compartment, world, WAL, segment, projection, backup, export, AI artifact, WASM/plugin secret, and audit-log blast-radius boundaries with exact merge compatibility checks | Scaffolded | `skrifheim-crypto` |
 | Production AEAD and digest engine | WAL and segment bodies must move from structural CRC/unkeyed digest checks to admitted SHA-3/SHAKE digests plus AEAD authentication before manifests or recovery claim tamper resistance | Planned | `docs/VERSION_PLAN.md`, `docs/encryption-architecture.md` |
 | Index and projection encryption | Secondary, graph, search, vector, columnar, cache, and compaction projection surfaces must use classified projection encryption domains, require encryption at rest, disallow plaintext temporary files, reject incompatible domain mixing, and use redacted diagnostics with explicit structural comparison | Scaffolded | `skrifheim-crypto` |

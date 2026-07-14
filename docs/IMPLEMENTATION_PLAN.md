@@ -64,7 +64,7 @@ or client-provided evidence path is used.
 
 ## Non-Negotiable Engineering Rules
 
-- Rust stable `1.96.1`, edition 2024, workspace resolver `3`.
+- Rust stable `1.97.0`, edition 2024, workspace resolver `3`.
 - Latest stable Rust and dependency versions are re-checked before dependency/toolchain changes.
 - Core library crates use `#![no_std]` where possible.
 - External crates are exceptional: discuss, verify, document, and test before use. Prefer local implementation.
@@ -87,7 +87,7 @@ or client-provided evidence path is used.
 - `skrifheim-fact`: causal fact records, validation, evidence, confidence, supersession, invalidation.
 - `skrifheim-world`: production, draft, simulation, legal/audit, user-local, mission-capsule worlds.
 - `skrifheim-policy`: clearance lattice, compartment checks, releasability, planner decisions.
-- `skrifheim-crypto`: crypto-agile envelopes, epochs, algorithm identifiers, threshold signatures, and quorum proofs.
+- `skrifheim-crypto`: crypto-agile envelopes, crypto-material epochs, lifecycle event ordering, algorithm identifiers, threshold signatures, and quorum proofs.
 - `skrifheim-audit`: identities, attestation evidence references, audit events, and audit-log protection metadata.
 - `skrifheim-storage`: WAL, immutable segment metadata, Merkle manifests, content-addressed blobs.
 - `skrifheim-storage-host`: host-file WAL and segment helpers under `crates/`

@@ -10,6 +10,7 @@ fn key_lifecycle_accepts_valid_activation_and_rotation() -> Result<()> {
         .transition(KeyLifecycleState::Active, CryptoEpoch::new(2))?;
     let rotating = current.transition(KeyLifecycleState::Rotating, CryptoEpoch::new(3))?;
     assert_eq!(rotating.lifecycle(), KeyLifecycleState::Rotating);
+    assert_eq!(rotating.lifecycle_event_sequence().get(), 3);
 
     let candidate = KeyMetadata::new(id(KeyId::from_u128(51))?, None, scope, CryptoEpoch::new(4));
     let preflight = current.rotation_preflight(&candidate)?;
@@ -21,7 +22,7 @@ fn key_lifecycle_accepts_valid_activation_and_rotation() -> Result<()> {
 }
 
 #[test]
-fn key_lifecycle_rejects_invalid_transitions() -> Result<()> {
+fn key_lifecycle_rejects_invalid_transitions_and_epoch_shape() -> Result<()> {
     let key = KeyMetadata::new(
         id(KeyId::from_u128(60))?,
         None,
@@ -38,6 +39,16 @@ fn key_lifecycle_rejects_invalid_transitions() -> Result<()> {
     );
     assert_eq!(
         key.transition(KeyLifecycleState::Active, CryptoEpoch::new(2)),
+        Err(SkrifheimError::InvalidKeyLifecycle)
+    );
+
+    let active = key.transition(KeyLifecycleState::Active, CryptoEpoch::new(3))?;
+    assert_eq!(
+        active.transition(KeyLifecycleState::Compromised, CryptoEpoch::new(4)),
+        Err(SkrifheimError::InvalidKeyLifecycle)
+    );
+    assert_eq!(
+        active.transition(KeyLifecycleState::Rotating, CryptoEpoch::new(3)),
         Err(SkrifheimError::InvalidKeyLifecycle)
     );
     Ok(())
@@ -70,7 +81,7 @@ fn compromise_can_be_declared_from_non_active_material_states() -> Result<()> {
     );
     assert_eq!(
         created
-            .transition(KeyLifecycleState::Compromised, CryptoEpoch::new(2))?
+            .transition(KeyLifecycleState::Compromised, CryptoEpoch::new(1))?
             .lifecycle(),
         KeyLifecycleState::Compromised
     );
@@ -84,13 +95,13 @@ fn compromise_can_be_declared_from_non_active_material_states() -> Result<()> {
     );
     assert_eq!(
         retired
-            .transition(KeyLifecycleState::Compromised, CryptoEpoch::new(5))?
+            .transition(KeyLifecycleState::Compromised, CryptoEpoch::new(4))?
             .lifecycle(),
         KeyLifecycleState::Compromised
     );
     assert_eq!(
         retired
-            .transition(KeyLifecycleState::Quarantined, CryptoEpoch::new(5))?
+            .transition(KeyLifecycleState::Quarantined, CryptoEpoch::new(4))?
             .lifecycle(),
         KeyLifecycleState::Quarantined
     );
@@ -104,10 +115,45 @@ fn compromise_can_be_declared_from_non_active_material_states() -> Result<()> {
     );
     assert_eq!(
         quarantined
-            .transition(KeyLifecycleState::Compromised, CryptoEpoch::new(7))?
+            .transition(KeyLifecycleState::Compromised, CryptoEpoch::new(6))?
             .lifecycle(),
         KeyLifecycleState::Compromised
     );
+    Ok(())
+}
+
+#[test]
+fn metadata_only_lifecycle_changes_preserve_crypto_epoch_and_advance_event_sequence() -> Result<()>
+{
+    let active = KeyMetadata::new(
+        id(KeyId::from_u128(65))?,
+        None,
+        KeyScope::RootTrust,
+        CryptoEpoch::new(10),
+    )
+    .transition(KeyLifecycleState::Active, CryptoEpoch::new(11))?;
+
+    let compromised = active.transition(KeyLifecycleState::Compromised, CryptoEpoch::new(11))?;
+    assert_eq!(compromised.epoch(), CryptoEpoch::new(11));
+    assert_eq!(compromised.lifecycle_event_sequence().get(), 3);
+
+    let quarantined =
+        compromised.transition(KeyLifecycleState::Quarantined, CryptoEpoch::new(11))?;
+    assert_eq!(quarantined.epoch(), CryptoEpoch::new(11));
+    assert_eq!(quarantined.lifecycle_event_sequence().get(), 4);
+
+    let destroyed = quarantined.transition(KeyLifecycleState::Destroyed, CryptoEpoch::new(11))?;
+    assert_eq!(destroyed.epoch(), CryptoEpoch::new(11));
+    assert_eq!(destroyed.lifecycle_event_sequence().get(), 5);
+
+    let erased = destroyed.crypto_erase(KeyErasureReason::Compromise)?;
+    assert_eq!(erased.epoch(), CryptoEpoch::new(11));
+    assert_eq!(erased.lifecycle_event_sequence().get(), 6);
+    let erasure = erased
+        .erasure()
+        .ok_or(SkrifheimError::InvalidKeyLifecycle)?;
+    assert_eq!(erasure.epoch(), CryptoEpoch::new(11));
+    assert_eq!(erasure.lifecycle_event_sequence().get(), 6);
     Ok(())
 }
 
@@ -161,15 +207,16 @@ fn compromised_key_can_be_quarantined_destroyed_and_erased() -> Result<()> {
         CryptoEpoch::new(0),
     )
     .transition(KeyLifecycleState::Active, CryptoEpoch::new(1))?
-    .transition(KeyLifecycleState::Compromised, CryptoEpoch::new(2))?
-    .transition(KeyLifecycleState::Quarantined, CryptoEpoch::new(3))?
-    .transition(KeyLifecycleState::Destroyed, CryptoEpoch::new(4))?
+    .transition(KeyLifecycleState::Compromised, CryptoEpoch::new(1))?
+    .transition(KeyLifecycleState::Quarantined, CryptoEpoch::new(1))?
+    .transition(KeyLifecycleState::Destroyed, CryptoEpoch::new(1))?
     .crypto_erase(KeyErasureReason::Compromise)?;
 
     assert_eq!(key.lifecycle(), KeyLifecycleState::CryptoErased);
     let erasure = key.erasure().ok_or(SkrifheimError::InvalidKeyLifecycle)?;
     assert_eq!(erasure.key_id(), key.key_id());
-    assert_eq!(erasure.epoch(), CryptoEpoch::new(4));
+    assert_eq!(erasure.epoch(), CryptoEpoch::new(1));
+    assert_eq!(erasure.lifecycle_event_sequence().get(), 6);
     assert_eq!(erasure.reason(), KeyErasureReason::Compromise);
     Ok(())
 }

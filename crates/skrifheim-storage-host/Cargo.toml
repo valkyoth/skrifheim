@@ -8,9 +8,9 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-skrifheim-core = { version = "0.18.1", path = "../skrifheim-core" }
-skrifheim-crypto = { version = "0.18.1", path = "../skrifheim-crypto" }
-skrifheim-storage = { version = "0.18.1", path = "../skrifheim-storage" }
+skrifheim-core = { version = "0.18.2", path = "../skrifheim-core" }
+skrifheim-crypto = { version = "0.18.2", path = "../skrifheim-crypto" }
+skrifheim-storage = { version = "0.18.2", path = "../skrifheim-storage" }
 
 [lints]
 workspace = true

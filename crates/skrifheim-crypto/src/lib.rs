@@ -24,7 +24,8 @@ pub use digest::{
 pub use domain::{EncryptionDomain, EncryptionDomainPurpose};
 pub use key::{
     CompartmentKeyId, DeploymentKeyId, KeyErasureMetadata, KeyErasureReason, KeyId,
-    KeyLifecycleState, KeyMetadata, KeyRotationPreflight, KeyScope, RegionKeyId, SegmentKeyId,
+    KeyLifecycleEventSequence, KeyLifecycleState, KeyMetadata, KeyRotationPreflight, KeyScope,
+    RegionKeyId, SegmentKeyId,
 };
 pub use projection::{ProjectionEncryptionPolicy, ProjectionSurface};
 pub use secret::{SECRET_VALUE_MAX_BYTES, SecretBytes};

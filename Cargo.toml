@@ -15,11 +15,11 @@ members = [
 ]
 
 [workspace.package]
-version = "0.18.1"
+version = "0.18.2"
 edition = "2024"
 license = "EUPL-1.2"
 repository = "https://github.com/valkyoth/skrifheim"
-rust-version = "1.96"
+rust-version = "1.97"
 
 [workspace.lints.rust]
 unsafe_op_in_unsafe_fn = "forbid"

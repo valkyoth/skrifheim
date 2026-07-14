@@ -2,9 +2,11 @@
 
 Status: policy
 
-`skrifheim` currently pins Rust stable `1.96.1`.
+`skrifheim` currently pins Rust stable `1.97.0`.
 
-This was checked against the official Rust release announcements on July 7, 2026. The Rust project announced Rust 1.96.1 on June 30, 2026 as the current stable point release for the 1.96 series.
+This was checked against the official Rust release announcements on July 14,
+2026. The Rust project announced Rust 1.97.0 on July 9, 2026 as the current
+stable release.
 
 ## Update Rule
 

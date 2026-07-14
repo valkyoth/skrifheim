@@ -88,11 +88,32 @@ pub enum KeyErasureReason {
     OperatorApproved,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct KeyLifecycleEventSequence(u64);
+
+impl KeyLifecycleEventSequence {
+    #[must_use]
+    pub const fn new(value: u64) -> Self {
+        Self(value)
+    }
+
+    #[must_use]
+    pub const fn initial() -> Self {
+        Self(1)
+    }
+
+    #[must_use]
+    pub const fn get(self) -> u64 {
+        self.0
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct KeyErasureMetadata {
     key_id: KeyId,
     scope: KeyScope,
     epoch: CryptoEpoch,
+    lifecycle_event_sequence: KeyLifecycleEventSequence,
     reason: KeyErasureReason,
 }
 
@@ -110,6 +131,11 @@ impl KeyErasureMetadata {
     #[must_use]
     pub const fn epoch(self) -> CryptoEpoch {
         self.epoch
+    }
+
+    #[must_use]
+    pub const fn lifecycle_event_sequence(self) -> KeyLifecycleEventSequence {
+        self.lifecycle_event_sequence
     }
 
     #[must_use]
@@ -160,6 +186,7 @@ pub struct KeyMetadata {
     parent: Option<KeyId>,
     scope: KeyScope,
     epoch: CryptoEpoch,
+    lifecycle_event_sequence: KeyLifecycleEventSequence,
     lifecycle: KeyLifecycleState,
     erasure: Option<KeyErasureMetadata>,
 }
@@ -176,6 +203,7 @@ impl KeyMetadata {
             parent,
             scope,
             epoch,
+            lifecycle_event_sequence: KeyLifecycleEventSequence::initial(),
             lifecycle: KeyLifecycleState::Created,
             erasure: None,
         }
@@ -193,6 +221,7 @@ impl KeyMetadata {
             parent,
             scope,
             epoch,
+            lifecycle_event_sequence: KeyLifecycleEventSequence::initial(),
             lifecycle,
             erasure: None,
         }
@@ -216,6 +245,11 @@ impl KeyMetadata {
     #[must_use]
     pub const fn epoch(&self) -> CryptoEpoch {
         self.epoch
+    }
+
+    #[must_use]
+    pub const fn lifecycle_event_sequence(&self) -> KeyLifecycleEventSequence {
+        self.lifecycle_event_sequence
     }
 
     #[must_use]
@@ -260,16 +294,24 @@ impl KeyMetadata {
         next_lifecycle: KeyLifecycleState,
         next_epoch: CryptoEpoch,
     ) -> Result<Self> {
-        if !is_valid_lifecycle_transition(self.lifecycle, next_lifecycle)
-            || next_epoch.get() <= self.epoch.get()
-        {
+        if !is_valid_lifecycle_transition(self.lifecycle, next_lifecycle) {
             return Err(SkrifheimError::InvalidKeyLifecycle);
         }
+        if requires_crypto_epoch_advancement(self.lifecycle, next_lifecycle) {
+            if next_epoch.get() <= self.epoch.get() {
+                return Err(SkrifheimError::InvalidKeyLifecycle);
+            }
+        } else if next_epoch != self.epoch {
+            return Err(SkrifheimError::InvalidKeyLifecycle);
+        }
+        let lifecycle_event_sequence = next_lifecycle_event_sequence(self.lifecycle_event_sequence)
+            .ok_or(SkrifheimError::InvalidKeyLifecycle)?;
         Ok(Self {
             key_id: self.key_id,
             parent: self.parent,
             scope: self.scope,
             epoch: next_epoch,
+            lifecycle_event_sequence,
             lifecycle: next_lifecycle,
             erasure: self.erasure,
         })
@@ -303,11 +345,17 @@ impl KeyMetadata {
             parent: self.parent,
             scope: self.scope,
             epoch: self.epoch,
+            lifecycle_event_sequence: next_lifecycle_event_sequence(self.lifecycle_event_sequence)
+                .ok_or(SkrifheimError::InvalidKeyLifecycle)?,
             lifecycle: KeyLifecycleState::CryptoErased,
             erasure: Some(KeyErasureMetadata {
                 key_id: self.key_id,
                 scope: self.scope,
                 epoch: self.epoch,
+                lifecycle_event_sequence: next_lifecycle_event_sequence(
+                    self.lifecycle_event_sequence,
+                )
+                .ok_or(SkrifheimError::InvalidKeyLifecycle)?,
                 reason,
             }),
         })
@@ -358,6 +406,23 @@ fn is_valid_lifecycle_transition(current: KeyLifecycleState, next: KeyLifecycleS
                 KeyLifecycleState::CryptoErased
             )
     )
+}
+
+fn requires_crypto_epoch_advancement(current: KeyLifecycleState, next: KeyLifecycleState) -> bool {
+    matches!(
+        (current, next),
+        (KeyLifecycleState::Created, KeyLifecycleState::Active)
+            | (KeyLifecycleState::Active, KeyLifecycleState::Rotating)
+    )
+}
+
+fn next_lifecycle_event_sequence(
+    current: KeyLifecycleEventSequence,
+) -> Option<KeyLifecycleEventSequence> {
+    current
+        .get()
+        .checked_add(1)
+        .map(KeyLifecycleEventSequence::new)
 }
 
 fn is_valid_parent(child: KeyScope, parent: KeyScope) -> bool {

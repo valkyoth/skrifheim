@@ -64,7 +64,7 @@ for path in $required; do
     fi
 done
 
-if ! grep -q 'channel = "1.96.1"' rust-toolchain.toml; then
-    echo "rust-toolchain.toml must pin Rust stable 1.96.1" >&2
+if ! grep -q 'channel = "1.97.0"' rust-toolchain.toml; then
+    echo "rust-toolchain.toml must pin Rust stable 1.97.0" >&2
     exit 1
 fi

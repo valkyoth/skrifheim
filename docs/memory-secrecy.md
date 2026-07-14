@@ -30,10 +30,10 @@ future key and secret APIs must use before durable encryption paths exist.
 
 ## Dependency Admission
 
-`sanitization` `1.2.2` is admitted for this boundary with:
+`sanitization` `1.2.4` is admitted for this boundary with:
 
 ```toml
-sanitization = { version = "1.2.2", default-features = false, features = ["alloc"] }
+sanitization = { version = "1.2.4", default-features = false, features = ["alloc"] }
 ```
 
 The selected feature set keeps `skrifheim` on no-std library crates, avoids

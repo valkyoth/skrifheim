@@ -91,11 +91,11 @@ Crypto-erasure must pass through an explicit destruction checkpoint before key
 metadata enters the crypto-erased state.
 
 The crypto epoch identifies key-material/version authority for WAL frames,
-segments, manifests, signatures, and recovery checks. It should not be the only
-ordering mechanism for lifecycle metadata. A future lifecycle event sequence or
-state epoch must record compromise, quarantine, destruction, and erasure events
-when those operations do not introduce new key material. Rotation and
-replacement-key activation still require strictly advancing crypto epochs.
+segments, manifests, signatures, and recovery checks. It is not the ordering
+mechanism for lifecycle metadata. A separate lifecycle event sequence records
+compromise, quarantine, destruction, and erasure events when those operations do
+not introduce new key material. Rotation and replacement-key activation still
+require strictly advancing crypto epochs.
 
 Key hierarchy validation must reject children of compromised, quarantined,
 destroyed, or crypto-erased parent keys. Future storage-backed ancestor walks
@@ -186,7 +186,7 @@ durable projection builder exists.
 Rust memory safety does not automatically protect secrets in RAM.
 
 The `0.12.0` scaffold admitted `sanitization`; the active dependency admission
-now pins `sanitization` `1.2.2` with only the `alloc` feature and exposes
+now pins `sanitization` `1.2.4` with only the `alloc` feature and exposes
 `SecretBytes` in `skrifheim-crypto`. `SecretBytes` is a bounded, non-clone,
 redacted, clear-on-drop wrapper for future key material, bearer tokens, and
 other crypto-control-plane secrets. See

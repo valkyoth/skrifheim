@@ -43,6 +43,25 @@
   client-owned search and group-key state, legal hold over ciphertext, and
   plugin/integration metadata without plaintext access.
 
+## 0.18.2
+
+- Added `KeyLifecycleEventSequence` in `skrifheim-crypto` to separate
+  lifecycle/audit event ordering from crypto-material epoch identity.
+- Allowed metadata-only compromise, quarantine, destruction, and crypto-erasure
+  transitions to preserve the existing `CryptoEpoch`.
+- Kept key-material activation and rotation transitions on strictly advancing
+  `CryptoEpoch` values.
+- Kept compromised, quarantined, destroyed, and crypto-erased parent keys
+  fail-closed for key hierarchy validation.
+- Updated encryption architecture, security controls, README, and implementation
+  planning docs to describe the split between crypto epochs and lifecycle event
+  ordering.
+- Updated the pinned stable Rust toolchain from `1.96.1` to `1.97.0` after
+  checking the official Rust release announcement from July 9, 2026.
+- Updated the admitted `sanitization` dependency from `1.2.2` to `1.2.4` after
+  checking crates.io metadata.
+- Bumped workspace and internal crate dependency versions to `0.18.2`.
+
 ## 0.18.1
 
 - Added `SovereigntyScope` in `skrifheim-policy` so query-result

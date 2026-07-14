@@ -8,14 +8,14 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-skrifheim-core = { version = "0.18.1", path = "../skrifheim-core" }
-skrifheim-fact = { version = "0.18.1", path = "../skrifheim-fact" }
-skrifheim-world = { version = "0.18.1", path = "../skrifheim-world" }
-skrifheim-policy = { version = "0.18.1", path = "../skrifheim-policy" }
-skrifheim-crypto = { version = "0.18.1", path = "../skrifheim-crypto" }
-skrifheim-audit = { version = "0.18.1", path = "../skrifheim-audit" }
-skrifheim-storage = { version = "0.18.1", path = "../skrifheim-storage" }
-skrifheim-query = { version = "0.18.1", path = "../skrifheim-query" }
+skrifheim-core = { version = "0.18.2", path = "../skrifheim-core" }
+skrifheim-fact = { version = "0.18.2", path = "../skrifheim-fact" }
+skrifheim-world = { version = "0.18.2", path = "../skrifheim-world" }
+skrifheim-policy = { version = "0.18.2", path = "../skrifheim-policy" }
+skrifheim-crypto = { version = "0.18.2", path = "../skrifheim-crypto" }
+skrifheim-audit = { version = "0.18.2", path = "../skrifheim-audit" }
+skrifheim-storage = { version = "0.18.2", path = "../skrifheim-storage" }
+skrifheim-query = { version = "0.18.2", path = "../skrifheim-query" }
 
 [lints]
 workspace = true
