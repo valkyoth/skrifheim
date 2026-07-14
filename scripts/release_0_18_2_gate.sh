@@ -127,6 +127,13 @@ if ! cargo test -p skrifheim-storage-host --quiet \
 fi
 
 if ! cargo test -p skrifheim-storage-host --quiet \
+    tests::segment_cleanup::segment_writer_rejects_reserved_staging_namespace_target \
+    -- --exact >/dev/null; then
+    echo "0.18.2 requires writer rejection for reserved staging namespace targets" >&2
+    exit 1
+fi
+
+if ! cargo test -p skrifheim-storage-host --quiet \
     tests::segment_cleanup::cleanup_staged_segments_rejects_symlink_directory \
     -- --exact >/dev/null; then
     echo "0.18.2 requires staged cleanup symlink directory rejection coverage" >&2

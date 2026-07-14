@@ -3,7 +3,7 @@ use std::fs;
 #[cfg(unix)]
 use std::os::unix::fs::{PermissionsExt, symlink};
 
-use crate::{SegmentFileError, cleanup_staged_segments};
+use crate::{SegmentFileError, SegmentFileWriter, SegmentWriteOptions, cleanup_staged_segments};
 
 use super::helpers::{SegmentResult, temp_path, wal_to_segment_error};
 
@@ -87,6 +87,21 @@ fn cleanup_staged_segments_preserves_published_staging_like_segment_name() -> Se
     assert!(published.exists());
 
     fs::remove_file(published)?;
+    fs::remove_dir(dir)?;
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn segment_writer_rejects_reserved_staging_namespace_target() -> SegmentResult<()> {
+    let dir = temp_path("segment-reserved-target-dir").map_err(wal_to_segment_error)?;
+    fs::create_dir(&dir)?;
+    let reserved_target = dir.join(".published.skrifheim-stage-0123456789abcdef-1");
+    let result = SegmentFileWriter::create(&reserved_target, SegmentWriteOptions::new(false));
+
+    assert!(matches!(result, Err(SegmentFileError::Io(_))));
+    assert!(!reserved_target.exists());
+
     fs::remove_dir(dir)?;
     Ok(())
 }

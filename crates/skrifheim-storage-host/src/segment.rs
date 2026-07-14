@@ -12,7 +12,7 @@ use std::{
 #[cfg(unix)]
 use std::{
     fs::Permissions,
-    os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt},
+    os::unix::fs::{OpenOptionsExt, PermissionsExt},
 };
 
 use skrifheim_core::{Result as SkrifheimResult, SkrifheimError};
@@ -23,6 +23,9 @@ use skrifheim_storage::{
 };
 
 use crate::common::{add_no_follow, fsync_parent_dir, require_explicit_parent};
+
+mod cleanup;
+pub use cleanup::cleanup_staged_segments;
 
 pub const MAX_IN_MEMORY_SEGMENT_BYTES: u64 = 16 * 1024 * 1024;
 static STAGED_SEGMENT_COUNTER: AtomicU64 = AtomicU64::new(1);
@@ -151,6 +154,7 @@ impl SegmentFileWriter {
     pub fn create(path: impl AsRef<Path>, options: SegmentWriteOptions) -> SegmentResult<Self> {
         let path = path.as_ref();
         let _parent = require_explicit_parent(path)?;
+        reject_reserved_staging_target(path)?;
         if path.try_exists()? {
             return Err(SegmentFileError::Io(io::Error::new(
                 io::ErrorKind::AlreadyExists,
@@ -319,40 +323,6 @@ impl SegmentFileSegment {
 
 pub(crate) type SegmentResult<T> = core::result::Result<T, SegmentFileError>;
 
-/// Removes owned stale segment staging files from a database directory.
-///
-/// This is a startup or maintenance operation. It must not run concurrently
-/// with active segment writers in the same directory.
-pub fn cleanup_staged_segments(dir: impl AsRef<Path>) -> SegmentResult<usize> {
-    let dir = dir.as_ref();
-    let dir_metadata = fs::symlink_metadata(dir)?;
-    if dir_metadata.file_type().is_symlink() || !dir_metadata.is_dir() {
-        return Err(SegmentFileError::Io(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "segment staging cleanup path must be a non-symlink directory",
-        )));
-    }
-    let mut removed = 0_usize;
-    for entry in fs::read_dir(dir)? {
-        let entry = entry?;
-        let file_name = entry.file_name();
-        let Some(file_name) = file_name.to_str() else {
-            continue;
-        };
-        if !is_strict_staged_segment_file_name(file_name) {
-            continue;
-        }
-        let path = entry.path();
-        validate_staged_cleanup_candidate(dir_metadata.uid(), &path)?;
-        fs::remove_file(&path)?;
-        removed += 1;
-    }
-    if removed != 0 {
-        File::open(dir)?.sync_all()?;
-    }
-    Ok(removed)
-}
-
 fn validate_segment_body_len(header: &SegmentHeader, encrypted_body: &[u8]) -> SegmentResult<()> {
     if encrypted_body.len() as u64 != header.body_len() {
         return Err(SegmentFileError::BodyLengthMismatch);
@@ -363,6 +333,20 @@ fn validate_segment_body_len(header: &SegmentHeader, encrypted_body: &[u8]) -> S
 fn enforce_host_body_limit(header: &SegmentHeader) -> SegmentResult<()> {
     if header.body_len() > MAX_IN_MEMORY_SEGMENT_BYTES {
         return Err(SegmentFileError::ResourceLimitExceeded);
+    }
+    Ok(())
+}
+
+fn reject_reserved_staging_target(path: &Path) -> SegmentResult<()> {
+    let is_reserved = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(is_strict_staged_segment_file_name);
+    if is_reserved {
+        return Err(SegmentFileError::Io(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "segment target uses the reserved staging namespace",
+        )));
     }
     Ok(())
 }
@@ -413,7 +397,7 @@ fn staged_segment_path(path: &Path) -> SegmentResult<PathBuf> {
     Ok(parent.join(staged_name))
 }
 
-fn is_strict_staged_segment_file_name(file_name: &str) -> bool {
+pub(crate) fn is_strict_staged_segment_file_name(file_name: &str) -> bool {
     let Some(rest) = file_name.strip_prefix('.') else {
         return false;
     };
@@ -431,35 +415,6 @@ fn is_strict_staged_segment_file_name(file_name: &str) -> bool {
         && counter
             .parse::<u64>()
             .is_ok_and(|value| value != 0 && value.to_string() == counter)
-}
-
-fn validate_staged_cleanup_candidate(owner_uid: u32, path: &Path) -> SegmentResult<()> {
-    let symlink_metadata = fs::symlink_metadata(path)?;
-    if symlink_metadata.file_type().is_symlink() {
-        return Err(SegmentFileError::Io(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "segment staging cleanup refuses symlink candidates",
-        )));
-    }
-    if !symlink_metadata.is_file() {
-        return Err(SegmentFileError::Io(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "segment staging cleanup refuses non-file candidates",
-        )));
-    }
-    if symlink_metadata.uid() != owner_uid {
-        return Err(SegmentFileError::Io(io::Error::new(
-            io::ErrorKind::PermissionDenied,
-            "segment staging cleanup refuses files with unexpected owner",
-        )));
-    }
-    if symlink_metadata.permissions().mode() & 0o777 != 0o600 {
-        return Err(SegmentFileError::Io(io::Error::new(
-            io::ErrorKind::PermissionDenied,
-            "segment staging cleanup refuses files with unexpected permissions",
-        )));
-    }
-    Ok(())
 }
 
 fn verify_segment_body_crc(header: &SegmentHeader, encrypted_body: &[u8]) -> SegmentResult<()> {

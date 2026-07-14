@@ -58,6 +58,8 @@ or replacement actually introduces new material.
   writer-created reserved filename namespace, preserving published
   staging-like names, rejecting symlink cleanup directories, and adding
   regression tests for lookalike names.
+- Resolved the fifth retest by rejecting segment target filenames that use the
+  reserved staging cleanup namespace before writer creation can mutate disk.
 
 ## Verification
 
