@@ -172,6 +172,13 @@ including maximum world count and total tracked fact references across all
 world overlays. Per-world list bounds are not a substitute for tenant quota
 enforcement.
 
+Stable world identity must not be confused with mutable world state.
+`WorldId` identifies a branch; `WorldRevisionId` identifies an immutable
+content/root revision. Forks must record the exact parent revision they forked
+from, world-head updates must use compare-and-swap over the expected revision,
+and promotion must be a three-way merge over fork base, current parent head,
+and candidate head.
+
 ## Phase 3: Storage Kernel
 
 Implement:
@@ -224,6 +231,35 @@ and authenticated with domain-separated associated data before manifests,
 checkpoints, or recovery can claim tamper resistance. CRC64 remains only a
 structural corruption check.
 
+The storage crypto boundary must also handle log splicing and metadata
+confidentiality. WAL frames need database/log generation, LSN, transaction
+ordinal, previous-frame digest, and commit-root binding so valid encrypted
+frames cannot be deleted or reordered. WAL and segment formats must split a
+minimal plaintext outer header from encrypted inner metadata; tenant, world
+revision, classification, compartment, policy epoch, key ID, transaction range,
+and sensitive content identity should not be plaintext by default.
+
+Signed manifests and AEAD authenticate a state, not freshness. Before manifest
+selection and startup recovery become authoritative, production profiles need a
+non-rollbackable freshness anchor: TPM or HSM monotonic state, remote witness,
+transparency service, WORM/offline operator checkpoint, or threshold-held
+external checkpoint. Active startup must fail closed when local storage is
+older than the anchor; historical roots can be opened only through explicit
+recovery workflows.
+
+The database process must not become a god-mode key holder. Production key
+release must go through a scoped KMS, HSM, privilege-separated key service, or
+equivalent provider that checks tenant, compartment, purpose, policy epoch,
+workload identity, encryption domain, and bound policy proof before releasing a
+key operation. High-assurance deployments may split processes or instances by
+classification or compartment.
+
+Crypto-erasure granularity is a storage-layout decision. Before real encrypted
+segments are trusted, `skrifheim` must choose per-object or erasure-group data
+keys, wrapped-key indexes, backup key-slot deletion, compaction/re-encryption
+rules, snapshot and legal-hold exceptions, and proof that every readable key
+slot was removed.
+
 `v0.18.4` pulls fuzzing forward for the WAL and segment byte parsers. The
 general fuzz/property baseline remains later, but hand-written parsing of
 untrusted WAL and segment bytes must have a deterministic fuzz smoke from this
@@ -261,6 +297,27 @@ The planner must answer:
 - what classification does the output carry.
 
 Rejected plans must be deterministic and constant-shape where practical.
+
+Public query construction must not accept caller-supplied labels or
+result-classification inputs for stored data. Labels and result security
+metadata must be resolved from validated snapshot, schema, and policy state.
+Plans must bind tenant, principal, device and workload evidence, world
+revision, manifest root, policy epoch, query digest, purpose, expiry, and nonce,
+then execution must revalidate that binding.
+
+Derived result security labels must propagate full access-control state:
+classification by maximum dominance, required compartments by union,
+releasability/dissemination by intersection or deny-all on conflict,
+sovereignty by exact-or-saturated scope, bounded policy epoch proof state,
+PII-derived state, AI eligibility, and confidence policy metadata. Caches,
+projections, exports, backups, AI pipelines, and legal planners must not treat
+derived data as less constrained than its inputs.
+
+Aggregation needs real inference controls, not just redacted planner
+diagnostics. Before aggregate execution, `skrifheim` must define inference
+budgets, minimum cohort sizes, contribution bounds, query-history differencing
+detection, consistent suppression, purpose-specific audit, and cross-session
+budget aggregation.
 
 Result sovereignty is represented as either an exact bounded jurisdiction set
 or a saturated multi-jurisdiction scope. The saturated scope is not a

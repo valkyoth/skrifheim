@@ -44,6 +44,14 @@ Every encrypted object must record:
 - compartment or classification boundary,
 - rotation and destruction status.
 
+Production key release must be scoped outside the main database process. The
+database process must not hold root, deployment, or unrestricted tenant keys in
+production profiles. A KMS, HSM, privilege-separated key service, or equivalent
+`ScopedKeyProvider` must decide key release from tenant, compartment, purpose,
+policy epoch, workload identity, encryption domain, and bound policy proof.
+High-assurance deployments may require separate processes or instances per
+classification or compartment domain.
+
 Storage must not treat a non-zero encryption key ID as sufficient. Once segment
 I/O is wired to key metadata, segment read/write acceptance must validate the
 referenced key lifecycle and reject compromised, quarantined, destroyed, or
@@ -62,12 +70,32 @@ against local tampering until encrypted bodies are authenticated with AEAD,
 signed/keyed manifests, or an equivalent admitted integrity root.
 
 `v0.18.3` is the scheduled milestone for that boundary. It must admit the
-production SHA-3/SHAKE digest engine and AEAD implementation, define the
-encrypted body envelope, bind WAL and segment headers as associated data,
-define nonce uniqueness and crash-recovery rules, and add wrong-key,
-wrong-domain, wrong-epoch, swapped-header/footer, replay, truncation, and
-corrupt-ciphertext rejection tests. Later manifests and recovery code must not
-claim tamper resistance before this milestone is complete.
+production SHA-3/SHAKE digest engine and AEAD implementation, define the WAL
+and segment envelope, define nonce uniqueness and crash-recovery rules, and add
+wrong-key, wrong-domain, wrong-epoch, swapped-header/footer, replay,
+truncation, and corrupt-ciphertext rejection tests. Later manifests and
+recovery code must not claim tamper resistance before this milestone is
+complete.
+
+AEAD must not be treated as sufficient if the log can be spliced from valid
+frames. WAL encryption must bind database ID, log incarnation, WAL generation,
+LSN, transaction ID, transaction frame ordinal, previous-frame digest,
+transaction frame count, and commit transcript root. Recovery must reject gaps,
+duplicates, reordered frames, generation mismatches, unexpected ordinals,
+missing transaction frames, and commit-root mismatches.
+
+Storage metadata is sensitive. Associated data is authenticated, not normally
+encrypted, so the production envelope must separate a minimal plaintext outer
+header from encrypted inner metadata. Tenant, world or world-revision,
+classification, compartment, policy epoch, key ID, transaction range, body
+size where possible, and content identity must not be plaintext by default.
+Any plaintext field needs an explicit public-header exception. Opaque filenames
+and optional padding buckets remain part of the metadata-minimisation design.
+
+The production digest model must keep separate meanings for plaintext semantic
+identity, ciphertext integrity digest, and keyed equality-safe content
+references. One digest over encrypted bytes cannot simultaneously be a stable
+plaintext content address and a confidentiality-safe storage integrity marker.
 
 ## Key Lifecycle
 
@@ -107,6 +135,14 @@ Key hierarchy validation must reject children of compromised, quarantined,
 destroyed, or crypto-erased parent keys. Future storage-backed ancestor walks
 must propagate those states through the subtree before segment access is
 allowed.
+
+Crypto-erasure granularity must be fixed before real storage encryption is
+trusted. The design must choose per-object or erasure-group data encryption
+keys, wrapped-key indexes, backup key-slot deletion, compaction and
+re-encryption protocol, snapshot/legal-hold exceptions, and proof that every
+readable key slot was removed. Immutable audit can retain non-secret deletion
+evidence, but must not retain decryptable erased payloads unless a legal hold
+or explicit override policy authorizes it.
 
 The lifecycle audit layer must preserve full transition history. Repeated
 active/rotating movement is not a privilege escalation by itself, but audit

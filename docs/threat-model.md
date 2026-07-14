@@ -27,6 +27,9 @@ Status: baseline
 - stale vector/search results leaking deleted or unauthorized facts,
 - AI artifact poisoning,
 - manifest rollback,
+- rollback to a self-consistent old database directory containing old
+  manifests, WAL, policies, credentials, key states, deleted facts, missing
+  audit events, or reusable emergency approvals,
 - WAL or segment corruption,
 - unauthorized export,
 - plugin capability escape.
@@ -41,8 +44,22 @@ Status: baseline
   before policy evaluation,
 - keep projections rebuildable,
 - sign commits and manifests,
+- require a non-rollbackable freshness anchor for production profiles; signed
+  manifests and AEAD authenticate a stored state but do not prove it is the
+  newest valid state by themselves,
+- fail closed on active startup when local storage is older than the freshness
+  anchor, and open historical roots only through explicit recovery workflows,
 - scope keys by compartment and epoch,
+- release keys through scoped key-provider boundaries rather than giving the
+  main database process unrestricted root or tenant key authority,
 - quarantine stale or forked replicas,
+- chain audit records and include audit roots in manifests and freshness
+  anchors so valid individual audit records cannot be silently deleted or
+  reordered,
+- bind query plans to authenticated identity, attestation evidence, snapshot,
+  policy epoch, query digest, purpose, expiry, and replay nonce; public query
+  requests must not provide the labels or result security metadata of stored
+  facts,
 - keep public web projections separate from private worlds,
 - treat AI output as untrusted until reviewed.
 

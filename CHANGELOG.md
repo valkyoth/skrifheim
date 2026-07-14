@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Added pre-manifest, pre-transaction, and pre-query roadmap gates for
+  non-rollbackable freshness anchors, chained audit roots, scoped key release,
+  trusted time, WAL anti-splicing, encrypted inner storage metadata,
+  crypto-erasure granularity, canonical fact signing transcripts, early schema
+  roots, immutable world revisions, causal truth-resolution algebra, trusted
+  planner contexts, full result security labels, and query inference budgets.
 - Reworked the roadmap so `v1.0.0` is the core production world database,
   `v1.1.0` through `v1.6.0` are optional application-extension tracks, and
   Hyve clustering starts at `v2.0.0`.

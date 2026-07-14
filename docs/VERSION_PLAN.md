@@ -474,6 +474,30 @@ Deliverables:
 - AEAD envelope format for WAL bodies and immutable segment bodies, including
   algorithm ID, nonce strategy, associated-data binding, key ID, crypto epoch,
   policy epoch, tenant, encryption domain, body length, and replay context,
+- WAL frame identity model covering database ID, log incarnation, WAL
+  generation, LSN, transaction ID, transaction frame ordinal, previous-frame
+  digest, expected batch count, and commit transcript digest,
+- anti-splicing recovery rules that reject WAL gaps, duplicates, reordered
+  frames, generation mismatches, unexpected transaction ordinals, missing
+  transaction frames, and commit-root mismatches before replay can advance
+  durable state,
+- AEAD associated-data rules that bind all WAL ordering fields, segment
+  identity fields, crypto epoch, policy epoch, tenant, and encryption-domain
+  metadata,
+- storage metadata privacy split between a minimal plaintext outer header and
+  encrypted inner headers for WAL frames and immutable segments,
+- rule that tenant IDs, world or world-revision IDs, classification,
+  compartment, policy epoch, key IDs, transaction ranges, content digests, and
+  other sensitive storage metadata must move into encrypted inner metadata
+  unless an explicit public-header exception is documented,
+- opaque filename and optional padding-bucket decision for deployments that
+  need copied-disk metadata minimisation,
+- separation of plaintext semantic identity, ciphertext integrity digest, and
+  keyed equality-safe content reference semantics,
+- crypto-erasure granularity decision covering per-object or erasure-group
+  DEKs, wrapped-key indexes, backup key-slot deletion, compaction and
+  re-encryption protocol, snapshot/legal-hold exceptions, and proof that every
+  readable key slot was removed,
 - domain-separated key derivation contract from the key hierarchy to WAL,
   segment, projection, backup, export, AI artifact, and audit-log data keys,
 - nonce uniqueness and crash-recovery analysis for append-only WAL writes and
@@ -562,6 +586,95 @@ Deliverables:
   or filesystem hints are optional performance paths only and never required
   for correctness or security.
 
+## v0.18.7 - Non-Rollbackable Freshness Anchor Contract
+
+Goal: prevent a copied or replaced database directory from authenticating as
+the newest valid state before manifests and startup recovery choose durable
+roots.
+
+Deliverables:
+
+- `AnchoredDatabaseRoot` contract covering database identity, generation,
+  manifest digest, policy epoch, key-state digest, audit root, and previous
+  anchor digest,
+- `FreshnessAnchor` trait shape with `current` and compare-and-advance
+  semantics,
+- production profile rule requiring at least one non-rollbackable freshness
+  mechanism: TPM monotonic/NV state, HSM-backed counter, remote witness or
+  transparency service, WORM/offline signed operator checkpoint, or
+  threshold-held external checkpoint,
+- explicit non-claim that signed manifests and AEAD prove authenticity of a
+  state, not freshness of the newest state by themselves,
+- recovery workflow distinction between active startup and historical rollback
+  inspection,
+- rule that active startup must fail closed if the selected manifest generation
+  is older than the anchor or if the anchor cannot be checked under a
+  production profile,
+- tests for stale root rejection, generation regression, anchor digest chain
+  mismatch, missing production anchor, and explicit historical recovery open.
+
+## v0.18.8 - Chained Audit Log Root Contract
+
+Goal: make audit evidence append-only and anchorable before manifests record
+storage roots.
+
+Deliverables:
+
+- chained audit record contract with tenant, sequence, previous-record digest,
+  event digest, manifest root, policy epoch, and signatures,
+- audit segment root model included in manifests and freshness anchors,
+- mandatory-audit operation rule: protected reads, policy changes,
+  declassification, key lifecycle changes, break-glass grants, backup restore,
+  and release operations must fail closed if required audit emission cannot be
+  made durable,
+- deletion and reordering rejection rules for audit record sequences,
+- audit compaction rule that preserves verifiable sequence roots and external
+  anchor references,
+- tests for removed audit record detection, reordered audit record detection,
+  stale manifest-root binding, missing mandatory audit durability, and
+  anchor-root mismatch.
+
+## v0.18.9 - Scoped Key Release And No-God-Mode Boundary
+
+Goal: make the "no god-mode database" claim enforceable before real storage
+encryption depends on key release.
+
+Deliverables:
+
+- `ScopedKeyProvider` boundary that releases decrypt/sign/unwrap authority only
+  for a specific encryption domain, tenant, compartment, purpose, policy epoch,
+  workload identity, and bound policy proof,
+- rule that the database process never holds root, deployment, or unrestricted
+  tenant keys in production profiles,
+- privilege-separated key-service, KMS, HSM, or equivalent provider profile
+  for high-assurance deployments,
+- explicit high-assurance option for separate processes or instances per
+  classification or compartment domain,
+- tests or mock-provider fixtures proving a process with one scoped proof
+  cannot unwrap keys for another tenant, compartment, policy epoch, purpose, or
+  workload,
+- documentation that key hierarchy metadata alone is not least privilege unless
+  key release is enforced outside the main database process.
+
+## v0.18.10 - Trusted Time And Monotonic Sequence Types
+
+Goal: remove ambiguous timestamp semantics before audit, expiry, freshness,
+transactions, and approval windows depend on time.
+
+Deliverables:
+
+- separate wall-clock, trusted-time evidence, commit sequence, and hybrid
+  logical timestamp types,
+- documented units, UTC behavior, leap-second stance, uncertainty bounds, and
+  clock source requirements for security expiry,
+- rule that transaction ordering uses monotonic/logical sequence evidence, not
+  unauthenticated wall-clock timestamps,
+- trusted-time evidence model for attestation expiry, approval validity,
+  freshness-anchor checkpoint time, audit event time, and break-glass windows,
+- tests for stale/future trusted-time evidence, uncertainty overflow, inverted
+  validity windows, wall-clock/logical-time type confusion, and replayed
+  approval windows.
+
 ## v0.19.0 - Manifest And Checkpoint Format
 
 Goal: record the durable storage root.
@@ -575,11 +688,16 @@ Deliverables:
 - full-width world identity, content, and manifest digest fields,
 - policy epoch field,
 - crypto epoch field,
+- audit root field from the chained audit-log contract,
+- freshness-anchor generation and anchor digest fields from `v0.18.7`,
 - encryption domain inventory,
+- atomic manifest/checkpoint/WAL-pruning crash-ordering specification,
 - world-id collision detection that rejects an existing `WorldId` for a
   different `(tenant_id, kind, depth, parent, name)` tuple,
 - rejection of manifests whose full-width digest profile does not match the
   active deployment policy,
+- rejection of manifests whose audit root, policy epoch, key-state digest, or
+  freshness-anchor generation cannot be reconciled,
 - manifest validation tests.
 
 ## v0.20.0 - Startup Recovery Integration
@@ -590,7 +708,14 @@ Deliverables:
 
 - recovery loader,
 - manifest selection,
+- freshness-anchor check before selecting an active manifest under production
+  profiles,
 - WAL replay from checkpoint,
+- fail-closed startup when the newest valid local manifest is older than the
+  external anchor,
+- explicit historical recovery workflow for rollback roots that may be opened
+  for inspection, recovery-world forks, or simulation, but may not silently
+  replace the active freshness anchor,
 - storage-backed world ancestry verification before promotion or rollback
   execution can be authorized,
 - internal storage-validated promotion and rollback preflight construction that
@@ -630,6 +755,89 @@ Deliverables:
 - documented thresholds that are non-claims but catch obvious regressions,
 - decision record on whether footer layout, token-slot bounds, or recovery
   sequencing need adjustment before transaction durability depends on them.
+
+## v0.20.3 - Canonical Fact Transcript And Verified Ingest
+
+Goal: define exactly what a fact signature means before durable transaction
+commit accepts signed facts.
+
+Deliverables:
+
+- canonical fact encoding profile with domain-separation tag and format
+  version,
+- signed transcript fields covering tenant, world revision, schema root,
+  predicate/schema version, policy epoch, actor, valid time, causality links,
+  evidence, payload digest, classification label, and all signature-covered
+  fact metadata,
+- actor-to-key authorization model for assertion time,
+- key lifecycle and revocation checks at assertion time,
+- verified fact constructor that requires a key registry and trusted
+  verification result before durable ingest,
+- signature algorithm/context rule that rejects algorithm confusion and
+  signature-context misuse,
+- tests for omitted fields, reordered fields, wrong tenant, wrong world
+  revision, wrong schema root, stale policy epoch, revoked key, wrong actor key,
+  and transcript version downgrade.
+
+## v0.20.4 - Early Schema Root And Predicate Contract
+
+Goal: move enough schema identity before durable commits so fact signatures,
+backups, manifests, and world revisions do not bind to an undefined data
+contract.
+
+Deliverables:
+
+- minimal schema root digest type and canonical schema-root transcript,
+- predicate/model identity and version placeholders used by fact signing,
+  world revisions, manifests, backups, and transaction validation,
+- compatibility stance for unknown schema roots before the full `v0.45.0`
+  schema catalog exists,
+- rule that durable facts cannot be committed without a schema/predicate root
+  binding, even if the schema is a scaffolded opaque root,
+- tests for missing schema root, mismatched predicate version,
+  forward-incompatible schema marker, and backup/manifest/schema-root mismatch.
+
+## v0.20.5 - Immutable WorldRevision And CAS Head Model
+
+Goal: separate stable world identity from mutable world state before
+transactions, manifests, and promotion rely on world heads.
+
+Deliverables:
+
+- `WorldRevisionId` immutable content/root identity distinct from `WorldId`,
+- world revision record covering stable world ID, revision ID, previous
+  revision, fork-base revision, added fact root, hidden fact root, schema root,
+  policy epoch, and committing transaction ID,
+- world-head compare-and-swap contract:
+  `advance_head(world_id, expected_revision, next_revision)`,
+- fork rule that child worlds record the exact parent revision used as fork
+  base, not only the stable parent world ID,
+- promotion rule requiring a three-way merge over fork base, current parent
+  head, and candidate head,
+- manifest world-head inventory that names world IDs and revision IDs,
+- tests for divergent clones with the same `WorldId`, lost-update rejection,
+  stale fork-base rejection, same-ID/different-state diff rejection, and CAS
+  head advancement.
+
+## v0.20.6 - Causal DAG And Truth Resolution Algebra
+
+Goal: define fact visibility, precedence, and graph validity before indexes and
+transactions make caused-by, supersedes, invalidates, hiding, deletion, and
+policy revocation authoritative.
+
+Deliverables:
+
+- commit-time cycle validation for caused-by, supersedes, and invalidates
+  graphs, or an explicit general-graph model with bounded visited sets and
+  deterministic cycle behavior,
+- deterministic state-resolution specification covering caused-by,
+  supersedes, invalidates, world hiding, valid-time overlap, tombstones, legal
+  deletion, policy revocation, and rollback/archive visibility,
+- precedence rules for conflicting facts and overlapping valid-time intervals,
+- bounded forward and reverse traversal rules for taint/blast-radius queries,
+- tests for multi-fact cycles, invalidation chains, supersession precedence,
+  hidden fact reintroduction, tombstone/legal-deletion conflict, and policy
+  revocation visibility.
 
 ## v0.21.0 - In-Memory Transaction Model
 
@@ -797,6 +1005,74 @@ Deliverables:
 - documented decision on whether the planned seven-stage planner pipeline needs
   restructuring before v0.25 and v0.27.
 
+## v0.24.3 - Trusted Planner Context And Canonical Label Resolution
+
+Goal: prevent callers from declaring the security labels or result metadata of
+stored data before public query construction and policy planning harden.
+
+Deliverables:
+
+- trusted plan-context contract binding tenant, principal, device evidence,
+  workload evidence, world revision, manifest root, policy epoch, query digest,
+  purpose, expiry, and replay nonce,
+- rule that public query requests carry query intent/AST only; stored fact
+  labels, schema labels, result-classification inputs, and release constraints
+  are resolved from validated storage, schema metadata, and policy registries,
+- `BoundQueryPlan` shape whose policy proof is bound to authenticated context,
+  snapshot, policy epoch, query digest, purpose, expiry, and nonce,
+- execution-time revalidation that snapshot root, policy epoch, identity,
+  attestation evidence, and proof binding are still current before execution,
+- denial behavior for stale proof, wrong tenant, wrong principal, wrong world
+  revision, wrong manifest, wrong policy epoch, wrong query digest, wrong
+  purpose, expired context, and replayed nonce,
+- tests that untrusted callers cannot request a Public label for TopSecret
+  facts, cannot supply fake result-classification inputs, cannot reuse proofs
+  across queries, and cannot execute against a different snapshot than planned.
+
+## v0.24.4 - Full Result Security Label Join Rules
+
+Goal: make derived result labels carry all mandatory access-control and
+dissemination constraints before query planning, projections, exports, caches,
+or AI pipelines consume result metadata.
+
+Deliverables:
+
+- `ResultSecurityLabel` or equivalent result label model with classification,
+  required compartments, dissemination/releasability constraints, sovereignty
+  scope, policy epoch proof set, PII state, AI eligibility, and confidence
+  policy metadata,
+- formal join rules: classification uses the dominating maximum, required
+  compartments use union, releasability uses intersection or deny-all on
+  conflict, sovereignty uses exact-or-saturated scope, policy epochs use a
+  bounded proof set or approval-required/deny state, and overflow uses typed
+  most-restrictive states instead of truncation,
+- downstream contract for caches, projections, export, backup, legal planning,
+  AI processing, and declassification so they cannot treat a derived result as
+  less constrained than its inputs,
+- tests for combining same-classification different-compartment facts, mixed
+  releasability sets, deny-all dissemination, policy-epoch conflicts,
+  compartment overflow, saturated sovereignty, and non-allow metadata masking.
+
+## v0.24.5 - Query Inference Budget And Aggregation Controls
+
+Goal: define an effective response to statistical inference and differencing
+attacks before aggregate query execution exists.
+
+Deliverables:
+
+- inference-budget model keyed by principal, tenant, purpose, dataset digest,
+  privacy budget, and time window,
+- minimum cohort-size, contribution-bound, rate-limit, result-budget,
+  consistent-suppression, and query-history-aware differencing controls,
+- cross-session, cross-device, and cross-service budget aggregation rules,
+- differential-privacy decision for cases where exact aggregates are not
+  required,
+- purpose-specific audit for inference-sensitive queries,
+- planner behavior that denies, redacts, suppresses, or requires approval when
+  inference budget or cohort requirements fail,
+- tests for differencing attempts, repeated small cohorts, budget exhaustion,
+  cross-device budget reuse, inconsistent suppression, and purpose mismatch.
+
 ## v0.25.0 - Native Query AST
 
 Goal: define the first native query representation without execution.
@@ -923,15 +1199,25 @@ Deliverables:
 
 - logical plan,
 - security checks before execution,
+- no caller-supplied labels or result inputs in public planning paths; labels
+  and result security metadata come from validated snapshot/schema/policy
+  state using the `v0.24.3` trusted planner context,
+- bound policy proof tied to tenant, principal, attestation evidence, world
+  revision, manifest root, policy epoch, query digest, purpose, expiry, and
+  nonce,
 - break-glass planning uses the `v0.26.1` access model and does not treat audit
   metadata as a blanket policy bypass,
 - rejection and redaction reports,
 - policy proof skeleton,
-- query-result classification,
+- full query-result security label propagation from `v0.24.4`, including
+  compartments, releasability/dissemination, policy epochs, sovereignty, PII,
+  AI eligibility, and confidence hooks,
 - sovereignty-scope overflow handling: exact bounded jurisdictions stay exact,
   while more than the bounded exact set becomes a typed multi-jurisdiction
   sentinel that is treated as most-restrictive for export, placement, indexing,
   backup, AI processing, and legal/compliance decisions,
+- inference-budget planning from `v0.24.5` for aggregate and repeated-query
+  surfaces,
 - confidence-aware allow/redact/reject policy hooks,
 - tests for denied plans.
 
@@ -947,6 +1233,9 @@ Deliverables:
 - bounded forward traversal for taint and blast-radius queries,
 - implementation of the selected `v0.23.1` propagated-confidence model over
   evidence and caused-by chains,
+- execution-time revalidation that the bound plan's snapshot root, policy
+  epoch, proof, identity, expiry, purpose, and nonce are still valid,
+- inference-budget enforcement for aggregate query execution,
 - bounded result sets,
 - tests for authorized and denied reads.
 
@@ -1598,14 +1887,28 @@ Deliverables:
 
 - durable single-node fact/world engine,
 - strict transaction semantics,
+- non-rollbackable freshness anchor contract for production profiles,
+- immutable world revisions with compare-and-swap world heads,
+- canonical fact transcript, signature verification, and verified ingest gate,
 - policy-aware query planning,
+- trusted planner context and bound query proofs,
+- full result security label propagation, including compartments and
+  releasability/dissemination constraints,
+- query inference budgets and aggregation controls,
 - causal blast-radius invalidation and quarantine support,
 - key hierarchy and lifecycle,
+- scoped key release boundary so the main database process is not a god-mode
+  key holder in production profiles,
 - signed declassification proof model,
 - capability-scoped AI derivation cones,
 - propagated confidence fused with mandatory access control,
 - encrypted WAL, segments, indexes, projections, backups, exports, and audit logs,
+- WAL anti-splicing identity, chained frame digests, and transaction commit
+  roots,
+- encrypted inner storage metadata with minimal plaintext outer framing,
+- explicit crypto-erasure granularity and key-slot deletion proofs,
 - query-result classification,
+- trusted time and monotonic sequence model,
 - legal/compliance passport foundations,
 - law-pack metadata admission,
 - legal operation and transfer decision skeleton,
@@ -1618,6 +1921,7 @@ Deliverables:
 - observability without secret leakage,
 - performance and load evidence,
 - tamper-evident manifests,
+- externally anchorable chained audit roots,
 - SBOM, dependency-tree, source-lock, and release-evidence gates,
 - local snapshot and rollback retention with locked archive/recovery worlds,
 - rootless Podman deployment,
