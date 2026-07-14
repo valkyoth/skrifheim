@@ -58,7 +58,11 @@ pub(super) fn header(tx: u128, body: &[u8]) -> SkrifheimResult<WalFrameHeader> {
 }
 
 pub(super) fn segment_header(body: &[u8]) -> SkrifheimResult<SegmentHeader> {
-    SegmentHeader::new(SegmentHeaderInput {
+    SegmentHeader::new(segment_header_input(body)?)
+}
+
+pub(super) fn segment_header_input(body: &[u8]) -> SkrifheimResult<SegmentHeaderInput> {
+    Ok(SegmentHeaderInput {
         segment_kind: SegmentKind::Fact,
         tenant_id: tenant()?,
         min_tx: id(TxId::from_u128(20))?,

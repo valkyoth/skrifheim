@@ -2,7 +2,7 @@ use core::num::NonZeroU128;
 
 use skrifheim_core::{Result, SkrifheimError, TenantId};
 
-use crate::CryptoEpoch;
+use crate::{CryptoEpoch, key_hierarchy::is_valid_parent};
 
 macro_rules! nonzero_key_id {
     ($name:ident) => {
@@ -209,7 +209,30 @@ impl KeyMetadata {
         }
     }
 
-    pub const fn with_lifecycle(
+    pub fn reconstruct(
+        key_id: KeyId,
+        parent: Option<KeyId>,
+        scope: KeyScope,
+        epoch: CryptoEpoch,
+        lifecycle_event_sequence: KeyLifecycleEventSequence,
+        lifecycle: KeyLifecycleState,
+        erasure: Option<KeyErasureMetadata>,
+    ) -> Result<Self> {
+        let metadata = Self {
+            key_id,
+            parent,
+            scope,
+            epoch,
+            lifecycle_event_sequence,
+            lifecycle,
+            erasure,
+        };
+        metadata.validate_invariants()?;
+        Ok(metadata)
+    }
+
+    #[cfg(test)]
+    pub(crate) const fn with_lifecycle_for_test(
         key_id: KeyId,
         parent: Option<KeyId>,
         scope: KeyScope,
@@ -221,7 +244,7 @@ impl KeyMetadata {
             parent,
             scope,
             epoch,
-            lifecycle_event_sequence: KeyLifecycleEventSequence::initial(),
+            lifecycle_event_sequence: KeyLifecycleEventSequence::new(2),
             lifecycle,
             erasure: None,
         }
@@ -260,6 +283,23 @@ impl KeyMetadata {
     #[must_use]
     pub const fn erasure(&self) -> Option<KeyErasureMetadata> {
         self.erasure
+    }
+
+    pub fn validate_invariants(&self) -> Result<()> {
+        let sequence = self.lifecycle_event_sequence.get();
+        if sequence == 0 {
+            return Err(SkrifheimError::InvalidKeyLifecycle);
+        }
+        if self.lifecycle == KeyLifecycleState::Created && sequence != 1 {
+            return Err(SkrifheimError::InvalidKeyLifecycle);
+        }
+        if self.lifecycle != KeyLifecycleState::Created && sequence == 1 {
+            return Err(SkrifheimError::InvalidKeyLifecycle);
+        }
+        if !self.erasure_metadata_matches_state() {
+            return Err(SkrifheimError::InvalidKeyLifecycle);
+        }
+        Ok(())
     }
 
     pub fn validate_parent(&self, parent: Option<&Self>) -> Result<()> {
@@ -340,25 +380,36 @@ impl KeyMetadata {
         if !is_valid_lifecycle_transition(self.lifecycle, KeyLifecycleState::CryptoErased) {
             return Err(SkrifheimError::InvalidKeyLifecycle);
         }
+        let lifecycle_event_sequence = next_lifecycle_event_sequence(self.lifecycle_event_sequence)
+            .ok_or(SkrifheimError::InvalidKeyLifecycle)?;
         Ok(Self {
             key_id: self.key_id,
             parent: self.parent,
             scope: self.scope,
             epoch: self.epoch,
-            lifecycle_event_sequence: next_lifecycle_event_sequence(self.lifecycle_event_sequence)
-                .ok_or(SkrifheimError::InvalidKeyLifecycle)?,
+            lifecycle_event_sequence,
             lifecycle: KeyLifecycleState::CryptoErased,
             erasure: Some(KeyErasureMetadata {
                 key_id: self.key_id,
                 scope: self.scope,
                 epoch: self.epoch,
-                lifecycle_event_sequence: next_lifecycle_event_sequence(
-                    self.lifecycle_event_sequence,
-                )
-                .ok_or(SkrifheimError::InvalidKeyLifecycle)?,
+                lifecycle_event_sequence,
                 reason,
             }),
         })
+    }
+
+    fn erasure_metadata_matches_state(&self) -> bool {
+        match (self.lifecycle, self.erasure) {
+            (KeyLifecycleState::CryptoErased, Some(erasure)) => {
+                erasure.key_id == self.key_id
+                    && erasure.scope == self.scope
+                    && erasure.epoch == self.epoch
+                    && erasure.lifecycle_event_sequence == self.lifecycle_event_sequence
+            }
+            (KeyLifecycleState::CryptoErased, None) | (_, Some(_)) => false,
+            (_, None) => true,
+        }
     }
 }
 
@@ -423,51 +474,4 @@ fn next_lifecycle_event_sequence(
         .get()
         .checked_add(1)
         .map(KeyLifecycleEventSequence::new)
-}
-
-fn is_valid_parent(child: KeyScope, parent: KeyScope) -> bool {
-    match (child, parent) {
-        (KeyScope::Deployment { .. }, KeyScope::RootTrust) => true,
-        (
-            KeyScope::Region { deployment_id, .. },
-            KeyScope::Deployment {
-                deployment_id: parent_deployment,
-            },
-        ) => deployment_id == parent_deployment,
-        (
-            KeyScope::Tenant {
-                deployment_id,
-                region_id,
-                ..
-            },
-            KeyScope::Region {
-                deployment_id: parent_deployment,
-                region_id: parent_region,
-            },
-        ) => deployment_id == parent_deployment && region_id == parent_region,
-        (
-            KeyScope::Compartment { tenant_id, .. },
-            KeyScope::Tenant {
-                tenant_id: parent_tenant,
-                ..
-            },
-        ) => tenant_id == parent_tenant,
-        (
-            KeyScope::Segment {
-                tenant_id,
-                compartment_id,
-                ..
-            }
-            | KeyScope::Data {
-                tenant_id,
-                compartment_id,
-                ..
-            },
-            KeyScope::Compartment {
-                tenant_id: parent_tenant,
-                compartment_id: parent_compartment,
-            },
-        ) => tenant_id == parent_tenant && compartment_id == parent_compartment,
-        _ => false,
-    }
 }

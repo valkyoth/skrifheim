@@ -20,6 +20,8 @@ use skrifheim_storage::{
 
 use crate::common::{add_no_follow, fsync_parent_dir};
 
+pub const MAX_IN_MEMORY_SEGMENT_BYTES: u64 = 16 * 1024 * 1024;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct SegmentWriteOptions {
     sync_on_write: bool,
@@ -50,6 +52,7 @@ pub enum SegmentFileError {
     BodyLengthMismatch,
     FileLengthMismatch,
     PartialSegment,
+    ResourceLimitExceeded,
     ContentDigestRejected(SkrifheimError),
 }
 
@@ -61,6 +64,7 @@ impl fmt::Display for SegmentFileError {
             Self::BodyLengthMismatch => write!(f, "segment body length mismatch"),
             Self::FileLengthMismatch => write!(f, "segment file length mismatch"),
             Self::PartialSegment => write!(f, "segment file ended inside a segment"),
+            Self::ResourceLimitExceeded => write!(f, "segment resource limit exceeded"),
             Self::ContentDigestRejected(error) => {
                 write!(f, "segment content digest verification failed: {error}")
             }
@@ -131,7 +135,7 @@ impl SegmentFileWriter {
     }
 
     pub fn write_segment(
-        &mut self,
+        mut self,
         header: &SegmentHeader,
         encrypted_body: &[u8],
         verifier: &impl SegmentContentVerifier,
@@ -185,12 +189,19 @@ impl SegmentFileReader {
             .map_err(map_segment_partial_read)?;
         let header = SegmentHeader::parse_for_domain(&header_bytes, self.expected_domain)?;
         verify_segment_file_len(&self.file, &header)?;
+        if header.body_len() > MAX_IN_MEMORY_SEGMENT_BYTES {
+            return Err(SegmentFileError::ResourceLimitExceeded);
+        }
         let body_len = usize::try_from(header.body_len()).map_err(|_| {
             SegmentFileError::Io(io::Error::other(
                 "segment body length exceeds address space",
             ))
         })?;
-        let mut encrypted_body = vec![0_u8; body_len];
+        let mut encrypted_body = Vec::new();
+        encrypted_body
+            .try_reserve_exact(body_len)
+            .map_err(|_| SegmentFileError::ResourceLimitExceeded)?;
+        encrypted_body.resize(body_len, 0);
         self.file
             .read_exact(&mut encrypted_body)
             .map_err(map_segment_partial_read)?;

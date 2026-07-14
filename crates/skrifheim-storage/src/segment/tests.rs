@@ -61,6 +61,7 @@ fn valid_footer_passes_and_matches_header() -> Result<()> {
     assert_eq!(footer.validate_against_header(&header), Ok(()));
     assert_eq!(footer.magic(), SEGMENT_FOOTER_MAGIC);
     assert_eq!(footer.version(), SEGMENT_FOOTER_VERSION_MAX);
+    assert_eq!(footer.segment_kind(), SegmentKind::Fact);
     Ok(())
 }
 
@@ -128,6 +129,7 @@ fn header_and_footer_round_trip_fixed_bytes() -> Result<()> {
     assert_eq!(header_bytes.len(), SEGMENT_HEADER_BYTES);
     assert_eq!(footer_bytes.len(), SEGMENT_FOOTER_BYTES);
     assert_eq!(parsed_header.segment_kind(), SegmentKind::Fact);
+    assert_eq!(parsed_footer.segment_kind(), SegmentKind::Fact);
     assert_eq!(parsed_header.tenant_id().get(), header.tenant_id().get());
     assert_eq!(parsed_header.min_tx().get(), header.min_tx().get());
     assert_eq!(parsed_header.max_tx().get(), header.max_tx().get());
@@ -181,7 +183,7 @@ fn parsers_reject_malformed_segment_metadata() -> Result<()> {
     ));
 
     let mut footer_bytes = footer()?.encode();
-    footer_bytes[10] = 1;
+    footer_bytes[10] = 0;
     assert!(matches!(
         SegmentFooter::parse(&footer_bytes),
         Err(SkrifheimError::InvalidStorageHeader(_))
@@ -198,6 +200,22 @@ fn decoded_footer_rejects_header_mismatch() -> Result<()> {
 
     assert!(matches!(
         footer.validate_against_header(&header),
+        Err(SkrifheimError::InvalidStorageHeader(_))
+    ));
+    Ok(())
+}
+
+#[test]
+fn decoded_footer_rejects_header_kind_mismatch() -> Result<()> {
+    let header = header()?;
+    let footer = SegmentFooter::from_header(&header)?;
+    let mut header_bytes = header.encode();
+    header_bytes[10] = 3;
+    let changed_header = SegmentHeader::parse(&header_bytes)?;
+
+    assert_eq!(changed_header.segment_kind(), SegmentKind::Projection);
+    assert!(matches!(
+        footer.validate_against_header(&changed_header),
         Err(SkrifheimError::InvalidStorageHeader(_))
     ));
     Ok(())
@@ -317,6 +335,7 @@ fn header_rejects_explicit_zero_body_crc() -> Result<()> {
 fn footer_rejects_header_mismatch() -> Result<()> {
     let header = header()?;
     let mut footer_input = SegmentFooterInput {
+        segment_kind: header.segment_kind(),
         tenant_id: header.tenant_id(),
         min_tx: header.min_tx(),
         max_tx: header.max_tx(),

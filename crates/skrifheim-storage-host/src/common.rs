@@ -55,11 +55,15 @@ pub(crate) fn add_no_follow(options: &mut std::fs::OpenOptions) {
 
 #[cfg(unix)]
 pub(crate) fn fsync_parent_dir(path: &Path) -> io::Result<()> {
-    if let Some(parent) = path
+    let parent = path
         .parent()
         .filter(|parent| !parent.as_os_str().is_empty())
-    {
-        File::open(parent)?.sync_all()?;
-    }
+        .ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "path must include an explicit parent directory for durable fsync",
+            )
+        })?;
+    File::open(parent)?.sync_all()?;
     Ok(())
 }

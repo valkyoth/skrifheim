@@ -97,6 +97,12 @@ compromise, quarantine, destruction, and erasure events when those operations do
 not introduce new key material. Rotation and replacement-key activation still
 require strictly advancing crypto epochs.
 
+Any future encrypt, decrypt, manifest, recovery, or key-use path must inspect
+the full key lifecycle state and fail closed for compromised, quarantined,
+destroyed, or crypto-erased keys. A crypto epoch comparison alone is not a trust
+decision because metadata-only lifecycle events can share the same crypto epoch
+as the key material they affect.
+
 Key hierarchy validation must reject children of compromised, quarantined,
 destroyed, or crypto-erased parent keys. Future storage-backed ancestor walks
 must propagate those states through the subtree before segment access is

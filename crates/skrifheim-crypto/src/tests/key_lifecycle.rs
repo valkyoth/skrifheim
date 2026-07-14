@@ -56,7 +56,7 @@ fn key_lifecycle_rejects_invalid_transitions_and_epoch_shape() -> Result<()> {
 
 #[test]
 fn rotating_key_cannot_return_to_active() -> Result<()> {
-    let key = KeyMetadata::with_lifecycle(
+    let key = KeyMetadata::with_lifecycle_for_test(
         id(KeyId::from_u128(64))?,
         None,
         KeyScope::RootTrust,
@@ -86,7 +86,7 @@ fn compromise_can_be_declared_from_non_active_material_states() -> Result<()> {
         KeyLifecycleState::Compromised
     );
 
-    let retired = KeyMetadata::with_lifecycle(
+    let retired = KeyMetadata::with_lifecycle_for_test(
         id(KeyId::from_u128(62))?,
         None,
         KeyScope::RootTrust,
@@ -106,7 +106,7 @@ fn compromise_can_be_declared_from_non_active_material_states() -> Result<()> {
         KeyLifecycleState::Quarantined
     );
 
-    let quarantined = KeyMetadata::with_lifecycle(
+    let quarantined = KeyMetadata::with_lifecycle_for_test(
         id(KeyId::from_u128(63))?,
         None,
         KeyScope::RootTrust,
@@ -158,9 +158,53 @@ fn metadata_only_lifecycle_changes_preserve_crypto_epoch_and_advance_event_seque
 }
 
 #[test]
+fn reconstructed_key_metadata_requires_valid_lifecycle_sequence_and_erasure() -> Result<()> {
+    let key_id = id(KeyId::from_u128(66))?;
+    let scope = KeyScope::RootTrust;
+    assert_eq!(
+        KeyMetadata::reconstruct(
+            key_id,
+            None,
+            scope,
+            CryptoEpoch::new(3),
+            KeyLifecycleEventSequence::initial(),
+            KeyLifecycleState::Compromised,
+            None,
+        ),
+        Err(SkrifheimError::InvalidKeyLifecycle)
+    );
+
+    let destroyed = KeyMetadata::reconstruct(
+        key_id,
+        None,
+        scope,
+        CryptoEpoch::new(3),
+        KeyLifecycleEventSequence::new(4),
+        KeyLifecycleState::Destroyed,
+        None,
+    )?;
+    assert_eq!(destroyed.lifecycle(), KeyLifecycleState::Destroyed);
+    assert_eq!(destroyed.lifecycle_event_sequence().get(), 4);
+
+    assert_eq!(
+        KeyMetadata::reconstruct(
+            key_id,
+            None,
+            scope,
+            CryptoEpoch::new(3),
+            KeyLifecycleEventSequence::new(5),
+            KeyLifecycleState::CryptoErased,
+            None,
+        ),
+        Err(SkrifheimError::InvalidKeyLifecycle)
+    );
+    Ok(())
+}
+
+#[test]
 fn key_rotation_preflight_rejects_wrong_scope_or_epoch() -> Result<()> {
     let tenant_id = id(TenantId::from_u128(12))?;
-    let current = KeyMetadata::with_lifecycle(
+    let current = KeyMetadata::with_lifecycle_for_test(
         id(KeyId::from_u128(70))?,
         None,
         KeyScope::Compartment {
@@ -223,7 +267,7 @@ fn compromised_key_can_be_quarantined_destroyed_and_erased() -> Result<()> {
 
 #[test]
 fn active_key_cannot_be_crypto_erased_directly() -> Result<()> {
-    let key = KeyMetadata::with_lifecycle(
+    let key = KeyMetadata::with_lifecycle_for_test(
         id(KeyId::from_u128(90))?,
         None,
         KeyScope::RootTrust,
@@ -239,14 +283,14 @@ fn active_key_cannot_be_crypto_erased_directly() -> Result<()> {
 
 #[test]
 fn compromised_or_quarantined_key_must_be_destroyed_before_crypto_erasure() -> Result<()> {
-    let compromised = KeyMetadata::with_lifecycle(
+    let compromised = KeyMetadata::with_lifecycle_for_test(
         id(KeyId::from_u128(91))?,
         None,
         KeyScope::RootTrust,
         CryptoEpoch::new(1),
         KeyLifecycleState::Compromised,
     );
-    let quarantined = KeyMetadata::with_lifecycle(
+    let quarantined = KeyMetadata::with_lifecycle_for_test(
         id(KeyId::from_u128(92))?,
         None,
         KeyScope::RootTrust,

@@ -13,23 +13,52 @@ if ! grep -R "lifecycle_event_sequence" crates/skrifheim-crypto/src/key.rs >/dev
     exit 1
 fi
 
-if ! grep -R "requires_crypto_epoch_advancement" crates/skrifheim-crypto/src/key.rs >/dev/null; then
-    echo "0.18.2 requires explicit crypto epoch advancement policy" >&2
-    exit 1
-fi
-
-if ! grep -R "next_epoch != self.epoch" crates/skrifheim-crypto/src/key.rs >/dev/null; then
+if ! cargo test -p skrifheim-crypto --quiet \
+    tests::key_lifecycle::metadata_only_lifecycle_changes_preserve_crypto_epoch_and_advance_event_sequence \
+    -- --exact >/dev/null; then
     echo "0.18.2 requires metadata-only lifecycle transitions to preserve crypto epoch" >&2
     exit 1
 fi
 
-if ! grep -R "metadata_only_lifecycle_changes_preserve_crypto_epoch_and_advance_event_sequence" crates/skrifheim-crypto/src/tests/key_lifecycle.rs >/dev/null; then
-    echo "0.18.2 requires metadata-only lifecycle transition coverage" >&2
+if ! cargo test -p skrifheim-crypto --quiet \
+    tests::key_lifecycle::key_lifecycle_rejects_invalid_transitions_and_epoch_shape \
+    -- --exact >/dev/null; then
+    echo "0.18.2 requires rotation epoch advancement rejection coverage" >&2
     exit 1
 fi
 
-if ! grep -R "active.transition(KeyLifecycleState::Rotating, CryptoEpoch::new(3))" crates/skrifheim-crypto/src/tests/key_lifecycle.rs >/dev/null; then
-    echo "0.18.2 requires rotation epoch advancement rejection coverage" >&2
+if ! cargo test -p skrifheim-crypto --quiet \
+    tests::key_lifecycle::reconstructed_key_metadata_requires_valid_lifecycle_sequence_and_erasure \
+    -- --exact >/dev/null; then
+    echo "0.18.2 requires checked key metadata reconstruction coverage" >&2
+    exit 1
+fi
+
+if ! cargo test -p skrifheim-storage --quiet \
+    segment::tests::decoded_footer_rejects_header_kind_mismatch \
+    -- --exact >/dev/null; then
+    echo "0.18.2 requires segment footer kind binding coverage" >&2
+    exit 1
+fi
+
+if ! cargo test -p skrifheim-storage-host --quiet \
+    tests::segment::segment_reader_rejects_oversized_sparse_segment_before_allocation \
+    -- --exact >/dev/null; then
+    echo "0.18.2 requires sparse segment allocation-limit coverage" >&2
+    exit 1
+fi
+
+if ! cargo test -p skrifheim-storage-host --quiet \
+    tests::wal::wal_writer_rejects_second_concurrent_writer \
+    -- --exact >/dev/null; then
+    echo "0.18.2 requires exclusive WAL writer coverage" >&2
+    exit 1
+fi
+
+if ! cargo test -p skrifheim-storage --quiet \
+    wal::replay::tests::replay_rejected_close_keeps_active_transaction \
+    -- --exact >/dev/null; then
+    echo "0.18.2 requires non-destructive WAL replay rejection coverage" >&2
     exit 1
 fi
 

@@ -1,6 +1,6 @@
 # skrifheim 0.18.2 Release Notes
 
-Status: implementation stop, pentest pending.
+Status: first pentest pass resolved locally, retest pending.
 
 ## Scope
 
@@ -32,10 +32,19 @@ or replacement actually introduces new material.
   quarantined, destroyed, and crypto-erased parent keys.
 - Updated encryption architecture and security controls to describe the split
   between crypto-material epochs and lifecycle event ordering.
+- Resolved the first pentest pass by replacing arbitrary public key lifecycle
+  reconstruction with checked reconstruction, computing crypto-erasure sequence
+  once, binding segment kind into the footer, adding an in-memory segment read
+  cap, enforcing exclusive WAL writers, rejecting bare new-file paths that
+  cannot durably fsync an explicit parent directory, and making rejected WAL
+  close records non-destructive.
 
 ## Verification
 
 - `cargo test -p skrifheim-crypto key_lifecycle`
+- `cargo test -p skrifheim-storage segment`
+- `cargo test -p skrifheim-storage replay`
+- `cargo test -p skrifheim-storage-host`
 - `scripts/checks.sh`
 - `scripts/release_0_18_2_gate.sh` after pentest evidence is committed
 
@@ -49,4 +58,5 @@ metadata; durable audit/event storage remains planned work.
 
 ## Pentest Status
 
-`v0.18.2 implementation stop reached. Run pentest for this exact commit.`
+The first `0.18.2` pentest pass has been resolved locally. Root `PENTEST.md`
+has been removed after findings were resolved.

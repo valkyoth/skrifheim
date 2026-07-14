@@ -10,6 +10,7 @@ use skrifheim_core::{Result, SkrifheimError};
 mod digest;
 mod domain;
 mod key;
+mod key_hierarchy;
 mod projection;
 mod secret;
 

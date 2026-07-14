@@ -61,6 +61,11 @@
 - Updated the admitted `sanitization` dependency from `1.2.2` to `1.2.4` after
   checking crates.io metadata.
 - Bumped workspace and internal crate dependency versions to `0.18.2`.
+- Resolved the first `0.18.2` pentest pass by removing public arbitrary key
+  lifecycle construction, validating reconstructed key metadata invariants,
+  binding segment kind into the mirrored footer, bounding in-memory segment
+  reads, locking WAL writers, making parent-directory fsync fail closed for
+  bare paths, and preserving WAL replay state on rejected close records.
 
 ## 0.18.1
 

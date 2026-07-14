@@ -109,6 +109,40 @@ fn wal_writer_tightens_existing_file_permissions() -> WalResult<()> {
 
 #[cfg(unix)]
 #[test]
+fn wal_writer_rejects_second_concurrent_writer() -> WalResult<()> {
+    let path = temp_path("exclusive-writer")?;
+    let writer = WalFileWriter::open_append(&path, WalAppendOptions::new(false))?;
+
+    assert!(matches!(
+        WalFileWriter::open_append(&path, WalAppendOptions::new(false)),
+        Err(WalFileError::Io(_))
+    ));
+
+    drop(writer);
+    fs::remove_file(path)?;
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn wal_writer_requires_explicit_parent_for_new_files() -> WalResult<()> {
+    let path = format!(
+        "skrifheim-bare-wal-{}-{}.wal",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map_err(|error| WalFileError::Io(std::io::Error::other(error)))?
+            .as_nanos()
+    );
+    let result = WalFileWriter::open_append(&path, WalAppendOptions::new(false));
+
+    assert!(matches!(result, Err(WalFileError::Io(_))));
+    let _ = fs::remove_file(path);
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
 fn wal_writer_rejects_symlink_paths() -> WalResult<()> {
     let target = temp_path("symlink-target")?;
     let link = temp_path("symlink-link")?;

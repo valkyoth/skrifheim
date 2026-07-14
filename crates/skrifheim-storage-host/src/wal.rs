@@ -81,18 +81,13 @@ pub struct WalFileWriter {
 impl WalFileWriter {
     pub fn open_append(path: impl AsRef<Path>, options: WalAppendOptions) -> Result<Self> {
         let path = path.as_ref();
-        let created = !path.try_exists()?;
-        let mut open_options = OpenOptions::new();
-        open_options.create(true).append(true);
-        add_no_follow(&mut open_options);
-        #[cfg(unix)]
-        open_options.mode(0o600);
-        let file = open_options.open(path)?;
+        let (file, created) = open_wal_for_append(path)?;
         if !file.metadata()?.is_file() {
             return Err(WalFileError::Io(io::Error::other(
                 "WAL path must be a regular file",
             )));
         }
+        lock_wal_writer(&file)?;
         #[cfg(unix)]
         {
             file.set_permissions(Permissions::from_mode(0o600))?;
@@ -202,6 +197,40 @@ fn verify_body_crc(
         ));
     }
     Ok(())
+}
+
+fn open_wal_for_append(path: &Path) -> Result<(File, bool)> {
+    let mut create_options = OpenOptions::new();
+    create_options.create_new(true).read(true).append(true);
+    add_no_follow(&mut create_options);
+    #[cfg(unix)]
+    create_options.mode(0o600);
+
+    match create_options.open(path) {
+        Ok(file) => Ok((file, true)),
+        Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
+            let mut existing_options = OpenOptions::new();
+            existing_options.read(true).append(true);
+            add_no_follow(&mut existing_options);
+            existing_options
+                .open(path)
+                .map(|file| (file, false))
+                .map_err(WalFileError::Io)
+        }
+        Err(error) => Err(WalFileError::Io(error)),
+    }
+}
+
+fn lock_wal_writer(file: &File) -> Result<()> {
+    file.try_lock().map_err(|error| {
+        WalFileError::Io(match error {
+            std::fs::TryLockError::Error(error) => error,
+            std::fs::TryLockError::WouldBlock => io::Error::new(
+                io::ErrorKind::WouldBlock,
+                "WAL file is already locked by another writer",
+            ),
+        })
+    })
 }
 
 enum ReadState {

@@ -154,6 +154,40 @@ fn replay_rejects_key_epoch_or_domain_mismatch() -> Result<()> {
 }
 
 #[test]
+fn replay_rejected_close_keeps_active_transaction() -> Result<()> {
+    let mut replay = WalReplay::new();
+    replay.process_header(&header(WalRecordKind::TransactionBegin, 26)?)?;
+    replay.process_header(&header(WalRecordKind::FactBatch, 26)?)?;
+
+    assert!(matches!(
+        replay.process_header(&header(WalRecordKind::TransactionCommit, 27)?),
+        Err(SkrifheimError::InvalidWalFrame(_))
+    ));
+    replay.process_header(&header(WalRecordKind::TransactionCommit, 26)?)?;
+    let report = replay.finish(WalReplayStop::CleanEof)?;
+
+    assert_eq!(report.replayed_frame_count(), 3);
+    assert_eq!(report.committed_transactions().len(), 1);
+    assert_eq!(report.committed_transactions()[0].tx_id().get(), 26);
+    assert!(report.rolled_back_transactions().is_empty());
+    Ok(())
+}
+
+#[test]
+fn replay_rejected_frame_does_not_advance_frame_count() -> Result<()> {
+    let mut replay = WalReplay::new();
+
+    assert!(matches!(
+        replay.process_header(&header(WalRecordKind::FactBatch, 28)?),
+        Err(SkrifheimError::InvalidWalFrame(_))
+    ));
+    let report = replay.finish(WalReplayStop::CleanEof)?;
+
+    assert_eq!(report.replayed_frame_count(), 0);
+    Ok(())
+}
+
+#[test]
 fn replay_rejects_non_advancing_transaction_ids() -> Result<()> {
     let mut replay = WalReplay::new();
     replay.process_header(&header(WalRecordKind::TransactionBegin, 20)?)?;

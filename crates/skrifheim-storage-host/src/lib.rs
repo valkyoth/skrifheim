@@ -5,8 +5,8 @@ mod segment;
 mod wal;
 
 pub use segment::{
-    SegmentContentVerifier, SegmentFileError, SegmentFileReader, SegmentFileSegment,
-    SegmentFileWriter, SegmentWriteOptions,
+    MAX_IN_MEMORY_SEGMENT_BYTES, SegmentContentVerifier, SegmentFileError, SegmentFileReader,
+    SegmentFileSegment, SegmentFileWriter, SegmentWriteOptions,
 };
 pub use wal::{WalAppendOptions, WalFileError, WalFileFrame, WalFileReader, WalFileWriter};
 

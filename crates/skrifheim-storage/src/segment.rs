@@ -15,7 +15,7 @@ use validation::{
 pub const SEGMENT_MAGIC: [u8; 8] = *b"SKRIFSEG";
 pub const SEGMENT_FOOTER_MAGIC: [u8; 8] = *b"SKRIFFTR";
 pub const SEGMENT_VERSION_MAX: u16 = 1;
-pub const SEGMENT_FOOTER_VERSION_MAX: u16 = 1;
+pub const SEGMENT_FOOTER_VERSION_MAX: u16 = 2;
 pub const SEGMENT_HEADER_BYTES: usize = 256;
 pub const SEGMENT_FOOTER_BYTES: usize = 256;
 pub const SEGMENT_BODY_MAX_BYTES: u64 = 1024 * 1024 * 1024;
@@ -106,6 +106,7 @@ impl fmt::Debug for SegmentHeaderInput {
 pub struct SegmentFooter {
     magic: [u8; 8],
     version: u16,
+    segment_kind: SegmentKind,
     tenant_id: TenantId,
     min_tx: TxId,
     max_tx: TxId,
@@ -123,6 +124,7 @@ impl fmt::Debug for SegmentFooter {
         f.debug_struct("SegmentFooter")
             .field("magic", &"<redacted>")
             .field("version", &self.version)
+            .field("segment_kind", &self.segment_kind)
             .field("tenant_id", &"<redacted>")
             .field("tx_range", &"<redacted>")
             .field("policy_id", &"<redacted>")
@@ -138,6 +140,7 @@ impl fmt::Debug for SegmentFooter {
 
 #[derive(Clone)]
 pub struct SegmentFooterInput {
+    pub segment_kind: SegmentKind,
     pub tenant_id: TenantId,
     pub min_tx: TxId,
     pub max_tx: TxId,
@@ -153,6 +156,7 @@ pub struct SegmentFooterInput {
 impl fmt::Debug for SegmentFooterInput {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("SegmentFooterInput")
+            .field("segment_kind", &self.segment_kind)
             .field("tenant_id", &"<redacted>")
             .field("tx_range", &"<redacted>")
             .field("policy_id", &"<redacted>")
@@ -306,6 +310,7 @@ impl SegmentFooter {
         let footer = Self {
             magic: SEGMENT_FOOTER_MAGIC,
             version: SEGMENT_FOOTER_VERSION_MAX,
+            segment_kind: input.segment_kind,
             tenant_id: input.tenant_id,
             min_tx: input.min_tx,
             max_tx: input.max_tx,
@@ -327,6 +332,7 @@ impl SegmentFooter {
             .clone()
             .ok_or_else(|| invalid_segment("content digest missing"))?;
         Self::new(SegmentFooterInput {
+            segment_kind: header.segment_kind,
             tenant_id: header.tenant_id,
             min_tx: header.min_tx,
             max_tx: header.max_tx,
@@ -357,6 +363,11 @@ impl SegmentFooter {
     #[must_use]
     pub const fn version(&self) -> u16 {
         self.version
+    }
+
+    #[must_use]
+    pub const fn segment_kind(&self) -> SegmentKind {
+        self.segment_kind
     }
 
     #[must_use]
@@ -434,6 +445,7 @@ impl SegmentFooter {
         self.validate()?;
         header.validate()?;
         if self.tenant_id.get() != header.tenant_id.get()
+            || self.segment_kind != header.segment_kind
             || self.min_tx.get() != header.min_tx.get()
             || self.max_tx.get() != header.max_tx.get()
             || self.policy_id.get() != header.policy_id.get()

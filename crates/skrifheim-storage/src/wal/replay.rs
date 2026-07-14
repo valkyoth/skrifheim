@@ -221,7 +221,7 @@ impl WalReplay {
 
     pub fn process_header(&mut self, header: &WalFrameHeader) -> Result<()> {
         header.validate()?;
-        self.replayed_frame_count = self
+        let next_replayed_frame_count = self
             .replayed_frame_count
             .checked_add(1)
             .ok_or_else(|| invalid_replay("WAL replay frame count overflow"))?;
@@ -231,7 +231,9 @@ impl WalReplay {
             WalRecordKind::TransactionCommit => self.commit_transaction(header),
             WalRecordKind::TransactionAbort => self.abort_transaction(header),
             WalRecordKind::Checkpoint => self.record_checkpoint(),
-        }
+        }?;
+        self.replayed_frame_count = next_replayed_frame_count;
+        Ok(())
     }
 
     pub fn finish(mut self, stop: WalReplayStop) -> Result<WalRecoveryReport> {
@@ -279,25 +281,28 @@ impl WalReplay {
     fn commit_transaction(&mut self, header: &WalFrameHeader) -> Result<()> {
         let active = self
             .active
-            .take()
+            .as_ref()
             .ok_or_else(|| invalid_replay("WAL commit is outside transaction"))?;
         active.require_matching_header(header)?;
         self.require_transaction_capacity()?;
+        let committed = active.to_commit()?;
         self.last_closed_tx = Some(active.tx_id);
-        self.committed_transactions.push(active.into_commit()?);
+        self.committed_transactions.push(committed);
+        self.active = None;
         Ok(())
     }
 
     fn abort_transaction(&mut self, header: &WalFrameHeader) -> Result<()> {
         let active = self
             .active
-            .take()
+            .as_ref()
             .ok_or_else(|| invalid_replay("WAL abort is outside transaction"))?;
         active.require_matching_header(header)?;
         self.require_transaction_capacity()?;
+        let rollback = active.to_rollback(WalRollbackReason::AbortRecord);
         self.last_closed_tx = Some(active.tx_id);
-        self.rolled_back_transactions
-            .push(active.into_rollback(WalRollbackReason::AbortRecord));
+        self.rolled_back_transactions.push(rollback);
+        self.active = None;
         Ok(())
     }
 
@@ -395,14 +400,14 @@ impl ActiveTransaction {
         Ok(())
     }
 
-    fn into_commit(mut self) -> Result<WalRecoveredTransaction> {
-        self.frame_count = self
+    fn to_commit(&self) -> Result<WalRecoveredTransaction> {
+        let frame_count = self
             .frame_count
             .checked_add(1)
             .ok_or_else(|| invalid_replay("WAL transaction frame count overflow"))?;
         Ok(WalRecoveredTransaction {
             tx_id: self.tx_id,
-            frame_count: self.frame_count,
+            frame_count,
             fact_batch_count: self.fact_batch_count,
             encryption_key_id: self.encryption_key_id,
             crypto_epoch: self.crypto_epoch,
@@ -410,13 +415,17 @@ impl ActiveTransaction {
         })
     }
 
-    fn into_rollback(self, reason: WalRollbackReason) -> WalRolledBackTransaction {
+    fn to_rollback(&self, reason: WalRollbackReason) -> WalRolledBackTransaction {
         WalRolledBackTransaction {
             tx_id: self.tx_id,
             reason,
             frame_count: self.frame_count,
             fact_batch_count: self.fact_batch_count,
         }
+    }
+
+    fn into_rollback(self, reason: WalRollbackReason) -> WalRolledBackTransaction {
+        self.to_rollback(reason)
     }
 }
 

@@ -135,7 +135,7 @@ fn key_hierarchy_rejects_invalid_parent_edges() -> Result<()> {
 
 #[test]
 fn key_hierarchy_rejects_unsafe_parent_lifecycle() -> Result<()> {
-    let root = KeyMetadata::with_lifecycle(
+    let root = KeyMetadata::with_lifecycle_for_test(
         id(KeyId::from_u128(1))?,
         None,
         KeyScope::RootTrust,
