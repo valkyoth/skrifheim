@@ -463,12 +463,16 @@ impl SegmentFooter {
     pub fn validate_against_header(&self, header: &SegmentHeader) -> Result<()> {
         self.validate()?;
         header.validate()?;
-        let kind_mismatch = match self.segment_kind {
-            SegmentFooterKindBinding::LegacyV1Unbound => false,
-            SegmentFooterKindBinding::Bound(kind) => kind != header.segment_kind,
+        let footer_kind = match self.segment_kind {
+            SegmentFooterKindBinding::LegacyV1Unbound => {
+                return Err(invalid_segment(
+                    "legacy v1 footer requires explicit trusted migration",
+                ));
+            }
+            SegmentFooterKindBinding::Bound(kind) => kind,
         };
         if self.tenant_id.get() != header.tenant_id.get()
-            || kind_mismatch
+            || footer_kind != header.segment_kind
             || self.min_tx.get() != header.min_tx.get()
             || self.max_tx.get() != header.max_tx.get()
             || self.policy_id.get() != header.policy_id.get()

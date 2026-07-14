@@ -6,7 +6,7 @@ mod wal;
 
 pub use segment::{
     MAX_IN_MEMORY_SEGMENT_BYTES, SegmentContentVerifier, SegmentFileError, SegmentFileReader,
-    SegmentFileSegment, SegmentFileWriter, SegmentWriteOptions,
+    SegmentFileSegment, SegmentFileWriter, SegmentPublishOutcome, SegmentWriteOptions,
 };
 pub use wal::{WalAppendOptions, WalFileError, WalFileFrame, WalFileReader, WalFileWriter};
 

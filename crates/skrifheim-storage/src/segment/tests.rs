@@ -208,7 +208,10 @@ fn legacy_v1_footer_keeps_kind_unbound_explicit() -> Result<()> {
     );
     assert_eq!(legacy_footer.segment_kind(), None);
     assert!(legacy_footer.has_legacy_unbound_kind());
-    assert_eq!(legacy_footer.validate_against_header(&header), Ok(()));
+    assert!(matches!(
+        legacy_footer.validate_against_header(&header),
+        Err(SkrifheimError::InvalidStorageHeader(_))
+    ));
     Ok(())
 }
 

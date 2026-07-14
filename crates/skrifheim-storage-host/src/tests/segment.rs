@@ -12,7 +12,7 @@ use skrifheim_storage::{SEGMENT_FOOTER_BYTES, SEGMENT_HEADER_BYTES, SegmentFoote
 
 use crate::{
     MAX_IN_MEMORY_SEGMENT_BYTES, SegmentFileError, SegmentFileReader, SegmentFileWriter,
-    SegmentWriteOptions,
+    SegmentPublishOutcome, SegmentWriteOptions,
 };
 
 use super::helpers::*;
@@ -24,7 +24,10 @@ fn segment_writer_and_reader_round_trip_encrypted_segment() -> SegmentResult<()>
     let header = segment_header(&body)?;
     {
         let writer = SegmentFileWriter::create(&path, SegmentWriteOptions::new(false))?;
-        writer.write_segment(&header, &body, &AcceptDigest)?;
+        assert_eq!(
+            writer.write_segment(&header, &body, &AcceptDigest)?,
+            SegmentPublishOutcome::Published
+        );
     }
 
     let mut reader = SegmentFileReader::open(&path, segment_domain()?)?;
@@ -103,7 +106,10 @@ fn segment_writer_and_reader_round_trip_max_in_memory_body() -> SegmentResult<()
     let header = segment_header(&body)?;
     {
         let writer = SegmentFileWriter::create(&path, SegmentWriteOptions::new(false))?;
-        writer.write_segment(&header, &body, &AcceptDigest)?;
+        assert_eq!(
+            writer.write_segment(&header, &body, &AcceptDigest)?,
+            SegmentPublishOutcome::Published
+        );
     }
 
     let mut reader = SegmentFileReader::open(&path, segment_domain()?)?;
@@ -174,12 +180,48 @@ fn segment_reader_rejects_footer_header_mismatch() -> SegmentResult<()> {
 }
 
 #[test]
+fn segment_reader_rejects_v2_to_v1_kind_binding_downgrade() -> SegmentResult<()> {
+    let path = temp_path("segment-v1-downgrade").map_err(wal_to_segment_error)?;
+    let body = [11_u8; 8];
+    {
+        let writer = SegmentFileWriter::create(&path, SegmentWriteOptions::new(false))?;
+        assert_eq!(
+            writer.write_segment(&segment_header(&body)?, &body, &AcceptDigest)?,
+            SegmentPublishOutcome::Published
+        );
+    }
+    {
+        let mut file = OpenOptions::new().read(true).write(true).open(&path)?;
+        file.seek(SeekFrom::Start(10))?;
+        file.write_all(&[3])?;
+        let footer_offset = (SEGMENT_HEADER_BYTES as u64) + (body.len() as u64);
+        file.seek(SeekFrom::Start(footer_offset + 8))?;
+        file.write_all(&1_u16.to_le_bytes())?;
+        file.write_all(&[0])?;
+        file.flush()?;
+    }
+    let mut reader = SegmentFileReader::open(&path, segment_domain()?)?;
+
+    assert!(matches!(
+        reader.read_segment(&AcceptDigest),
+        Err(SegmentFileError::InvalidSegment(
+            SkrifheimError::InvalidStorageHeader(_)
+        ))
+    ));
+    fs::remove_file(path)?;
+    Ok(())
+}
+
+#[test]
 fn segment_reader_rejects_unexpected_domain() -> SegmentResult<()> {
     let path = temp_path("segment-domain").map_err(wal_to_segment_error)?;
     let body = [21_u8; 4];
     {
         let writer = SegmentFileWriter::create(&path, SegmentWriteOptions::new(false))?;
-        writer.write_segment(&segment_header(&body)?, &body, &AcceptDigest)?;
+        assert_eq!(
+            writer.write_segment(&segment_header(&body)?, &body, &AcceptDigest)?,
+            SegmentPublishOutcome::Published
+        );
     }
     let other_domain = EncryptionDomain::segment(
         tenant()?,
@@ -241,7 +283,10 @@ fn segment_reader_requires_content_digest_verifier() -> SegmentResult<()> {
     let body = [9_u8; 4];
     {
         let writer = SegmentFileWriter::create(&path, SegmentWriteOptions::new(false))?;
-        writer.write_segment(&segment_header(&body)?, &body, &AcceptDigest)?;
+        assert_eq!(
+            writer.write_segment(&segment_header(&body)?, &body, &AcceptDigest)?,
+            SegmentPublishOutcome::Published
+        );
     }
     let mut reader = SegmentFileReader::open(&path, segment_domain()?)?;
 
@@ -290,7 +335,10 @@ fn segment_writer_creates_owner_only_files() -> SegmentResult<()> {
     let body = [3_u8; 4];
     {
         let writer = SegmentFileWriter::create(&path, SegmentWriteOptions::new(false))?;
-        writer.write_segment(&segment_header(&body)?, &body, &AcceptDigest)?;
+        assert_eq!(
+            writer.write_segment(&segment_header(&body)?, &body, &AcceptDigest)?,
+            SegmentPublishOutcome::Published
+        );
     }
     let mode = fs::metadata(&path)?.permissions().mode() & 0o777;
 

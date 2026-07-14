@@ -1,9 +1,12 @@
 use std::{
+    collections::hash_map::RandomState,
     fmt,
     fs::{self, File, OpenOptions},
+    hash::BuildHasher,
     io::{self, Read, Write},
     path::{Path, PathBuf},
     sync::atomic::{AtomicU64, Ordering},
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 #[cfg(unix)]
@@ -23,6 +26,7 @@ use crate::common::{add_no_follow, fsync_parent_dir, require_explicit_parent};
 
 pub const MAX_IN_MEMORY_SEGMENT_BYTES: u64 = 16 * 1024 * 1024;
 static STAGED_SEGMENT_COUNTER: AtomicU64 = AtomicU64::new(1);
+const STAGED_SEGMENT_CREATE_ATTEMPTS: usize = 8;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct SegmentWriteOptions {
@@ -30,6 +34,11 @@ pub struct SegmentWriteOptions {
 }
 
 impl SegmentWriteOptions {
+    /// Controls the optional pre-publication file sync after writing bytes.
+    ///
+    /// Immutable segment publication always performs the durability syncs
+    /// required to make a completed target visible safely. Passing `false`
+    /// skips only the extra sync before the mandatory publication sync.
     #[must_use]
     pub const fn new(sync_on_write: bool) -> Self {
         Self { sync_on_write }
@@ -56,6 +65,7 @@ pub enum SegmentFileError {
     PartialSegment,
     ResourceLimitExceeded,
     ContentDigestRejected(SkrifheimError),
+    PublishedDurabilityUnknown { target: PathBuf, source: io::Error },
 }
 
 impl fmt::Display for SegmentFileError {
@@ -70,6 +80,11 @@ impl fmt::Display for SegmentFileError {
             Self::ContentDigestRejected(error) => {
                 write!(f, "segment content digest verification failed: {error}")
             }
+            Self::PublishedDurabilityUnknown { target, source } => write!(
+                f,
+                "segment target {} is visible but durability is uncertain: {source}",
+                target.display()
+            ),
         }
     }
 }
@@ -109,6 +124,12 @@ pub trait SegmentContentVerifier {
     ) -> SkrifheimResult<()>;
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SegmentPublishOutcome {
+    Published,
+    PublishedWithCleanupPending,
+}
+
 pub struct SegmentFileWriter {
     file: File,
     staged_path: PathBuf,
@@ -127,13 +148,12 @@ impl SegmentFileWriter {
                 "segment path already exists",
             )));
         }
-        let staged_path = staged_segment_path(path)?;
         let mut open_options = OpenOptions::new();
         open_options.create_new(true).write(true);
         add_no_follow(&mut open_options);
         #[cfg(unix)]
         open_options.mode(0o600);
-        let file = open_options.open(&staged_path)?;
+        let (file, staged_path) = create_staged_segment_file(path, &open_options)?;
         if !file.metadata()?.is_file() {
             return Err(SegmentFileError::Io(io::Error::other(
                 "segment path must be a regular file",
@@ -157,7 +177,7 @@ impl SegmentFileWriter {
         header: &SegmentHeader,
         encrypted_body: &[u8],
         verifier: &impl SegmentContentVerifier,
-    ) -> SegmentResult<()> {
+    ) -> SegmentResult<SegmentPublishOutcome> {
         header.validate()?;
         enforce_host_body_limit(header)?;
         validate_segment_body_len(header, encrypted_body)?;
@@ -174,11 +194,23 @@ impl SegmentFileWriter {
         }
         self.file.sync_all()?;
         fs::hard_link(&self.staged_path, &self.target_path)?;
-        fsync_parent_dir(&self.target_path)?;
-        fs::remove_file(&self.staged_path)?;
-        fsync_parent_dir(&self.target_path)?;
         self.published = true;
-        Ok(())
+        fsync_parent_dir(&self.target_path).map_err(|source| {
+            SegmentFileError::PublishedDurabilityUnknown {
+                target: self.target_path.clone(),
+                source,
+            }
+        })?;
+        if fs::remove_file(&self.staged_path).is_err() {
+            return Ok(SegmentPublishOutcome::PublishedWithCleanupPending);
+        }
+        fsync_parent_dir(&self.target_path).map_err(|source| {
+            SegmentFileError::PublishedDurabilityUnknown {
+                target: self.target_path.clone(),
+                source,
+            }
+        })?;
+        Ok(SegmentPublishOutcome::Published)
     }
 }
 
@@ -298,6 +330,29 @@ fn enforce_host_body_limit(header: &SegmentHeader) -> SegmentResult<()> {
     Ok(())
 }
 
+fn create_staged_segment_file(
+    target: &Path,
+    open_options: &OpenOptions,
+) -> SegmentResult<(File, PathBuf)> {
+    let mut last_error = None;
+    for _ in 0..STAGED_SEGMENT_CREATE_ATTEMPTS {
+        let staged_path = staged_segment_path(target)?;
+        match open_options.open(&staged_path) {
+            Ok(file) => return Ok((file, staged_path)),
+            Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
+                last_error = Some(error);
+            }
+            Err(error) => return Err(SegmentFileError::Io(error)),
+        }
+    }
+    Err(SegmentFileError::Io(last_error.unwrap_or_else(|| {
+        io::Error::new(
+            io::ErrorKind::AlreadyExists,
+            "could not create unique staged segment file",
+        )
+    })))
+}
+
 fn staged_segment_path(path: &Path) -> SegmentResult<PathBuf> {
     let parent = require_explicit_parent(path)?;
     let file_name = path.file_name().ok_or_else(|| {
@@ -307,10 +362,15 @@ fn staged_segment_path(path: &Path) -> SegmentResult<PathBuf> {
         ))
     })?;
     let unique = STAGED_SEGMENT_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|error| SegmentFileError::Io(io::Error::other(error)))?
+        .as_nanos();
+    let random_state = RandomState::new();
+    let nonce = random_state.hash_one((std::process::id(), unique, now));
     let staged_name = format!(
-        ".{}.skrifheim-stage-{}-{}",
+        ".{}.skrifheim-stage-{nonce:016x}-{}",
         file_name.to_string_lossy(),
-        std::process::id(),
         unique
     );
     Ok(parent.join(staged_name))

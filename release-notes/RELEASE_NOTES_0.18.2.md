@@ -45,6 +45,11 @@ or replacement actually introduces new material.
   parsing `v0.18.0`/`v0.18.1` footers as explicit legacy kind-unbound metadata,
   and pinning CI/container supply-chain inputs to reviewed versions or digests
   for both the runtime and Alpine smoke container definitions.
+- Resolved the second retest by rejecting legacy kind-unbound footers on normal
+  segment reads, keeping them only as an explicit future migration signal,
+  adding a v2-to-v1 downgrade regression test, returning explicit segment
+  publication outcomes, reporting post-publication durability uncertainty as a
+  distinct error, and retrying staged file creation with randomized names.
 
 ## Verification
 

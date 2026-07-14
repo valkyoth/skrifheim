@@ -49,7 +49,14 @@ fi
 if ! cargo test -p skrifheim-storage --quiet \
     segment::tests::legacy_v1_footer_keeps_kind_unbound_explicit \
     -- --exact >/dev/null; then
-    echo "0.18.2 requires explicit legacy v1 footer compatibility coverage" >&2
+    echo "0.18.2 requires explicit legacy v1 footer migration-only coverage" >&2
+    exit 1
+fi
+
+if ! cargo test -p skrifheim-storage-host --quiet \
+    tests::segment::segment_reader_rejects_v2_to_v1_kind_binding_downgrade \
+    -- --exact >/dev/null; then
+    echo "0.18.2 requires segment kind downgrade rejection coverage" >&2
     exit 1
 fi
 
@@ -78,6 +85,16 @@ if ! cargo test -p skrifheim-storage-host --quiet \
     tests::segment::segment_writer_does_not_publish_until_complete_write \
     -- --exact >/dev/null; then
     echo "0.18.2 requires staged segment publication coverage" >&2
+    exit 1
+fi
+
+if ! grep -R "pub enum SegmentPublishOutcome" crates/skrifheim-storage-host/src/segment.rs >/dev/null; then
+    echo "0.18.2 requires explicit segment publication outcomes" >&2
+    exit 1
+fi
+
+if ! grep -R "PublishedDurabilityUnknown" crates/skrifheim-storage-host/src/segment.rs >/dev/null; then
+    echo "0.18.2 requires explicit post-publication durability uncertainty" >&2
     exit 1
 fi
 
