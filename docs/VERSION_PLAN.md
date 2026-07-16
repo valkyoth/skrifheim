@@ -761,6 +761,13 @@ Deliverables:
   or canonical offset, block kind, format version, feature version, tenant,
   encryption domain, policy epoch, crypto epoch, compression format, and
   authenticated original length,
+- keyed table/segment commitment covering expected block count, ordered block
+  identities, data block root, index block root, filter block root,
+  range-tombstone block root, metadata block root, first and last internal key,
+  sequence range, file length, footer location, format/features, database
+  generation, and file identity,
+- manifest reference rule requiring the authenticated manifest to name the
+  table/segment commitment, not only a file path or per-block digest set,
 - durable-format compatibility contract for block and segment framing: major
   and minor version semantics, required versus safely ignorable feature bits,
   minimum reader and writer versions, canonical encoding rules,
@@ -787,7 +794,9 @@ Deliverables:
   range tombstone overlap, snapshot-visible range deletion, cross-domain
   partition rejection, cross-file block replay, cross-offset block replay,
   cross-generation block replay, wrong-block-kind substitution,
-  duplicate-block replay, and stale-block replay,
+  duplicate-block replay, stale-block replay, missing final block, missing
+  middle block, reordered block, substituted index/filter block, truncated
+  table, valid-prefix attack, and attacker-rebuilt footer,
 - golden compatibility fixtures for block table headers, restart arrays,
   compression metadata, range tombstones, sparse indexes, filters, and
   encrypted inner/outer segment framing, exercised by current and previous
@@ -2314,6 +2323,15 @@ Deliverables:
 
 - storage-format feature manifest for WAL, segment, manifest, audit, backup,
   schema, and projection format versions,
+- supported storage-upgrade window defining directly supported source
+  versions, versions requiring sequential migration, read-only recovery support
+  for older formats, support lifetime for each durable format, and whether any
+  pre-1.0 format receives compatibility guarantees,
+- golden database corpus retained for every supported upgrade path, including
+  WAL, table/segment, manifest, audit, backup, schema, projection, and
+  freshness-anchor state,
+- cross-platform migration expectations for every production-supported
+  OS/filesystem pair and explicit non-claims for preview-only targets,
 - migration plan model with preflight, dry-run, required source version,
   target version, affected roots, expected duration class, rollback/restore
   point, and operator authority,
@@ -2324,9 +2342,11 @@ Deliverables:
 - signed migration proof facts and audit events bound to manifest root,
   freshness anchor, schema root, policy epoch, crypto epoch, and operator
   approval,
-- tests for interrupted migration, replayed migration proof, downgrade attack,
-  unknown feature bit, partial projection migration, and rollback-protected
-  snapshot preservation.
+- tests for direct upgrade, sequential migration, read-only old-format
+  recovery, unsupported old-format rejection, interrupted migration, replayed
+  migration proof, downgrade attack, unknown feature bit, partial projection
+  migration, cross-platform migration, and rollback-protected snapshot
+  preservation.
 
 ## v0.40.0 - Host Runtime Isolation And Resource Pools
 
@@ -2711,6 +2731,36 @@ Deliverables:
   throughput, storage overhead, temporary-space requirement, operational
   authority, and non-claims.
 
+## v0.56.1 - Cross-Platform Production Qualification
+
+Goal: close the gap between portable design and actual v1.0 production
+platform support.
+
+Deliverables:
+
+- explicit support tier for every OS/filesystem pair: production-supported,
+  supported with caveats, compile-preview, experimental, or unsupported,
+- real production host-storage adapters for every v1.0 production-supported
+  OS family, covering Unix/Linux, Windows, macOS, and BSD if they remain in the
+  production tier,
+- permissions, ownership, ACL, symlink, reparse-point, path traversal,
+  advisory/mandatory locking, positional I/O, atomic replacement, file sync,
+  directory sync, rename, truncation, and temporary-file semantics documented
+  and tested for each production-supported platform,
+- crash recovery and power-loss tests per supported filesystem or an explicit
+  non-claim that keeps that OS/filesystem pair out of the production tier,
+- backup/restore and storage-format compatibility tests across production
+  platforms, including backups created on one production platform and restored
+  on another where the support matrix claims portability,
+- x86_64 and AArch64 execution tests for core engine, host storage, recovery,
+  backup/restore, and rootless/container profiles where applicable,
+- downgrade or support-tier narrowing rule: if equivalent security/durability
+  semantics cannot be proven for an OS/filesystem pair, the v1.0 checklist must
+  list it as compile-preview or unsupported rather than production-supported,
+- tests for Windows reparse-point attacks, Unix symlink attacks, BSD/macOS
+  directory sync behavior, Linux filesystem matrix behavior, cross-platform
+  backup/restore, and architecture-neutral format replay.
+
 ## v0.57.0 - 1.0 Release Candidate
 
 Goal: freeze the 1.0 feature set and run final release evidence.
@@ -2793,6 +2843,11 @@ Deliverables:
 - tamper-evident manifests,
 - storage-directory single-writer lease and downgrade-protected format
   migration model,
+- defined storage-upgrade support window with golden databases for every
+  supported path,
+- qualified production platform support matrix with real host adapters,
+  crash/power-loss evidence, cross-platform backup/restore, and x86_64/AArch64
+  execution tests for production-supported OS/filesystem pairs,
 - online integrity scrubbing, protected-root reference accounting, and
   capacity/file-count governance,
 - externally anchorable chained audit roots,

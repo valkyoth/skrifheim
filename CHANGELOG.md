@@ -55,6 +55,10 @@
   freshness-anchor providers, graceful shutdown and restart-storm handling,
   sovereign-placement backup qualification, and final release-candidate
   endurance/crash/upgrade reruns after late legal, placement, and backup work.
+- Added roadmap gates for keyed ordered table/segment commitments, explicit
+  storage-upgrade support windows with golden databases, and pre-1.0
+  cross-platform production qualification for host adapters, filesystem
+  durability, cross-platform backup/restore, and architecture execution tests.
 - Updated the pinned Rust stable toolchain from `1.97.0` to `1.97.1` after
   `rustup check` reported stable `1.97.1` (`8bab26f4f`, 2026-07-14).
 - Reworked the roadmap so `v1.0.0` is the core production world database,

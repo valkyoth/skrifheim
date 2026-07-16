@@ -314,12 +314,26 @@ feature versions, tenant, encryption domain, policy epoch, crypto epoch,
 compression format, and authenticated original length so a valid block cannot
 be replayed at another file, offset, generation, or kind.
 
+Per-block authentication is not enough to prove a complete table. Every
+immutable table or segment also needs a keyed commitment over the expected
+block count, ordered block identities, data/index/filter/range-tombstone and
+metadata roots, first and last internal key, sequence range, file length,
+footer location, format/features, database generation, and file identity. The
+authenticated manifest references that commitment so valid blocks cannot be
+removed, reordered, duplicated, or hidden behind an attacker-rebuilt footer.
+
 Every durable format starts with a compatibility contract, not only a byte
 layout: major/minor version semantics, required and safely ignorable feature
 bits, minimum reader and writer versions, canonical encoding, unknown-field
 behavior, and forward/backward read policy. Later migration work can automate
 upgrades, but the compatibility rules must exist as soon as WAL v2, block
 tables, and manifests become durable.
+
+Storage upgrades need a defined support window. The project must name directly
+supported source versions, versions requiring sequential migration, old formats
+that open only in read-only recovery, support lifetime for each durable
+format, whether pre-1.0 formats carry compatibility guarantees, golden
+databases for every supported path, and cross-platform migration expectations.
 
 The database process must not become a god-mode key holder. Production key
 release must go through a scoped KMS, HSM, privilege-separated key service, or
@@ -957,6 +971,15 @@ Durable formats must be architecture-neutral and must not assume x86, native
 endianness, pointer width, alignment, or page size. x86_64 and AArch64 are
 first-pass production CPU targets; RISC-V and other targets must remain
 possible through portable core code and optional host adapters.
+
+That production baseline is a qualified support claim, not just a compile
+check. Before 1.0, each OS/filesystem pair must be assigned a support tier and
+production-supported pairs must have real host-storage adapters, permission and
+symlink/reparse-point hardening, locking, positional I/O, atomic replacement,
+file and directory sync, crash/power-loss recovery, cross-platform backup and
+restore, format compatibility, and x86_64/AArch64 execution evidence. Any
+platform without equivalent security and durability evidence remains
+compile-preview or unsupported for v1.0.
 
 ## Phase 11: Hyve Cluster Fabric
 
