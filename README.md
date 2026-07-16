@@ -106,7 +106,7 @@ It is not a usable database engine.
 | Local-first worlds, mission capsules, and extension trust boundary | Planned | `v0.42.0` through `v0.43.1` adds local metadata, cross-domain export skeletons, and defers source-state/import/plugin implementation to post-1.0 extension crates. |
 | Fuzz/property baseline, operations, and hardening | Planned | `v0.44.0` through `v0.51.0`. |
 | Standalone legal/compliance passports and placement foundations | Planned | `v0.52.0` through `v0.55.0`, with external source-lock evidence in `v0.52.1`; privacy, private-channel, mailbox, and collaboration workflows move to `v1.6.0`. |
-| Production release candidate | Planned | `v0.56.0`. |
+| Production release candidate | Planned | `v0.57.0`. |
 | Optional extension crates | Planned | `v1.1.0` through `v1.6.0` add publishing/CMS, messenger/private-channel, forum/discussion, forge/source-state, relationship/feed/media, privacy, mailbox, and collaboration crates. |
 | Hyve multi-cell cluster fabric | Planned | `v2.0.0` and later, after the core database and initial extension tracks are stable. |
 

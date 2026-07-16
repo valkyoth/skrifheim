@@ -276,7 +276,10 @@ The freshness anchor needs a real provider before startup recovery depends on
 it. At least one reference provider, such as a remote witness client or
 TPM-backed host adapter, must implement idempotent compare-and-advance,
 timeout and unavailable-provider behavior, provisioning, replacement,
-equivocation detection, and disaster-recovery rules.
+equivocation detection, and disaster-recovery rules. Freshness providers are
+host-boundary implementations with authenticated and versioned transport,
+secure credential storage, redacted diagnostics, and no dependency from
+`no_std` core crates on network, TPM, HSM, filesystem, or process APIs.
 
 The storage directory itself needs an identity and single-writer lease. Two
 processes must not be able to advance the same WAL/manifest directory
@@ -303,6 +306,13 @@ block, segment, WAL, and manifest milestones instantiate those primitives only
 after their concrete byte formats are chosen. Each durable format milestone
 must commit golden compatibility fixtures at the same time it introduces the
 format.
+
+Encrypted blocks must authenticate their physical identity. The block AEAD
+associated-data transcript binds database ID, storage generation, table or
+segment identity, block ordinal or canonical offset, block kind, format and
+feature versions, tenant, encryption domain, policy epoch, crypto epoch,
+compression format, and authenticated original length so a valid block cannot
+be replayed at another file, offset, generation, or kind.
 
 Every durable format starts with a compatibility contract, not only a byte
 layout: major/minor version semantics, required and safely ignorable feature
@@ -401,7 +411,11 @@ and orphan-upload cleanup, restore into a new database identity versus
 authorized in-place recovery, automated restore drills, corruption injection,
 and measured RPO, RTO, throughput, and temporary-space requirements. Final
 production qualification happens only after schema catalog, retention, quota,
-runtime scheduling, observability, and legal-policy integrations exist.
+runtime scheduling, observability, legal-policy, and sovereign-placement
+integrations exist, including backup destination jurisdiction, temporary
+upload and restore-staging locations, cross-region restore, synthetic-full
+generation, placement-change handling, and deletion or quarantine of
+incorrectly placed fragments.
 
 The storage engine needs a block cache rather than a traditional dirty-page
 buffer pool. Dirty data primarily lives in WAL-backed memtables; immutable
@@ -421,6 +435,14 @@ free-space margins, a disk-exhaustion escape reserve for WAL repair, manifest
 publication, audit emission, and orderly shutdown, compaction-debt admission,
 file-count/open-file limits, and per-tenant I/O throttling must fail before a
 commit can exhaust shared storage.
+
+Graceful shutdown is a durability protocol, not just process exit. The engine
+must stop write admission, cancel or drain in-flight transactions, resolve
+group and ambiguous commits, stop background publication safely, optionally
+flush or checkpoint according to policy, order audit emission and anchor
+advancement, release the directory lease only after durable state is safe, and
+define forced-termination and restart-storm behavior with failure-injection
+coverage.
 
 The first real database milestone is a narrow storage spine, not another
 metadata-only model: `WriteBatch -> WAL v2 -> durable barrier -> memtable ->
@@ -470,6 +492,12 @@ quarantined files, backup health, restore-drill age, key-provider latency,
 quota denials, resource-pool saturation, and legal-policy denial categories
 without leaking tenant, compartment, fact, key, world, actor, policy-token, or
 query values.
+
+The final release candidate must rerun performance, durability, upgrade, and
+backup evidence after late legal, placement, and backup qualification is in
+place. The v0.50 evidence is a baseline; the release candidate compares
+against it with mixed backup, restore, legal-policy, placement, key rotation,
+compaction, scrub, checkpoint, and foreground traffic.
 
 Early performance and integration evidence must be gathered before the storage,
 transaction, query, and API shapes are too expensive to change. `v0.20.2`

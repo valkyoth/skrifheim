@@ -51,6 +51,10 @@
   endurance performance evidence, backup engine versus final backup
   qualification separation, bounded incremental backup chains, and stricter
   SemVer validation fixture tests.
+- Added roadmap gates for block AEAD physical-placement binding, host-boundary
+  freshness-anchor providers, graceful shutdown and restart-storm handling,
+  sovereign-placement backup qualification, and final release-candidate
+  endurance/crash/upgrade reruns after late legal, placement, and backup work.
 - Updated the pinned Rust stable toolchain from `1.97.0` to `1.97.1` after
   `rustup check` reported stable `1.97.1` (`8bab26f4f`, 2026-07-14).
 - Reworked the roadmap so `v1.0.0` is the core production world database,

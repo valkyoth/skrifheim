@@ -624,6 +624,10 @@ Deliverables:
 - supported reference provider decision, initially remote witness client,
   TPM-backed host adapter, or another explicitly reviewed non-rollbackable
   mechanism,
+- host-boundary implementation rule for freshness providers, including
+  authenticated and versioned transport, secure credential storage, redacted
+  diagnostics, and no direct dependency from `no_std` core crates on network,
+  TPM, HSM, filesystem, or process APIs,
 - idempotent compare-and-advance implementation for `AnchoredDatabaseRoot`,
   including retry behavior for already-advanced, stale, concurrent, and
   ambiguous outcomes,
@@ -752,6 +756,11 @@ Deliverables:
 - block format with offset table or restart array, record count, bounded
   decompressed length, compression algorithm ID, per-block checksum, AEAD
   envelope, and schema/format marker,
+- block AEAD associated-data transcript binding each encrypted block to
+  database ID, storage generation, file/table/segment identity, block ordinal
+  or canonical offset, block kind, format version, feature version, tenant,
+  encryption domain, policy epoch, crypto epoch, compression format, and
+  authenticated original length,
 - durable-format compatibility contract for block and segment framing: major
   and minor version semantics, required versus safely ignorable feature bits,
   minimum reader and writer versions, canonical encoding rules,
@@ -775,8 +784,10 @@ Deliverables:
   values that should not be inlined into fact records,
 - tests or format fixtures for block alignment, malformed offset tables,
   restart bounds, compression-size limits, filter false-positive boundaries,
-  range tombstone overlap, snapshot-visible range deletion, and cross-domain
-  partition rejection,
+  range tombstone overlap, snapshot-visible range deletion, cross-domain
+  partition rejection, cross-file block replay, cross-offset block replay,
+  cross-generation block replay, wrong-block-kind substitution,
+  duplicate-block replay, and stale-block replay,
 - golden compatibility fixtures for block table headers, restart arrays,
   compression metadata, range tombstones, sparse indexes, filters, and
   encrypted inner/outer segment framing, exercised by current and previous
@@ -1021,6 +1032,18 @@ Deliverables:
 - explicit operational recovery modes for normal active open, read-only
   degraded open, historical inspection, recovery-world fork, simulation open,
   and operator-approved anchor/provider re-provisioning,
+- graceful shutdown protocol that stops write admission, cancels or drains
+  in-flight transactions, resolves group commits and ambiguous commits, stops
+  background publication safely, chooses optional flush/checkpoint behavior,
+  orders audit emission and freshness-anchor advancement, and releases the
+  storage-directory lease only after durable state is safe,
+- bounded shutdown timeout and forced-termination behavior, including what
+  state recovery must expect if the process is killed at each shutdown stage,
+- restart-storm protection for repeated startup failures, including bounded
+  repair attempts, quarantine of repeatedly failing roots, operator-visible
+  diagnostics, and fail-closed active open under production profiles,
+- failure-injection tests for every shutdown stage, restart after forced
+  termination, repeated startup failure, and directory-lease release ordering,
 - deterministic recovery fixtures.
 
 ## v0.20.1 - Production Timing Evidence Gate
@@ -2534,6 +2557,13 @@ Deliverables:
 - no known release-blocking panics,
 - recovery runbook,
 - backup/restore runbook,
+- graceful shutdown and restart-storm runbook covering write-admission stop,
+  transaction cancellation, group-commit drain, background publication stop,
+  optional flush/checkpoint choice, audit and anchor ordering, directory-lease
+  release, bounded timeout, forced termination, and repeated startup failure,
+- shutdown/restart-storm failure-injection evidence for active writes,
+  background compaction/scrub/deletion, audit emission, anchor advancement,
+  manifest publication, checkpointing, and lease release,
 - security control evidence update,
 - known-limits review.
 
@@ -2653,7 +2683,7 @@ Deliverables:
 - end-to-end backup qualification across the `v0.35.4` backup engine,
   `v0.40.0` runtime resource pools, `v0.45.0` schema catalog, `v0.46.0`
   retention policy, `v0.48.0` quotas, `v0.49.0` observability, and `v0.54.0`
-  legal operation decision engine,
+  legal operation decision engine, plus `v0.55.0` sovereign placement intent,
 - schema-evolution backup/restore tests covering compatible, incompatible,
   migrated, unknown, and intentionally deferred schema/catalog states,
 - retention, legal-hold, privacy-erasure, tombstone, rollback-root,
@@ -2667,6 +2697,13 @@ Deliverables:
 - legal-policy enforcement tests for backup, restore, export-like restore,
   cross-jurisdiction restore, AI/search/index backup content, and denied
   in-place recovery,
+- sovereign-placement enforcement for backup destination and storage-provider
+  jurisdiction, temporary upload and restore-staging locations, cross-region
+  restore, synthetic-full generation, and placement changes after policy, key,
+  law-pack, or passport epochs change,
+- deletion or quarantine workflow for unlawfully or incorrectly placed backup
+  fragments, with audit proof, legal basis, key-slot handling, and no silent
+  policy bypass,
 - automated restore drill from full and incremental backups with corruption
   injection, missing chunks, wrong key, stale law pack, stale policy epoch,
   quota exhaustion, and anchor mismatch,
@@ -2683,6 +2720,16 @@ Deliverables:
 - release-candidate notes,
 - complete security review checklist,
 - rootless Podman release gate,
+- final performance and durability rerun after legal, placement, and backup
+  qualification, including required 24-hour endurance and target 72-hour
+  endurance over mixed backup, restore, legal-policy, sovereign-placement, key
+  rotation, compaction, scrub, checkpoint, and foreground read/write traffic,
+- crash/recovery and corrupted-backup matrix rerun after final backup and
+  placement integration,
+- upgrade from the oldest supported format and downgrade-rejection run against
+  the final migration and compatibility rules,
+- comparison against stored `v0.50.0` regression budgets for latency,
+  throughput, recovery, compaction, backup, restore, and policy planning,
 - final optional extension integration checklist,
 - no new feature work without explicit deferral decision.
 
