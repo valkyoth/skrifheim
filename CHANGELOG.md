@@ -46,6 +46,11 @@
   release-plan validation for strictly increasing SemVer headings, added
   manifest-key bootstrap and rotation recovery, fixed-width counter exhaustion
   policy, and a production backup/restore completion milestone.
+- Added follow-up roadmap gates for bounded manifest-key lookup, early
+  background-work scheduling, stronger redacted observability, p99.9 and
+  endurance performance evidence, backup engine versus final backup
+  qualification separation, bounded incremental backup chains, and stricter
+  SemVer validation fixture tests.
 - Updated the pinned Rust stable toolchain from `1.97.0` to `1.97.1` after
   `rustup check` reported stable `1.97.1` (`8bab26f4f`, 2026-07-14).
 - Reworked the roadmap so `v1.0.0` is the core production world database,

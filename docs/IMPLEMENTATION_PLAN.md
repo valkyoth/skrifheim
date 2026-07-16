@@ -364,9 +364,11 @@ public-header exception is documented.
 Manifest-key bootstrap must not trust the encrypted manifest before the key is
 located. Outer-header fields are only key-location hints; database identity and
 manifest generation construct the key-provider scope, opaque key slots prevent
-unnecessary key-ID disclosure, dual-key rotation handles previous-key fallback,
-and crashes between key activation, manifest publication, checkpoint update,
-and anchor advancement must recover without accepting key redirection.
+unnecessary key-ID disclosure, candidate key attempts are bounded, errors are
+uniform for nonexistent and unauthorized key slots, lookup timeouts/rate limits
+apply, dual-key rotation handles previous-key fallback, and crashes between
+key activation, manifest publication, checkpoint update, and anchor
+advancement must recover without accepting key redirection.
 
 Fixed-width counters are security boundaries. LSNs, WAL generations,
 transaction IDs, commit sequences, file numbers, manifest generations, crypto
@@ -390,13 +392,16 @@ compatible security domains. Dedup must not reveal plaintext equality across
 tenant, compartment, policy, key epoch, or legal boundaries. Tier movement must
 preserve snapshot, rollback, backup, audit, and legal-hold liveness.
 
-Backup and restore must graduate from skeleton to production before 1.0.
-Online backups need manifest-generation pinning during concurrent writes,
-full/incremental recovery-point semantics, resumable verified chunks,
-backup-specific key rotation and crypto-erasure behavior, retention and
-orphan-upload cleanup, restore into a new database identity versus authorized
-in-place recovery, automated restore drills, corruption injection, and measured
-RPO, RTO, throughput, and temporary-space requirements.
+Backup and restore must graduate from skeleton to engine completion before
+later production qualification. Online backups need manifest-generation pinning
+during concurrent writes, full/incremental recovery-point semantics, bounded
+incremental chains with synthetic-full consolidation, resumable verified
+chunks, backup-specific key rotation and crypto-erasure behavior, retention
+and orphan-upload cleanup, restore into a new database identity versus
+authorized in-place recovery, automated restore drills, corruption injection,
+and measured RPO, RTO, throughput, and temporary-space requirements. Final
+production qualification happens only after schema catalog, retention, quota,
+runtime scheduling, observability, and legal-policy integrations exist.
 
 The storage engine needs a block cache rather than a traditional dirty-page
 buffer pool. Dirty data primarily lives in WAL-backed memtables; immutable
@@ -425,6 +430,12 @@ recovery can recover authoritative database state instead of only structural
 metadata. Later transaction, query, projection, and extension work should
 consume that spine instead of evolving beside an unstable storage format.
 
+A minimal background-work scheduler belongs with the storage kernel, not only
+the later host runtime. Flush, compaction, scrub, deletion, and checkpoint
+cleanup need bounded concurrency, foreground read/write protection, audit and
+recovery priority, cancellation, per-tenant fairness, and starvation metrics
+before the full worker-pool model expands those interfaces.
+
 The in-memory transaction model must provide read-your-writes behavior before
 durable commit. Reads inside a transaction should consult transaction-local
 inserts, hides, supersessions, invalidations, and predicate changes before the
@@ -452,6 +463,13 @@ exists. Benchmark evidence must record hardware, filesystem, mount options,
 drive-cache mode, dataset distribution, compression ratio, encryption profile,
 warm/cold cache state, concurrency, run variance, and rootless container
 bind-volume versus overlay-filesystem behavior.
+
+Operational observability must expose redacted health signals for anchor
+availability, WAL/checkpoint lag, compaction debt, scrub coverage,
+quarantined files, backup health, restore-drill age, key-provider latency,
+quota denials, resource-pool saturation, and legal-policy denial categories
+without leaking tenant, compartment, fact, key, world, actor, policy-token, or
+query values.
 
 Early performance and integration evidence must be gathered before the storage,
 transaction, query, and API shapes are too expensive to change. `v0.20.2`

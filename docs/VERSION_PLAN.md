@@ -886,6 +886,15 @@ Deliverables:
   or locate the manifest key, and key-provider scope is constructed from
   trusted outer context plus configured database identity before encrypted
   metadata is trusted,
+- bounded candidate-key lookup rule: outer manifest bytes may select only from
+  configured database-local provider scopes, may try only a bounded number of
+  candidate slots, and must never derive arbitrary tenant, provider, or key
+  scope solely from disk-controlled bytes,
+- uniform error behavior for nonexistent, unauthorized, wrong-database,
+  compromised, destroyed, crypto-erased, and stale manifest key slots so
+  startup does not become a KMS existence oracle,
+- key-provider lookup rate limits, timeout budget, cancellation behavior, and
+  bounded previous-key fallback attempts during rotation,
 - opaque manifest key-slot identifier model when ordinary key IDs would reveal
   sensitive metadata, including rejection of attacker-controlled redirection to
   another valid key, database, generation, or provider scope,
@@ -940,7 +949,8 @@ Deliverables:
 - tests for concurrent opener rejection, stale lease recovery, wrong database
   identity, wrong storage generation, lease/anchor mismatch, manifest key-slot
   substitution, cross-database key redirection, previous-key fallback, lost
-  manifest key, compromised manifest key, and rotation crash recovery.
+  manifest key, compromised manifest key, malicious key-lookup amplification,
+  KMS existence-oracle behavior, and rotation crash recovery.
 
 ## v0.19.1 - Storage Spine Vertical Slice
 
@@ -1147,6 +1157,12 @@ Deliverables:
 
 - hardened WAL-backed memtable, immutable sorted run, version-set, iterator,
   merge-iterator, and flush behavior from the `v0.19.1` storage spine,
+- minimal background-work scheduler interface for flush, compaction, scrub,
+  obsolete-file deletion, and checkpoint-adjacent cleanup before the full
+  v0.40 worker-pool model exists,
+- concurrency rules for flush, compaction, scrub, and deletion, including
+  foreground read/write protection, audit and recovery priority, cancellation
+  points, per-tenant fairness, starvation metrics, and bounded queue depth,
 - minimal domain-local compaction implementation before durable transaction
   load tests, including tombstone and snapshot retention awareness,
 - compaction picker with bounded debt accounting, tombstone retention windows,
@@ -1177,8 +1193,9 @@ Deliverables:
   orphan-table recovery, scrub quarantine, and degraded opening,
 - tests for sorted-run lookup, merge iteration, flush/recover equivalence,
   compacted-state equivalence, protected-root liveness, file-number reuse
-  rejection, quarantine on scrub failure, cross-domain dedup rejection, and
-  protected hot/cold tier movement.
+  rejection, background scheduler fairness, foreground-write protection,
+  cancellation, starvation accounting, quarantine on scrub failure,
+  cross-domain dedup rejection, and protected hot/cold tier movement.
 
 ## v0.20.8 - Block Cache, I/O Profile, And Capacity Governance
 
@@ -1189,6 +1206,9 @@ Deliverables:
 
 - sharded block cache with separate budgets for data blocks, index/filter
   blocks, decoded metadata, and projection blocks,
+- cache-aware scheduler hooks so background flush, compaction, scrub, and
+  deletion work cannot evict protected foreground, audit, recovery, or anchor
+  working sets without policy and budget approval,
 - cache keys that include database generation, file number, block offset,
   encryption domain, policy epoch, and key epoch,
 - per-tenant and per-security-domain cache accounting with pin counts for
@@ -2082,10 +2102,11 @@ Deliverables:
   policy epoch changes, missing manifest generation, rollback/PITR confusion,
   deterministic trace reproduction, and redacted trace output.
 
-## v0.35.4 - Production Backup And Restore Completion
+## v0.35.4 - Backup Engine Completion
 
-Goal: make backup and restore a production capability rather than a skeleton
-before `v1.0.0` claims operational recovery.
+Goal: complete the backup/restore engine and evidence model without claiming
+final production qualification before later schema, retention, quota,
+observability, runtime-scheduling, and legal-policy integrations exist.
 
 Deliverables:
 
@@ -2096,6 +2117,9 @@ Deliverables:
 - full and incremental backup formats with explicit base generation, delta
   chain, WAL/archive requirements, exact recovery-point semantics, and
   compatibility with the schema/catalog and durable-format feature policies,
+- bounded incremental-backup chain length, periodic synthetic-full
+  consolidation, restore-amplification budget, and crash-safe deletion of
+  superseded chains,
 - resumable upload/download model with independently verified chunks, chunk
   manifests, retry idempotency, orphaned-upload cleanup, and failure-safe
   temporary storage,
@@ -2114,9 +2138,10 @@ Deliverables:
 - measured RPO, RTO, restore throughput, backup throughput, temporary-space
   requirement, chunk verification cost, and concurrent-write impact,
 - tests for online backup consistency, incremental-chain validation,
-  resumable upload idempotence, orphan cleanup, wrong database identity,
-  unauthorized in-place restore, backup key rotation, crypto-erasure, and
-  corrupted backup rejection.
+  chain-length overflow, synthetic-full consolidation, restore-amplification
+  limits, crash-safe superseded-chain deletion, resumable upload idempotence,
+  orphan cleanup, wrong database identity, unauthorized in-place restore,
+  backup key rotation, crypto-erasure, and corrupted backup rejection.
 
 ## v0.36.0 - Compromise And Recovery Playbooks
 
@@ -2459,9 +2484,19 @@ Deliverables:
 
 - health report model,
 - metrics event model,
+- redacted metrics for freshness-anchor availability, anchor advance failures,
+  WAL lag, checkpoint lag, compaction debt, scrub coverage, quarantined files,
+  backup health, backup chain depth, restore-drill age, key-provider latency,
+  KMS lookup rejection counts, resource-pool saturation, quota denials, and
+  legal-policy denial categories,
 - redacted diagnostic output,
+- metric cardinality and label policy so tenant, compartment, fact, key, world,
+  actor, policy-token, and query values cannot leak through metric labels,
 - no-secret log tests,
-- operator troubleshooting runbook.
+- operator troubleshooting runbook,
+- tests that metrics and health output remain useful while redacting secrets,
+  labels, key slots, exact policy tokens, exact fact identifiers, and
+  classified world names.
 
 ## v0.50.0 - Performance And Load Evidence
 
@@ -2472,6 +2507,19 @@ Deliverables:
 - write/read benchmark harness,
 - recovery benchmark harness,
 - policy-planner benchmark harness,
+- p50, p95, p99, and p99.9 latency measurements for reads, writes, commits,
+  recovery, manifest selection, key-provider lookup, backup chunking, restore,
+  and policy planning,
+- steady-state compaction load evidence, mixed read/write/backup/key-rotation
+  workload evidence, backup plus foreground-write interference evidence, and
+  quota/resource-scheduler behavior under pressure,
+- statistical regression budgets with stored historical artifacts,
+  dedicated-runner profile, run variance, warm/cold cache state, dataset shape,
+  compression ratio, encryption profile, filesystem, mount options, and
+  rootless container volume mode,
+- 24-hour minimum endurance smoke and 72-hour target endurance run before
+  production claims, including compaction, scrub, backup, restore drill,
+  key-rotation, manifest checkpoint, and policy-planner activity,
 - rootless Podman load smoke,
 - comparison against early v0.20.2 and v0.23.2 performance evidence to catch
   regressions and validate earlier design decisions,
@@ -2595,7 +2643,38 @@ Deliverables:
 - stale-placement marker when policy, law-pack, key, or data-passport epochs change,
 - tests for denied cross-boundary placement.
 
-## v0.56.0 - 1.0 Release Candidate
+## v0.56.0 - Final Backup And Restore Qualification
+
+Goal: qualify backup and restore after schema catalog, retention, quotas,
+runtime resource isolation, observability, and legal-policy integrations exist.
+
+Deliverables:
+
+- end-to-end backup qualification across the `v0.35.4` backup engine,
+  `v0.40.0` runtime resource pools, `v0.45.0` schema catalog, `v0.46.0`
+  retention policy, `v0.48.0` quotas, `v0.49.0` observability, and `v0.54.0`
+  legal operation decision engine,
+- schema-evolution backup/restore tests covering compatible, incompatible,
+  migrated, unknown, and intentionally deferred schema/catalog states,
+- retention, legal-hold, privacy-erasure, tombstone, rollback-root,
+  backup-root, and quota enforcement during backup creation, retention,
+  deletion, restore, and in-place recovery,
+- resource-scheduler and quota tests for online backup during foreground
+  reads/writes, compaction, scrub, key rotation, and checkpoint work,
+- observability qualification for backup health, backup chain depth,
+  restore-drill age, backup RPO/RTO, restore throughput, temporary-space use,
+  and redacted failure reasons,
+- legal-policy enforcement tests for backup, restore, export-like restore,
+  cross-jurisdiction restore, AI/search/index backup content, and denied
+  in-place recovery,
+- automated restore drill from full and incremental backups with corruption
+  injection, missing chunks, wrong key, stale law pack, stale policy epoch,
+  quota exhaustion, and anchor mismatch,
+- final production backup/restore runbook with measured RPO, RTO, restore
+  throughput, storage overhead, temporary-space requirement, operational
+  authority, and non-claims.
+
+## v0.57.0 - 1.0 Release Candidate
 
 Goal: freeze the 1.0 feature set and run final release evidence.
 
@@ -2621,7 +2700,8 @@ Deliverables:
 - model-checked concurrency and group commit with explicit durability SLO,
 - durable primary, causal, supersession, invalidation, and snapshot visibility
   indexes,
-- non-rollbackable freshness anchor contract for production profiles,
+- supported non-rollbackable freshness-anchor provider implementation for
+  production profiles,
 - immutable world revisions with compare-and-swap world heads,
 - canonical fact transcript, signature verification, and verified ingest gate,
 - policy-aware query planning,
@@ -2672,7 +2752,8 @@ Deliverables:
 - SBOM, dependency-tree, source-lock, and release-evidence gates,
 - local snapshot and rollback retention with locked archive/recovery worlds,
 - rootless Podman deployment,
-- backup/restore,
+- backup/restore engine plus final schema, retention, quota, observability,
+  runtime-scheduling, and legal-policy qualification,
 - secure first-run bootstrap and instance identity primitives,
 - read-only secret-free configuration export,
 - platform identity, shared-account, product-boundary, guardian-consent, and
