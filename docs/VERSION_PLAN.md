@@ -638,6 +638,33 @@ Deliverables:
 - tests for stale root rejection, generation regression, anchor digest chain
   mismatch, missing production anchor, and explicit historical recovery open.
 
+## v0.18.7.1 - Freshness Anchor Reference Provider
+
+Goal: implement at least one real non-rollbackable freshness-anchor provider
+before production startup recovery depends on anchor checks.
+
+Deliverables:
+
+- supported reference provider decision, initially remote witness client,
+  TPM-backed host adapter, or another explicitly reviewed non-rollbackable
+  mechanism,
+- idempotent compare-and-advance implementation for `AnchoredDatabaseRoot`,
+  including retry behavior for already-advanced, stale, concurrent, and
+  ambiguous outcomes,
+- timeout, unavailable-provider, degraded-mode, and fail-closed startup
+  semantics for production profiles,
+- provisioning, rotation, replacement, revocation, and disaster-recovery
+  procedure for anchor credentials and anchor service identity,
+- witness equivocation detection using signed or MACed generations, previous
+  anchor digest, database identity, manifest digest, key-state digest, audit
+  root, and policy epoch,
+- permanent-unavailable-anchor recovery policy that allows only explicit
+  historical inspection, recovery-world fork, or operator-approved
+  re-provisioning without silently replacing the active anchor,
+- tests for compare-and-advance idempotence, stale advance rejection,
+  unavailable-provider fail-closed behavior, timeout behavior, witness
+  equivocation, provider replacement, and disaster-recovery opening rules.
+
 ## v0.18.8 - Chained Audit Log Root Contract
 
 Goal: make audit evidence append-only and anchorable before manifests record
@@ -721,6 +748,10 @@ Deliverables:
 - block format with offset table or restart array, record count, bounded
   decompressed length, compression algorithm ID, per-block checksum, AEAD
   envelope, and schema/format marker,
+- durable-format compatibility contract for block and segment framing: major
+  and minor version semantics, required versus safely ignorable feature bits,
+  minimum reader and writer versions, canonical encoding rules,
+  unknown-field behavior, forward-read policy, and backward-read policy,
 - compression-before-encryption design for table/segment blocks, including
   adaptive per-block compression format IDs, authenticated original length,
   decompression memory/time budgets, dictionary versioning, domain-local
@@ -744,7 +775,8 @@ Deliverables:
   partition rejection,
 - golden compatibility fixtures for block table headers, restart arrays,
   compression metadata, range tombstones, sparse indexes, filters, and
-  encrypted inner/outer segment framing.
+  encrypted inner/outer segment framing, exercised by current and previous
+  readers where previous-reader behavior is defined.
 
 ## v0.18.12 - WAL v2 And Torn-Tail Recovery
 
@@ -756,6 +788,10 @@ Deliverables:
 - WAL v2 header with database ID, log incarnation, WAL generation, LSN,
   transaction ID, transaction frame ordinal, expected transaction frame count,
   previous-frame digest, header authentication, and commit transcript root,
+- durable-format compatibility contract for WAL-v2 frames and commit records:
+  major/minor version semantics, required versus safely ignorable feature bits,
+  minimum reader and writer versions, canonical encoding rules,
+  unknown-field behavior, forward-read policy, and backward-read policy,
 - WAL-v2 AEAD envelope instantiated from `v0.18.3` over the concrete v2 frame
   and commit-record fields, with associated data binding database ID, log
   incarnation, WAL generation, LSN, transaction ID, frame ordinal, previous
@@ -781,7 +817,8 @@ Deliverables:
   required for transactions that never became durable,
 - golden compatibility fixtures for WAL-v2 headers, encrypted frames,
   compressed and uncompressed sub-batches, commit records, repaired tails, and
-  commit-status records,
+  commit-status records, exercised by current and previous readers where
+  previous-reader behavior is defined,
 - tests for header mutation, frame deletion, duplication, reordering,
   transaction frame omission, commit-root mismatch, appending after corrupt
   tail, writer reuse after append error, ambiguous sync result, idempotent
@@ -789,17 +826,18 @@ Deliverables:
 
 ## v0.18.13 - Storage Crash Ordering And Failure Injection Harness
 
-Goal: prove storage root transitions under injected failures before manifest
-publication and checkpoint pruning become trusted.
+Goal: build reusable failure-injection and crash-oracle infrastructure before
+manifest publication and checkpoint pruning become trusted. Concrete failpoint
+coverage for future implementations is accepted in the milestones that
+introduce those implementations.
 
 Deliverables:
 
-- formal crash-ordering state machine for WAL append, group barrier, memtable
-  flush, immutable table publication, manifest write, manifest swap,
-  checkpoint, WAL pruning, audit-root publication, and freshness-anchor
-  advancement,
-- TLA+/PlusCal or equivalent lightweight model for WAL, manifest, checkpoint,
-  and freshness-anchor ordering,
+- formal crash-ordering state machine for current WAL append, current segment
+  publication, future manifest write/swap, checkpoint, WAL pruning, audit-root
+  publication, and freshness-anchor advancement,
+- TLA+/PlusCal or equivalent lightweight model scaffold for WAL, manifest,
+  checkpoint, and freshness-anchor ordering,
 - deterministic failpoint harness for writes, vectored writes, short writes,
   interrupted syscalls, sync, link/rename, manifest swap, WAL truncation,
   directory fsync, ENOSPC, quota exhaustion, EIO, and fsync failure,
@@ -811,12 +849,16 @@ Deliverables:
   and durability semantics are proven,
 - filesystem-specific power-cut tests using loopback, dm-flakey, or equivalent
   where practical,
-- subprocess crash tests that kill the process at persistence failpoints and
-  compare recovered state with an in-memory oracle,
-- torn-sector and corrupted-block matrix fixtures for WAL, block table,
-  manifest, and audit roots,
-- long-running randomized state-machine test comparing append, recover,
-  compact, checkpoint, and rollback behavior with a reference model,
+- reusable subprocess crash oracle that kills the process at persistence
+  failpoints and compares recovered state with an in-memory oracle,
+- current WAL and segment failure tests that exercise the reusable harness
+  without requiring future memtable, block table, manifest, compaction,
+  checkpoint, or audit-root implementations,
+- torn-sector and corrupted-block matrix fixture framework for WAL, future
+  block table, manifest, and audit roots,
+- long-running randomized state-machine scaffold comparing append, recover,
+  compact, checkpoint, and rollback behavior with a reference model as those
+  features become available,
 - release-gate smoke mode for deterministic failure-injection cases that are
   stable enough for normal local and CI runs.
 
@@ -827,6 +869,21 @@ Goal: record the durable storage root.
 Deliverables:
 
 - manifest structure,
+- durable-format compatibility contract for the manifest: major/minor version
+  semantics, required versus safely ignorable feature bits, minimum reader and
+  writer versions, canonical encoding rules, unknown-field behavior,
+  forward-read policy, and backward-read policy,
+- minimal plaintext outer manifest header plus encrypted/authenticated inner
+  manifest using the primitives admitted in `v0.18.3`,
+- keyed authentication before any manifest contents are trusted; asymmetric
+  signatures and quorum/non-repudiation remain later `v0.33.x` concerns,
+- database identity, storage generation, previous-manifest digest,
+  feature-version binding, checkpoint identity, and freshness-anchor reference
+  in the authenticated manifest transcript,
+- manifest/checkpoint replay, rollback, and substitution rejection rules,
+- metadata-confidentiality rules for table inventories, tenant/domain
+  information, world heads, schema roots, policy epochs, key-state digests, and
+  audit-root references,
 - rule that the manifest is the sole authority for live immutable tables,
   world heads, schema roots, key state, WAL checkpoint, audit root, freshness
   anchor, and protected roots; directory scans may discover candidates only for
@@ -857,6 +914,11 @@ Deliverables:
 - golden compatibility fixtures for manifest headers, version edits,
   checkpoint records, storage-directory identity, lease records, audit-root
   references, freshness-anchor references, and live-table inventories,
+- current-reader and previous-reader fixture tests for manifest compatibility
+  behavior, unknown feature bits, required feature bits, and canonical encoding,
+- failure-injection acceptance using the `v0.18.13` harness for manifest
+  write, manifest swap, checkpoint write, WAL-pruning decision, directory sync,
+  and crash-after-swap recovery,
 - tests for concurrent opener rejection, stale lease recovery, wrong database
   identity, wrong storage generation, and lease/anchor mismatch.
 
@@ -881,22 +943,26 @@ Deliverables:
   snapshot tracking, maximum snapshot/read-transaction age, explicit snapshot
   leases, per-tenant pin quotas, abandoned-client handling, and expired-snapshot
   failure behavior,
-- compaction, cache, and recovery SLO baselines that are measurable only after
-  the spine exists: read/write/space amplification, cache hit rate by block
-  class, recovery MiB/s through table replay, compaction debt, stall time,
-  protected-root liveness, and maximum memory per iterator/snapshot,
+- compaction, iterator, and recovery SLO baselines that are measurable only
+  after the spine exists: read/write/space amplification, recovery MiB/s
+  through table replay, compaction debt, stall time, protected-root liveness,
+  and maximum memory per iterator/snapshot; cache-hit and cache-residency SLOs
+  move to `v0.20.8`,
 - recovery test proving committed batches reappear after restart and
   uncommitted or non-durable batches do not,
 - point-read test proving a single fact can be located without reading a whole
   segment/table body,
 - compaction equivalence test proving compacted output preserves snapshot
   visibility, tombstones, policy domains, and rollback-protected roots,
+- failure-injection acceptance using the `v0.18.13` harness for memtable flush,
+  table publication, manifest version edit, restart recovery, point read after
+  crash, and compaction output publication,
 - release-gate smoke that exercises this full spine with a tiny fixture.
 
 ## v0.20.0 - Startup Recovery Integration
 
-Goal: recover authoritative database state from the manifest, WAL, and storage
-spine built in `v0.19.1`.
+Goal: provide full production startup recovery, building on the narrow
+storage-spine restart recovery from `v0.19.1`.
 
 Deliverables:
 
@@ -907,6 +973,9 @@ Deliverables:
 - WAL replay from checkpoint,
 - memtable/table/version-set reconstruction through the `v0.19.1` storage
   spine,
+- full operational startup diagnostics for selected manifest, anchor
+  generation, WAL checkpoint, key-state digest, audit root, schema root,
+  rollback roots, degraded files, quarantine state, and recovery mode,
 - fail-closed startup when the newest valid local manifest is older than the
   external anchor,
 - explicit historical recovery workflow for rollback roots that may be opened
@@ -919,6 +988,9 @@ Deliverables:
   ancestor traversal succeeds,
 - corrupted manifest rejection,
 - missing-key and compromised-key rejection,
+- explicit operational recovery modes for normal active open, read-only
+  degraded open, historical inspection, recovery-world fork, simulation open,
+  and operator-approved anchor/provider re-provisioning,
 - deterministic recovery fixtures.
 
 ## v0.20.1 - Production Timing Evidence Gate
@@ -1077,6 +1149,12 @@ Deliverables:
 - content-addressed blob deduplication plan limited to equality-safe encrypted
   domains, with no cross-tenant, cross-compartment, cross-policy, or
   cross-key-epoch plaintext equality leakage,
+- scrub salvage policy covering operator-driven quarantine review,
+  backup-based repair, lost-range reporting, read-only degraded opening, and
+  proof that repair cannot silently manufacture valid data,
+- failure-injection acceptance using the `v0.18.13` harness for compaction
+  input selection, output write, output publication, obsolete-file marking,
+  orphan-table recovery, scrub quarantine, and degraded opening,
 - tests for sorted-run lookup, merge iteration, flush/recover equivalence,
   compacted-state equivalence, protected-root liveness, file-number reuse
   rejection, quarantine on scrub failure, cross-domain dedup rejection, and
@@ -1095,6 +1173,9 @@ Deliverables:
   encryption domain, policy epoch, and key epoch,
 - per-tenant and per-security-domain cache accounting with pin counts for
   active iterators,
+- reusable aligned-buffer pools, allocation limits, and copy-count budgets for
+  WAL encoding, compression, AEAD, block reads, decompression, and secure
+  zeroization paths,
 - rule that iterator and snapshot pins prevent physical deletion of referenced
   files but must not force all pinned blocks to remain resident in cache,
 - explicit rule that decrypted blocks cannot be cached across incompatible
@@ -1118,9 +1199,13 @@ Deliverables:
 - disk-exhaustion escape reserve for WAL repair, manifest/checkpoint
   publication, audit emission, and orderly shutdown, with write-stall and
   recovery behavior when compaction cannot reserve enough temporary space,
+- cache-hit, cache-residency, copy-count, and allocation SLOs by block class
+  and security domain, measured only after the cache and aligned-buffer pools
+  exist,
 - tests for cache budget enforcement, iterator pinning, cross-authority cache
-  rejection, ENOSPC/quota handling, file-count limits, and descriptor-relative
-  path replacement attempts.
+  rejection, ENOSPC/quota handling, file-count limits, descriptor-relative
+  path replacement attempts, aligned-buffer exhaustion, copy-count budget
+  enforcement, and secure zeroization on buffer reuse.
 
 ## v0.20.9 - Policy Token Catalog And Compact Hot-Path Tags
 
@@ -1221,6 +1306,10 @@ Deliverables:
 - commit sequence: policy validation, immutable write batch, sequence
   reservation, conflict validation, WAL append, group fsync, version/world-head
   publication, acknowledgement,
+- mandatory-audit atomicity design: either the WAL commit transcript contains
+  and authenticates the audit-record digest made durable by the same barrier,
+  or a transactional audit outbox is committed in the same WAL transaction and
+  deterministically drained after recovery,
 - ordering rules for commit-sequence allocation, validation, group durability,
   publication, cancellation, timeout, and client disconnect so an ambiguous
   client session cannot create duplicate or lost commits,
@@ -1231,8 +1320,13 @@ Deliverables:
   transaction, batched transaction, and fsync-heavy profiles,
 - SLO evidence for WAL bytes per commit, fsyncs per commit, and ambiguous
   commit-status resolution latency,
+- failure-injection acceptance using the `v0.18.13` harness for group fsync,
+  batch publication, audit digest/outbox durability, timeout, cancellation, and
+  client disconnect,
 - tests for batch barrier ordering, failed fsync, partial batch commit, replay
-  after barrier-before-publication crash, and sync-mode misconfiguration.
+  after barrier-before-publication crash, audit-before-publication crash,
+  failed audit storage, duplicate recovery emission, ambiguous client
+  acknowledgement, and sync-mode misconfiguration.
 
 ## v0.23.0 - Durable Transaction Commit
 
@@ -1242,10 +1336,15 @@ Deliverables:
 
 - prepare and commit records,
 - durable commit boundary,
-- audit event emission,
+- audit event emission through the atomic audit transcript or transactional
+  audit outbox model selected in `v0.22.2`,
 - replay of committed transactions,
 - rollback of uncommitted transactions,
-- crash tests around prepare/commit.
+- failure-injection acceptance using the `v0.18.13` harness for prepare write,
+  commit write, audit write/outbox write, replay, rollback, and publication,
+- crash tests around prepare/commit, commit-before-audit rejection,
+  audit-before-publication recovery, duplicate recovery emission prevention,
+  failed mandatory-audit storage, and ambiguous client acknowledgement.
 
 ## v0.23.1 - Confidence Propagation Math
 

@@ -36,6 +36,12 @@
   before startup recovery, early SLOs match available machinery, snapshot/GC
   watermarks and disk-exhaustion reserves are explicit, and vector ANN
   isolation rules are release-gated.
+- Added follow-up roadmap gates for freshness-anchor reference providers,
+  keyed manifest authentication, early format compatibility contracts,
+  staged failure-injection acceptance, cache/buffer SLO placement, atomic
+  audit-with-commit durability, scrub salvage behavior, and clearer
+  `v0.18.3` documentation that concrete block/segment and WAL encryption land
+  in `v0.18.11` and `v0.18.12`.
 - Reworked the roadmap so `v1.0.0` is the core production world database,
   `v1.1.0` through `v1.6.0` are optional application-extension tracks, and
   Hyve clustering starts at `v2.0.0`.

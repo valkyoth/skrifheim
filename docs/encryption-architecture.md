@@ -69,13 +69,15 @@ recompute both. No WAL or segment file may be treated as production-trusted
 against local tampering until encrypted bodies are authenticated with AEAD,
 signed/keyed manifests, or an equivalent admitted integrity root.
 
-`v0.18.3` is the scheduled milestone for that boundary. It must admit the
-production SHA-3/SHAKE digest engine and AEAD implementation, define the WAL
-and segment envelope, define nonce uniqueness and crash-recovery rules, and add
-wrong-key, wrong-domain, wrong-epoch, swapped-header/footer, replay,
-truncation, and corrupt-ciphertext rejection tests. Later manifests and
-recovery code must not claim tamper resistance before this milestone is
-complete.
+`v0.18.3` is the scheduled milestone for admitting the production SHA-3/SHAKE
+digest engine, AEAD implementation, entropy provider, generic envelope
+primitive, and nonce uniqueness rules. It does not define the final concrete
+WAL or segment envelope. Segment and block encryption are instantiated when the
+physical storage layout is frozen in `v0.18.11`; WAL-v2 encryption is
+instantiated when the ordered log format lands in `v0.18.12`. Later manifests
+and recovery code must not claim tamper resistance until those concrete formats
+use the admitted primitives and pass wrong-key, wrong-domain, wrong-epoch,
+replay, truncation, and corrupt-ciphertext rejection tests.
 
 AEAD must not be treated as sufficient if the log can be spliced from valid
 frames. WAL encryption must bind database ID, log incarnation, WAL generation,

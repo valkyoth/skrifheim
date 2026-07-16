@@ -86,7 +86,7 @@ It is not a usable database engine.
 | Quantum-aware digest policy | Scaffolded | SHA-3/SHAKE digest-strength profiles and full-width world/content/manifest digest types before compact IDs become durable storage authority. |
 | Immutable segment format | Scaffolded | `v0.17.0` adds policy-scoped immutable segment headers and footers with key epoch, encryption-domain, checksum, and algorithm-agile digest metadata. |
 | Immutable segment persistence | Scaffolded | `v0.18.0` adds fixed segment encoding plus host-file writer and reader scaffolds; manifests and indexes remain planned for `v0.19.0` through `v0.20.0`. |
-| Production digest and AEAD storage encryption | Planned | `v0.18.3` admits and wires the production SHA-3/SHAKE digest engine plus AEAD envelopes for WAL and segment bodies before manifests or recovery claim tamper resistance. |
+| Production digest and AEAD storage encryption | Planned | `v0.18.3` admits production SHA-3/SHAKE and AEAD primitives; concrete block/segment encryption lands with `v0.18.11`, and WAL-v2 encryption lands with `v0.18.12` before manifests or recovery claim tamper resistance. |
 | Early WAL/segment fuzzing | Planned | `v0.18.4` adds deterministic fuzz smoke for the hand-written storage byte parsers; the broader fuzz/property baseline remains later. |
 | Release evidence hardening | Planned | `v0.18.5` adds SBOM validation, dependency-tree snapshots, runtime/optional-boundary policy, and release-gate tests before durable storage claims harden. |
 | Cross-platform portability baseline | Planned | `v0.18.6` adds Linux, Windows, macOS, BSD, x86_64, AArch64, and future RISC-V portability checks before manifests and recovery depend on host I/O behavior. |

@@ -243,10 +243,13 @@ blocks with sparse indexes and filters so point lookups do not allocate or read
 entire files.
 
 `v0.18.3` is the release that must admit and implement the production digest
-and AEAD engine. After that milestone, WAL and segment bodies must be encrypted
-and authenticated with domain-separated associated data before manifests,
-checkpoints, or recovery can claim tamper resistance. CRC64 remains only a
-structural corruption check.
+and AEAD primitives. After that milestone the cryptographic building blocks and
+generic envelope transcript APIs exist, but concrete segment/block encryption
+arrives with the physical storage layout in `v0.18.11`, and WAL-v2 encryption
+arrives with the ordered log format in `v0.18.12`. Manifests, checkpoints, and
+recovery must not claim tamper resistance until those concrete formats
+instantiate the admitted primitives. CRC64 remains only a structural corruption
+check.
 
 Nonce, key, salt, replay nonce, and random identifier generation require an
 admitted entropy/CSPRNG provider before production crypto paths exist.
@@ -268,6 +271,12 @@ transparency service, WORM/offline operator checkpoint, or threshold-held
 external checkpoint. Active startup must fail closed when local storage is
 older than the anchor; historical roots can be opened only through explicit
 recovery workflows.
+
+The freshness anchor needs a real provider before startup recovery depends on
+it. At least one reference provider, such as a remote witness client or
+TPM-backed host adapter, must implement idempotent compare-and-advance,
+timeout and unavailable-provider behavior, provisioning, replacement,
+equivocation detection, and disaster-recovery rules.
 
 The storage directory itself needs an identity and single-writer lease. Two
 processes must not be able to advance the same WAL/manifest directory
@@ -295,6 +304,13 @@ after their concrete byte formats are chosen. Each durable format milestone
 must commit golden compatibility fixtures at the same time it introduces the
 format.
 
+Every durable format starts with a compatibility contract, not only a byte
+layout: major/minor version semantics, required and safely ignorable feature
+bits, minimum reader and writer versions, canonical encoding, unknown-field
+behavior, and forward/backward read policy. Later migration work can automate
+upgrades, but the compatibility rules must exist as soon as WAL v2, block
+tables, and manifests become durable.
+
 The database process must not become a god-mode key holder. Production key
 release must go through a scoped KMS, HSM, privilege-separated key service, or
 equivalent provider that checks tenant, compartment, purpose, policy epoch,
@@ -314,10 +330,12 @@ untrusted WAL and segment bytes must have a deterministic fuzz smoke from this
 storage phase onward.
 
 Failure injection is part of the storage design, not late hardening. The
-engine needs failpoints for writes, short writes, interrupted syscalls, sync,
-link/rename, manifest swaps, WAL truncation, directory fsync, ENOSPC, quota
-exhaustion, and EIO, with subprocess crash tests comparing recovered state to
-an in-memory oracle.
+engine first needs reusable failpoints for writes, short writes, interrupted
+syscalls, sync, link/rename, manifest swaps, WAL truncation, directory fsync,
+ENOSPC, quota exhaustion, and EIO, with subprocess crash tests comparing
+recovered state to an in-memory oracle. Concrete coverage for manifest swaps,
+memtable flush, block tables, compaction, group commit, and durable commit
+belongs in the milestones that introduce those implementations.
 
 Filesystem behavior is part of the trust boundary. `skrifheim` needs a
 supported-filesystem matrix, explicit network-filesystem non-claims until
@@ -335,6 +353,13 @@ tables, world heads, schema roots, key state, WAL checkpoint, audit root,
 freshness anchor, and protected roots. Directory scans may help recovery,
 quarantine, and cleanup, but they must not become an alternative source of
 truth for active state.
+
+An authoritative manifest must be keyed-authenticated before its contents are
+trusted. Its minimal plaintext outer header should reveal only what is needed
+to locate and authenticate the encrypted inner manifest; table inventories,
+tenant/domain metadata, world heads, schema roots, key-state digests, and audit
+roots belong inside authenticated encrypted metadata unless an explicit
+public-header exception is documented.
 
 Space reclamation is a correctness feature, not only housekeeping. WAL pruning,
 obsolete-file sets, oldest-active-snapshot watermarks, explicit snapshot
@@ -387,10 +412,13 @@ serializable validation and WAL commit are wired in.
 Durable commit should use MVCC plus optimistic serializable validation, not
 long-lived database-wide locks. The intended commit path is: validate policy,
 construct immutable write batch, reserve commit sequence, validate conflicts,
-append ordered WAL frames and commit root, group fsync, publish versions and
+append ordered WAL frames, bind mandatory audit evidence through either an
+authenticated audit-record digest in the commit transcript or a transactional
+audit outbox in the same WAL transaction, group fsync, publish versions and
 world-head CAS updates, then acknowledge. A crash after the durable barrier but
 before publication is redone during recovery; a crash before the barrier must
-never expose the transaction as committed.
+never expose the transaction as committed, and mandatory-audit operations must
+not report success without durable audit evidence or a recoverable outbox item.
 
 Durability and performance must have measurable SLOs early: WAL bytes and
 fsyncs per append before transactions exist, raw block throughput, recovery
