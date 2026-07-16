@@ -80,6 +80,17 @@ or client-provided evidence path is used.
 - Release evidence is part of the product. A release is not complete unless its
   pentest digest, release notes, SBOM, relevant dependency-tree snapshots, and
   source-lock evidence are committed where the release gate can verify them.
+- Final qualification evidence is ordered to avoid circular proof. The
+  reviewed implementation commit is the frozen source/configuration commit that
+  fuzzing, benchmarks, crash tests, pentesting, and qualification exercise. The
+  tag-candidate commit is its direct child and may change only the permitted
+  permanent evidence report. External archives bind to the reviewed
+  implementation commit; the report-only commit records their digests,
+  signatures or attestations, trusted timestamps, storage locations, toolchain
+  and harness versions, and pass/fail results. Source, configuration,
+  test-harness, or dependency changes invalidate affected evidence and require
+  reruns; documentation-only amendments require explicit authorization or a
+  documented no-impact decision.
 
 ## Workspace Shape
 
@@ -550,10 +561,11 @@ cross-version and reference-model differential tests, sanitizer or Miri
 evidence where applicable, parser allocation/recursion/time limits, release
 candidate execution-count or duration thresholds, and reproducible failure
 commands bound to the reviewed release commit. Archived fuzz evidence needs
-content digests, source-commit binding, retention period, storage authority,
-reproducible retrieval instructions, toolchain and fuzz-engine versions, and
-protection against silent corpus or coverage-report replacement. The final
-release candidate reruns the qualification against the exact reviewed commit,
+content digests, source-commit binding, authenticated producer identity,
+trusted timestamp, retention period, storage authority, reproducible retrieval
+instructions, toolchain and fuzz-engine versions, and protection against
+silent corpus or coverage-report replacement. The final release candidate
+reruns the qualification against the exact reviewed implementation commit,
 with zero unresolved crashes, hangs, resource-bound violations, or correctness
 divergences.
 

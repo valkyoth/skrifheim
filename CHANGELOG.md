@@ -66,6 +66,10 @@
   verifiable fuzz-evidence archives, and table-commitment key-slot rotation
   semantics that separate immutable table-DEK identity from mutable KEK
   wrapping slots.
+- Clarified final release-candidate evidence ordering by separating the
+  reviewed implementation commit from the report-only tag-candidate commit,
+  requiring signed or attested external evidence archives, and planning
+  release-readiness validation for mandatory qualification report digests.
 - Updated the pinned Rust stable toolchain from `1.97.0` to `1.97.1` after
   `rustup check` reported stable `1.97.1` (`8bab26f4f`, 2026-07-14).
 - Reworked the roadmap so `v1.0.0` is the core production world database,

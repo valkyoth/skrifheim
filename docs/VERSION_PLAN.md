@@ -2464,9 +2464,10 @@ Deliverables:
 - retained minimized regression corpora committed or archived as release
   evidence for every production-relevant parser and durable format,
 - durable fuzz-evidence archive contract covering content digests,
-  source-commit binding, retention period, storage authority, reproducible
-  retrieval instructions, toolchain and fuzz-engine versions, and protection
-  against silently replacing a corpus or coverage report,
+  source-commit binding, authenticated producer identity, trusted timestamp,
+  retention period, storage authority, reproducible retrieval instructions,
+  toolchain and fuzz-engine versions, and protection against silently
+  replacing a corpus or coverage report,
 - cross-version and differential storage testing against the reference model,
 - ASan, UBSan, TSan, Miri, or platform-equivalent sanitizer/evidence runs where
   applicable to host-boundary and parser crates,
@@ -2823,6 +2824,20 @@ Deliverables:
   qualification, including required 24-hour endurance and target 72-hour
   endurance over mixed backup, restore, legal-policy, sovereign-placement, key
   rotation, compaction, scrub, checkpoint, and foreground read/write traffic,
+- final evidence commit-ordering rule: the reviewed implementation commit is
+  the frozen code/configuration commit on which fuzzing, benchmarks, crash
+  tests, pentesting, and qualification run; the tag-candidate commit is its
+  direct child and may change only the permitted permanent evidence report,
+- external fuzz, benchmark, crash, platform, backup/restore, and pentest
+  archives bind to the reviewed implementation commit; the report-only
+  tag-candidate commit records their content digests, signatures or
+  attestations, trusted timestamps, storage locations, toolchain/harness
+  versions, and pass/fail results without modifying the reviewed source tree,
+- evidence invalidation rule: any source, configuration, test-harness, or
+  dependency change after the reviewed implementation commit requires rerunning
+  affected qualification before tagging; documentation-only corrections require
+  either a narrowly authorized evidence amendment or a documented decision that
+  no qualification result is affected,
 - crash/recovery and corrupted-backup matrix rerun after final backup and
   placement integration,
 - upgrade from the oldest supported format and downgrade-rejection run against
@@ -2838,6 +2853,12 @@ Deliverables:
   reference-model differential tests, coverage artifacts, minimized corpora,
   and zero unresolved crashes, hangs, resource-bound violations, or correctness
   divergences,
+- release-readiness validation rule for the permanent report, eventually
+  checking that it names the reviewed commit, fuzz archive digest,
+  performance/endurance report digest, crash-matrix report digest,
+  platform-qualification report digest, backup/restore qualification digest,
+  toolchain and harness versions, and PASS status for every mandatory
+  qualification class,
 - final optional extension integration checklist,
 - no new feature work without explicit deferral decision.
 
