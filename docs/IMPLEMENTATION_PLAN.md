@@ -102,15 +102,33 @@ or client-provided evidence path is used.
   records the reviewed commit, artifact hashes, build profile, feature set,
   toolchain, container base image digest where relevant, and either
   reproducible equivalence or a mechanically verified permitted difference.
+  Reproducibility claims require hermetic builds: network-disabled sandbox,
+  pinned builder/container/compiler/linker digests, fixed locale, timezone,
+  timestamps, environment variables, filesystem ordering, explicit target
+  triple, CPU baseline, and independent second-build evidence for bit-for-bit
+  claims.
   Executable artifacts are built from the reviewed implementation commit's
   executable inputs; if a future profile allows evidence-only-commit artifacts,
   their hashes and permitted differences are recorded in a signed post-commit
   attestation, not inside the evidence-only commit. Final smoke tests run
   against the exact binaries, containers, source archives, and packages that
-  will be published. The signed annotated tag or external release attestation
-  created after the evidence-only commit binds the release version,
-  evidence-only commit, reviewed commit, qualification manifest digest,
-  artifact hashes, source archive hash, and PASS status.
+  will be published. Reviewed-commit source bundles are qualified before
+  tagging; hosting-provider or tag-generated archives are retrieved, smoked,
+  hashed, and attested after the tag exists. The signed annotated tag or
+  external release attestation created after the evidence-only commit binds the
+  release version, evidence-only commit, reviewed commit, qualification
+  manifest digest, artifact hashes, reviewed source-bundle hash, and PASS
+  status. A separate post-tag attestation binds any tag-generated archive hash.
+- Release publication is transactional. Artifacts are uploaded under immutable
+  digest/version identities, then downloaded from actual distribution
+  endpoints and verified for hashes, signatures, SBOM/provenance links, and
+  smoke results before registry indexes, release pages, and `latest` pointers
+  are published. Existing artifacts and version tags are never overwritten.
+  Partial publication is handled by retry or signed yank/revocation metadata.
+  Release-signing keys for tags and post-tag attestations need authorized
+  signer identities, algorithm policy, rotation, revocation, trusted timestamp
+  or transparency evidence, replay/version-rollback rejection, emergency
+  artifact withdrawal, and signed superseding advisories without retagging.
 
 ## Workspace Shape
 

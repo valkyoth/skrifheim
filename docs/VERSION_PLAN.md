@@ -2847,26 +2847,55 @@ Deliverables:
   features, container build inputs, and every other input that can affect
   executable artifacts; the permitted evidence-only report and qualification
   manifest are explicitly excluded from executable inputs,
+- hermetic build requirement for reproducibility claims, including a
+  network-disabled build sandbox, pinned builder/container/compiler/linker
+  digests, fixed locale, timezone, timestamps, environment variables, and
+  filesystem ordering, explicit target triple and CPU feature baseline,
+  clean-room or independent second build for bit-for-bit claims, and negative
+  tests for undeclared network access and host-environment leakage,
 - release artifact rule requiring executable binaries, containers, and
   packages to be built from the reviewed implementation commit's executable
   inputs, not from the evidence-only commit; if a future profile allows
   artifacts from the evidence-only commit, their hashes and mechanically
   verified permitted differences must live in a signed post-commit attestation,
   not inside the evidence-only commit,
-- source archive rule requiring either a reviewed-commit source bundle to be
-  qualified and hashed before the evidence-only commit, or tag-generated source
-  archives to be hashed and attested after tagging in a signed annotated tag or
-  external signed attestation,
+- source archive rule with two explicit paths: reviewed-commit source bundles
+  are qualified, smoked, and hashed before tagging so the signed annotated tag
+  can bind their hash; hosting-provider or tag-generated source archives are
+  retrieved, smoked, hashed, and attested only after the tag exists by a
+  separate signed post-tag attestation, not by replacing the tag object,
 - provenance for every published artifact recording `Reviewed-Commit`,
-  executable-input digest, artifact hash, build profile, feature set,
+  executable-input digest, artifact name, version, kind, target triple, ABI,
+  minimum CPU/OS baseline, media or package type, byte size, artifact hash,
+  corresponding SBOM digest, provenance digest, required versus optional
+  platform status, signing/notarization state, build profile, feature set,
   toolchain, container base image digest where relevant, and reproducibility or
   permitted-difference result,
 - final smoke test of the exact binaries, containers, source archives, and
-  packages that will be published, not only locally rebuilt equivalents,
+  packages built from the reviewed commit before tagging, not only locally
+  rebuilt equivalents; tag-generated archives are explicitly excluded from
+  this pre-tag smoke and move to the post-tag gate,
 - signed annotated tag or external signed release attestation created after the
   evidence-only commit, binding release tag/version, evidence-only commit,
   reviewed implementation commit, qualification manifest digest, artifact
   hashes, source archive hash, and release PASS status,
+- release-signing compromise model for tags and post-tag attestations,
+  including authorized signer identities and algorithms, key rotation and
+  revocation, trusted timestamp or transparency evidence, replay and
+  version-rollback rejection, emergency artifact withdrawal, and signed
+  superseding advisories without retagging,
+- post-tag pre-publication validator that runs only after explicit tagging
+  authorization and verifies tag signature and target, post-tag attestation,
+  tag-generated archive hash and smoke result where used, final downloadable
+  objects from their real distribution endpoints, registry/package-index
+  integrity, artifact signatures, SBOM/provenance links, and no mismatch
+  between the signed release attestation and downloadable bytes,
+- transactional publication protocol: upload artifacts under immutable
+  digest/version identities, download and verify from actual distribution
+  endpoints, verify hashes/signatures/SBOM/provenance links and smoke results,
+  publish registry indexes, release pages, and `latest` pointers last, never
+  overwrite artifacts or move an existing version tag, and handle partial
+  publication by retry or signed yank/revocation metadata,
 - crash/recovery and corrupted-backup matrix rerun after final backup and
   placement integration,
 - upgrade from the oldest supported format and downgrade-rejection run against
@@ -2904,6 +2933,12 @@ Deliverables:
   digest mismatch, forbidden evidence-only commit contents, self-referential
   evidence-commit hash declarations, and unverified qualified-versus-published
   artifact differences,
+- negative publication fixtures for partial upload, registry timeout,
+  mismatched mirrors, duplicate version, forbidden retag, stale `latest`
+  pointer, missing artifact, duplicate artifact, unexpected artifact,
+  cross-platform-substituted artifact, unsigned or expired post-tag
+  attestation, release-signing key revocation, and tag-generated archive hash
+  mismatch,
 - final optional extension integration checklist,
 - no new feature work without explicit deferral decision.
 

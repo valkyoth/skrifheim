@@ -76,6 +76,10 @@
   qualification-manifest validation fixtures.
 - Fixed the release-evidence roadmap to avoid self-referential evidence commits
   and added canonical qualification-manifest serialization/signature planning.
+- Added release-publication roadmap gates for tag-generated archive handling,
+  post-tag pre-publication validation, transactional publication, hermetic
+  reproducible builds, richer artifact-set identity, and release-signing
+  compromise response.
 - Updated the pinned Rust stable toolchain from `1.97.0` to `1.97.1` after
   `rustup check` reported stable `1.97.1` (`8bab26f4f`, 2026-07-14).
 - Reworked the roadmap so `v1.0.0` is the core production world database,
