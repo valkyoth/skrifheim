@@ -32,8 +32,8 @@ CMS-style publishing, messenger, forum, forge, and other application-family
 support is planned as optional compiled-in extension crates over the core world
 database primitives.
 
-The project is currently implementing `v0.18.2` key lifecycle event epoch
-semantics.
+The project is currently implementing `v0.18.3` production digest and AEAD
+engine admission.
 It is not a usable database engine.
 
 `skrifheim` is licensed under the European Union Public Licence 1.2.

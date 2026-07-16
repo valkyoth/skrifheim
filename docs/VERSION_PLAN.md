@@ -458,9 +458,11 @@ Deliverables:
 
 ## v0.18.3 - Production Digest And AEAD Engine Admission
 
-Goal: turn digest and encryption metadata into real cryptographic storage
-controls before manifests, checkpoints, or recovery can treat stored bytes as
-tamper-resistant.
+Goal: admit and implement production-ready cryptographic primitives before
+WAL v2, block tables, manifests, checkpoints, or recovery instantiate them.
+This milestone must not claim final production storage encryption; the final
+WAL and segment AEAD envelopes are bound to the concrete storage formats in
+`v0.18.11` and `v0.18.12`.
 
 Deliverables:
 
@@ -476,19 +478,12 @@ Deliverables:
   SHA3-512, SHAKE256-256, and SHAKE256-512 computation,
 - production `ContentDigest`, `ManifestDigest`, and `WorldIdentityDigest`
   computation APIs,
-- AEAD envelope format for WAL bodies and immutable segment bodies, including
-  algorithm ID, nonce strategy, associated-data binding, key ID, crypto epoch,
-  policy epoch, tenant, encryption domain, body length, and replay context,
-- WAL frame identity model covering database ID, log incarnation, WAL
-  generation, LSN, transaction ID, transaction frame ordinal, previous-frame
-  digest, expected batch count, and commit transcript digest,
-- anti-splicing recovery rules that reject WAL gaps, duplicates, reordered
-  frames, generation mismatches, unexpected transaction ordinals, missing
-  transaction frames, and commit-root mismatches before replay can advance
-  durable state,
-- AEAD associated-data rules that bind all WAL ordering fields, segment
-  identity fields, crypto epoch, policy epoch, tenant, and encryption-domain
-  metadata,
+- generic AEAD envelope primitive with algorithm ID, nonce strategy,
+  associated-data transcript input, key ID, crypto epoch, encryption domain,
+  plaintext length, ciphertext length, and versioned domain-separation tag,
+- transcript-builder APIs for future WAL, block, segment, manifest, backup,
+  export, projection, AI, and audit envelopes without freezing the final
+  storage-frame fields in this milestone,
 - storage metadata privacy split between a minimal plaintext outer header and
   encrypted inner headers for WAL frames and immutable segments,
 - rule that tenant IDs, world or world-revision IDs, classification,
@@ -507,6 +502,15 @@ Deliverables:
   segment, projection, backup, export, AI artifact, and audit-log data keys,
 - nonce uniqueness and crash-recovery analysis for append-only WAL writes and
   immutable segment writes,
+- immediate WAL-v1 stopgap hardening before any later storage milestone uses
+  the scaffold writer: host writers must poison themselves after any append,
+  partial write, flush, or sync error; existing tails must be scanned before
+  append; boolean sync options must be replaced with explicit
+  `DurabilityMode`; and append APIs must expose durable, failed, and ambiguous
+  outcomes,
+- durable LSN receipt, transaction idempotency key, and commit-status lookup
+  scaffold so ambiguous sync results can be retried without duplicating a
+  transaction before WAL v2 exists,
 - tests proving production paths fail closed when entropy is unavailable,
   deterministic test RNGs cannot be compiled into production profiles, and
   generated nonces cannot repeat across restart/crash scenarios covered by the
@@ -516,11 +520,14 @@ Deliverables:
   domains,
 - corrupt ciphertext, swapped header/footer, wrong key, wrong epoch, wrong
   domain, truncated body, and replay rejection tests,
+- golden compatibility fixtures for the admitted digest outputs, AEAD envelope
+  primitive, nonce/transcript encoding, and WAL-v1 durability outcome records,
 - explicit rule that CRC64 remains a structural corruption check only and that
   AEAD authentication plus signed/keyed manifests are the production integrity
   boundary,
-- release-gate check that no durable storage path can claim tamper resistance
-  unless the admitted digest and AEAD engine is in use.
+- release-gate check that no durable storage path can claim final tamper
+  resistance until the admitted primitives are instantiated by the concrete
+  WAL, block-table, manifest, and segment formats.
 
 ## v0.18.4 - WAL And Segment Fuzz Baseline
 
@@ -714,8 +721,16 @@ Deliverables:
 - block format with offset table or restart array, record count, bounded
   decompressed length, compression algorithm ID, per-block checksum, AEAD
   envelope, and schema/format marker,
+- compression-before-encryption design for table/segment blocks, including
+  adaptive per-block compression format IDs, authenticated original length,
+  decompression memory/time budgets, dictionary versioning, domain-local
+  dictionaries only, and a prohibition on attacker-controlled and secret
+  material being co-compressed in a way that creates compression oracles,
 - sparse index and filter format decision, including partitioned Bloom or XOR
   filters and workload-adaptive filter budgets,
+- range tombstone encoding and semantics, including fragmentation,
+  overlap/coalescing, snapshot visibility, compaction behavior, legal deletion
+  interaction, and protected rollback-root interaction,
 - physical partition key decision covering tenant, region, classification,
   compartment, key epoch, and policy compatibility class so policy isolation
   does not create uncontrolled small-file amplification,
@@ -725,7 +740,11 @@ Deliverables:
   values that should not be inlined into fact records,
 - tests or format fixtures for block alignment, malformed offset tables,
   restart bounds, compression-size limits, filter false-positive boundaries,
-  and cross-domain partition rejection.
+  range tombstone overlap, snapshot-visible range deletion, and cross-domain
+  partition rejection,
+- golden compatibility fixtures for block table headers, restart arrays,
+  compression metadata, range tombstones, sparse indexes, filters, and
+  encrypted inner/outer segment framing.
 
 ## v0.18.12 - WAL v2 And Torn-Tail Recovery
 
@@ -737,6 +756,15 @@ Deliverables:
 - WAL v2 header with database ID, log incarnation, WAL generation, LSN,
   transaction ID, transaction frame ordinal, expected transaction frame count,
   previous-frame digest, header authentication, and commit transcript root,
+- WAL-v2 AEAD envelope instantiated from `v0.18.3` over the concrete v2 frame
+  and commit-record fields, with associated data binding database ID, log
+  incarnation, WAL generation, LSN, transaction ID, frame ordinal, previous
+  frame digest, expected frame count, commit transcript root, crypto epoch,
+  policy epoch, tenant, and encryption domain,
+- compression-before-encryption decision for WAL sub-batches, including
+  authenticated original length, bounded decompression, explicit compression
+  format IDs, domain-local dictionary rules, and tiny/incompressible-frame skip
+  behavior,
 - explicit rule for single-domain transactions versus atomic cross-domain
   transactions; if cross-domain atomic writes are needed, use a commit-root
   record containing separately encrypted domain sub-batches rather than
@@ -747,16 +775,13 @@ Deliverables:
   distinguishes recoverable torn tail from interior corruption, truncates or
   rotates the WAL safely, and fsyncs the repaired file and parent directory,
 - writer preflight that validates an existing WAL tail before appending,
-- immediate WAL-v1 stopgap rule until v2 is active: host writers must poison
-  themselves after any append, partial write, flush, or sync error; existing
-  tails must be scanned before append; boolean sync options must be replaced
-  with explicit `DurabilityMode`; and append APIs must expose enough state to
-  distinguish durable, failed, and ambiguous outcomes,
-- durable LSN receipt, transaction idempotency key, and commit-status lookup
-  contract so ambiguous sync results can be retried without duplicating a
-  transaction,
+- migration rule from the `v0.18.3` WAL-v1 stopgap states to WAL v2 status
+  records without accepting ambiguous commits as durable by default,
 - redo-only ordinary failure model where pre-commit abort records are not
   required for transactions that never became durable,
+- golden compatibility fixtures for WAL-v2 headers, encrypted frames,
+  compressed and uncompressed sub-batches, commit records, repaired tails, and
+  commit-status records,
 - tests for header mutation, frame deletion, duplication, reordering,
   transaction frame omission, commit-root mismatch, appending after corrupt
   tail, writer reuse after append error, ambiguous sync result, idempotent
@@ -829,12 +854,49 @@ Deliverables:
 - rejection of manifests whose audit root, policy epoch, key-state digest, or
   freshness-anchor generation cannot be reconciled,
 - manifest validation tests,
+- golden compatibility fixtures for manifest headers, version edits,
+  checkpoint records, storage-directory identity, lease records, audit-root
+  references, freshness-anchor references, and live-table inventories,
 - tests for concurrent opener rejection, stale lease recovery, wrong database
   identity, wrong storage generation, and lease/anchor mismatch.
 
+## v0.19.1 - Storage Spine Vertical Slice
+
+Goal: prove the narrow end-to-end database kernel path immediately after
+manifests, before startup recovery, transactions, query execution, projections,
+and extensions depend on the storage format.
+
+Deliverables:
+
+- one complete vertical path:
+  `WriteBatch -> WAL v2 -> durable barrier -> memtable -> immutable table
+  flush -> manifest swap -> restart recovery -> point read -> domain-local
+  compaction`,
+- minimal `InternalKey`, `WriteBatch`, `MemTable`, `Snapshot`, `TableBuilder`,
+  `TableReader`, block iterator, merge iterator, filter policy,
+  manifest/version edit, version set, compaction job, obsolete-file manager,
+  database identity/superblock, environment/filesystem abstraction, and
+  resource governor,
+- snapshot lifetime and garbage-collection watermark model with oldest active
+  snapshot tracking, maximum snapshot/read-transaction age, explicit snapshot
+  leases, per-tenant pin quotas, abandoned-client handling, and expired-snapshot
+  failure behavior,
+- compaction, cache, and recovery SLO baselines that are measurable only after
+  the spine exists: read/write/space amplification, cache hit rate by block
+  class, recovery MiB/s through table replay, compaction debt, stall time,
+  protected-root liveness, and maximum memory per iterator/snapshot,
+- recovery test proving committed batches reappear after restart and
+  uncommitted or non-durable batches do not,
+- point-read test proving a single fact can be located without reading a whole
+  segment/table body,
+- compaction equivalence test proving compacted output preserves snapshot
+  visibility, tombstones, policy domains, and rollback-protected roots,
+- release-gate smoke that exercises this full spine with a tiny fixture.
+
 ## v0.20.0 - Startup Recovery Integration
 
-Goal: combine manifests, segments, and WAL replay at startup.
+Goal: recover authoritative database state from the manifest, WAL, and storage
+spine built in `v0.19.1`.
 
 Deliverables:
 
@@ -843,6 +905,8 @@ Deliverables:
 - freshness-anchor check before selecting an active manifest under production
   profiles,
 - WAL replay from checkpoint,
+- memtable/table/version-set reconstruction through the `v0.19.1` storage
+  spine,
 - fail-closed startup when the newest valid local manifest is older than the
   external anchor,
 - explicit historical recovery workflow for rollback roots that may be opened
@@ -878,20 +942,25 @@ still cheap to change.
 
 Deliverables:
 
-- microbenchmarks for WAL append/read, segment write/read, manifest selection,
-  and startup recovery over small, medium, and large fixture sets,
+- microbenchmarks for WAL append/read, segment write/read, raw block I/O,
+  recovery scanning, and startup manifest selection over small, medium, and
+  large fixture sets,
 - measurements for mirrored 256-byte segment footer overhead on very small
   segments and normal segment sizes,
 - policy-token fixed-slot scan benchmark for common authority/label shapes,
-- first measurable storage SLOs for WAL bytes per commit, fsyncs per commit,
-  p50/p99 commit latency, write amplification, read amplification, space
-  amplification, recovery MiB/s, maximum startup time, compaction debt, stall
-  time, cache hit rate by block class, and maximum memory per tenant,
-  transaction, iterator, and query,
+- first measurable pre-transaction SLOs for WAL bytes per appended batch, fsyncs
+  per durable append, raw block read/write throughput, recovery scan MiB/s,
+  manifest selection time, maximum startup scan time, policy-token scan time,
+  and memory used by recovery scanning,
+- benchmark methodology template recording hardware, filesystem, mount options,
+  drive-cache mode, dataset distribution, compression ratio, encryption
+  profile, warm/cold cache state, concurrency, run variance, and rootless
+  container bind-volume versus overlay-filesystem behavior,
 - rootless Podman recovery smoke with realistic persisted volume layout,
 - documented thresholds that are non-claims but catch obvious regressions,
-- decision record on whether footer layout, token-slot bounds, or recovery
-  sequencing need adjustment before transaction durability depends on them.
+- decision record on whether footer layout, block sizing, token-slot bounds, or
+  recovery sequencing need adjustment before transaction durability depends on
+  them.
 
 ## v0.20.3 - Canonical Fact Transcript And Verified Ingest
 
@@ -976,21 +1045,16 @@ Deliverables:
   hidden fact reintroduction, tombstone/legal-deletion conflict, and policy
   revocation visibility.
 
-## v0.20.7 - Real Storage Kernel Skeleton
+## v0.20.7 - Storage Kernel Expansion And Scrubbing
 
-Goal: introduce the first block-structured storage kernel before transaction
-and query milestones rely on whole-file segment reads.
+Goal: expand the `v0.19.1` storage spine with stronger compaction,
+reclamation, scrubbing, and tiering behavior before transaction and query
+milestones depend on sustained storage load.
 
 Deliverables:
 
-- WAL-backed mutable memtable model using the selected canonical key ordering,
-- immutable sorted run/SSTable-style table format using the `v0.18.11` block
-  layout,
-- version-set manager for table files, file numbers, manifest references,
-  compaction candidates, and visible snapshots,
-- streaming table iterators and merge iterators with bounded memory,
-- flush path from memtable to immutable table with policy/encryption-domain
-  partition enforcement,
+- hardened WAL-backed memtable, immutable sorted run, version-set, iterator,
+  merge-iterator, and flush behavior from the `v0.19.1` storage spine,
 - minimal domain-local compaction implementation before durable transaction
   load tests, including tombstone and snapshot retention awareness,
 - compaction picker with bounded debt accounting, tombstone retention windows,
@@ -1040,6 +1104,10 @@ Deliverables:
 - portable buffered positional/vectored I/O baseline, with optional direct-I/O,
   io_uring, mmap, SIMD, and aligned-buffer paths isolated behind reviewed host
   adapters,
+- unsafe or platform-specific fast paths must live in dedicated host-boundary
+  crates, retain the portable fallback, be optional per deployment profile, and
+  pass Miri where applicable plus ASan/TSan or equivalent checks before release
+  gates accept them,
 - descriptor-relative host path plan that keeps trusted directory handles and
   treats Linux `openat2` constraints as an optional hardened implementation,
 - filesystem capacity, ENOSPC, quota, file-count, open-file, and temporary-disk
@@ -1047,6 +1115,9 @@ Deliverables:
 - WAL/table extent preallocation policy, table size classes, temporary-space
   reservation, minimum free-space margins, compaction-debt admission, and
   per-tenant I/O throttling before commits can exhaust shared storage,
+- disk-exhaustion escape reserve for WAL repair, manifest/checkpoint
+  publication, audit emission, and orderly shutdown, with write-stall and
+  recovery behavior when compaction cannot reserve enough temporary space,
 - tests for cache budget enforcement, iterator pinning, cross-authority cache
   rejection, ENOSPC/quota handling, file-count limits, and descriptor-relative
   path replacement attempts.
@@ -1067,31 +1138,6 @@ Deliverables:
 - migration path from scaffold `PolicyTokenSet` slots to catalog-backed tags,
 - tests that homograph rejection, redaction, overflow behavior, non-allow
   masking, and constant-shape scans remain intact after compacting hot paths.
-
-## v0.20.10 - Storage Spine Vertical Slice
-
-Goal: prove the narrow end-to-end database kernel path before later
-transactions, query execution, projections, and extensions depend on the
-storage format.
-
-Deliverables:
-
-- one complete vertical path:
-  `WriteBatch -> WAL v2 -> durable barrier -> memtable -> immutable table
-  flush -> manifest swap -> restart recovery -> point read -> domain-local
-  compaction`,
-- minimal `InternalKey`, `WriteBatch`, `MemTable`, `Snapshot`, `TableBuilder`,
-  `TableReader`, block iterator, merge iterator, filter policy,
-  manifest/version edit, version set, compaction job, obsolete-file manager,
-  database identity/superblock, environment/filesystem abstraction, and
-  resource governor,
-- recovery test proving committed batches reappear after restart and
-  uncommitted or non-durable batches do not,
-- point-read test proving a single fact can be located without reading a whole
-  segment/table body,
-- compaction equivalence test proving compacted output preserves snapshot
-  visibility, tombstones, policy domains, and rollback-protected roots,
-- release-gate smoke that exercises this full spine with a tiny fixture.
 
 ## v0.21.0 - In-Memory Transaction Model
 
@@ -1134,8 +1180,12 @@ Deliverables:
 - read/write conflict validation,
 - predicate conflict validation,
 - write-write conflict validation,
+- OCC fairness policy for hot contention, including retry budgets,
+  starvation metrics, bounded backoff, and the criteria for switching to an
+  adaptive pessimistic intent-lock path,
 - abort reasons,
-- deterministic concurrency tests.
+- deterministic concurrency tests for starvation, retry-budget exhaustion, hot
+  write contention, bounded backoff, and adaptive intent-lock admission.
 
 ## v0.22.1 - Concurrency Model Checking
 
@@ -1171,6 +1221,9 @@ Deliverables:
 - commit sequence: policy validation, immutable write batch, sequence
   reservation, conflict validation, WAL append, group fsync, version/world-head
   publication, acknowledgement,
+- ordering rules for commit-sequence allocation, validation, group durability,
+  publication, cancellation, timeout, and client disconnect so an ambiguous
+  client session cannot create duplicate or lost commits,
 - crash rule proving a crash after the durable barrier but before publication
   is recovered by redo, while a crash before the barrier is never visible as
   committed,
@@ -1234,6 +1287,13 @@ Deliverables:
 - recovery-time measurements after clean shutdown, crash during append, crash
   after prepare, crash after commit, and crash during checkpoint,
 - memory-use checks for transaction-local read-your-writes overlays,
+- transaction SLO evidence for read-your-writes memory, predicate-set memory,
+  abort/retry rate under contention, hot-key backoff behavior, durable commit
+  throughput, and client-disconnect/ambiguous-commit status lookup,
+- benchmark methodology filled out with hardware, filesystem, mount options,
+  drive-cache mode, dataset distribution, compression ratio, encryption
+  profile, warm/cold cache state, concurrency, run variance, and rootless
+  container bind-volume versus overlay-filesystem behavior,
 - early evidence for whether fixed-shape policy evaluation, storage footer
   overhead, and sequential recovery are acceptable for 1.0 targets,
 - documented adjustment decision before v0.24 snapshot reads and v0.25 query
@@ -1591,8 +1651,8 @@ Deliverables:
 - explicit interpreter-first rule; optional JIT is deferred until profiling
   proves CPU-bound expression evaluation dominates and an interpreter fallback,
   code-cache limit, and sandbox/admission review exist,
-- plan for compression before encryption in WAL/table blocks, with bounded
-  decompression and authenticated original length,
+- execution plan compatibility with the storage-format compression decisions
+  from `v0.18.11` and WAL sub-batch compression decisions from `v0.18.12`,
 - benchmark fixtures for YCSB-like point workloads, temporal scans, causal
   traversal, branch promotion, checkpoint recovery, compaction debt, and
   policy-heavy queries,
@@ -1709,14 +1769,19 @@ Deliverables:
   manifest-bound watermarks and snapshot visibility, policy-first filtering
   where possible, embedding model/version/provenance fields, and recall
   regression fixtures,
+- rule that HNSW/ANN graph edges never cross incompatible tenant, compartment,
+  classification, policy, key-epoch, legal, or embedding-model domains,
+- bounded oversampling for filtered ANN, exact-search fallback when filtering
+  would make approximate search unsafe, deterministic rebuild criteria, and
+  recall targets per policy partition,
 - AI write capability ceiling metadata,
 - derivation-cone key-domain metadata,
 - source-fact visibility rules,
 - no lower-domain embedding of higher-domain facts,
-- tests for denied vector/AI projection writes.
-- tests for vector deletion visibility, stale-policy rejection, recall
-  regression, cross-domain leakage rejection, and model-version/provenance
-  mismatch.
+- tests for denied vector/AI projection writes, vector deletion visibility,
+  stale-policy rejection, recall regression, cross-domain leakage rejection,
+  filtered-ANN oversampling bounds, exact-search fallback, and
+  model-version/provenance mismatch.
 
 ## v0.32.1 - Extension Deferral And Core API Proof Gate
 

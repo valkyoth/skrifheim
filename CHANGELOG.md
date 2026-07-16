@@ -29,6 +29,13 @@
   durability evidence, obsolete-file cleanup, file-number no-reuse,
   cache-key/pinning rules, resource governance, the mandatory storage spine
   vertical slice, database SLOs, and vector-search projection boundaries.
+- Refined roadmap sequencing so `v0.18.3` admits digest/AEAD primitives without
+  claiming final storage encryption, WAL-v1 hardening happens immediately,
+  block/WAL/manifest formats carry golden fixtures, compression and range
+  tombstones land with physical layout, the storage spine moves to `v0.19.1`
+  before startup recovery, early SLOs match available machinery, snapshot/GC
+  watermarks and disk-exhaustion reserves are explicit, and vector ANN
+  isolation rules are release-gated.
 - Reworked the roadmap so `v1.0.0` is the core production world database,
   `v1.1.0` through `v1.6.0` are optional application-extension tracks, and
   Hyve clustering starts at `v2.0.0`.
