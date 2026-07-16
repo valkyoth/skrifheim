@@ -767,6 +767,11 @@ Deliverables:
   sequence range, file length, footer location, format/features, database
   generation, file identity, commitment algorithm/version, encryption domain,
   policy epoch, crypto epoch, and key-slot identity,
+- key-slot rotation semantics for table commitments: the commitment binds the
+  immutable table-DEK identity and encryption domain, while mutable wrapping
+  key locators or KEK slots are authenticated through manifest/wrapped-key
+  metadata so routine KEK rewrap does not rewrite blocks or recompute the
+  table commitment; DEK rotation requires re-encryption and a new commitment,
 - manifest reference rule requiring the authenticated manifest to name the
   table/segment commitment, not only a file path or per-block digest set,
 - durable-format compatibility contract for block and segment framing: major
@@ -798,6 +803,10 @@ Deliverables:
   duplicate-block replay, stale-block replay, missing final block, missing
   middle block, reordered block, substituted index/filter block, truncated
   table, valid-prefix attack, and attacker-rebuilt footer,
+- tests for KEK rewrap without table rewrite, DEK rotation requiring
+  re-encryption, previous wrapping-slot removal, crash during rewrap,
+  compromised wrapping key versus compromised table DEK, and crypto-erasure of
+  every readable key slot,
 - golden compatibility fixtures for block table headers, restart arrays,
   compression metadata, range tombstones, sparse indexes, filters, and
   encrypted inner/outer segment framing, exercised by current and previous
@@ -2454,6 +2463,10 @@ Deliverables:
   manifests, backups, query parsing/planning, and storage migrations,
 - retained minimized regression corpora committed or archived as release
   evidence for every production-relevant parser and durable format,
+- durable fuzz-evidence archive contract covering content digests,
+  source-commit binding, retention period, storage authority, reproducible
+  retrieval instructions, toolchain and fuzz-engine versions, and protection
+  against silently replacing a corpus or coverage report,
 - cross-version and differential storage testing against the reference model,
 - ASan, UBSan, TSan, Miri, or platform-equivalent sanitizer/evidence runs where
   applicable to host-boundary and parser crates,
@@ -2819,6 +2832,12 @@ Deliverables:
 - final release pass/fail report applying the `v0.50.0` blocking criteria,
   including confidence intervals, p99/p99.9 decisions, throughput/recovery
   floors, amplification ceilings, and any approved baseline changes,
+- final fuzz/property qualification rerun against the exact reviewed release
+  candidate commit, including all `v0.44.0` campaign thresholds, sanitizer or
+  Miri runs where applicable, property tests, cross-version tests,
+  reference-model differential tests, coverage artifacts, minimized corpora,
+  and zero unresolved crashes, hangs, resource-bound violations, or correctness
+  divergences,
 - final optional extension integration checklist,
 - no new feature work without explicit deferral decision.
 
@@ -2889,8 +2908,13 @@ Deliverables:
   execution tests for production-supported OS/filesystem pairs,
 - online integrity scrubbing, protected-root reference accounting, and
   capacity/file-count governance,
+- non-destructive restart repair with preserved original evidence, staged or
+  copy-on-write repair, provenance/audit records, and explicit authority for
+  destructive salvage,
 - externally anchorable chained audit roots,
-- SBOM, dependency-tree, source-lock, and release-evidence gates,
+- production fuzz qualification rerun on the final release-candidate commit,
+- SBOM, dependency-tree, source-lock, fuzz-evidence archive, and
+  release-evidence gates,
 - local snapshot and rollback retention with locked archive/recovery worlds,
 - rootless Podman deployment,
 - backup/restore engine plus final schema, retention, quota, observability,

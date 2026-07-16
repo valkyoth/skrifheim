@@ -323,6 +323,10 @@ commitment algorithm/version, encryption domain, policy epoch, crypto epoch,
 and key-slot identity. The authenticated manifest references that commitment
 so valid blocks cannot be removed, reordered, duplicated, or hidden behind an
 attacker-rebuilt footer.
+The committed key identity is the immutable table-DEK identity, not a mutable
+wrapping-key locator. Routine KEK rewrap updates authenticated manifest and
+wrapped-key metadata without rewriting table blocks or recomputing the table
+commitment; table-DEK rotation requires re-encryption and a new commitment.
 
 Every durable format starts with a compatibility contract, not only a byte
 layout: major/minor version semantics, required and safely ignorable feature
@@ -545,7 +549,13 @@ coverage-guided campaigns, retained minimized regression corpora,
 cross-version and reference-model differential tests, sanitizer or Miri
 evidence where applicable, parser allocation/recursion/time limits, release
 candidate execution-count or duration thresholds, and reproducible failure
-commands bound to the reviewed release commit.
+commands bound to the reviewed release commit. Archived fuzz evidence needs
+content digests, source-commit binding, retention period, storage authority,
+reproducible retrieval instructions, toolchain and fuzz-engine versions, and
+protection against silent corpus or coverage-report replacement. The final
+release candidate reruns the qualification against the exact reviewed commit,
+with zero unresolved crashes, hangs, resource-bound violations, or correctness
+divergences.
 
 ## Phase 4: Policy And Classification Planner
 

@@ -62,6 +62,10 @@
 - Added verification-policy roadmap gates for production-grade fuzz campaigns,
   objective release pass/fail criteria, non-destructive restart repair with
   preserved evidence, and algorithm/key-bound table commitments.
+- Tightened verification planning with final-RC fuzz/property reruns, durable
+  verifiable fuzz-evidence archives, and table-commitment key-slot rotation
+  semantics that separate immutable table-DEK identity from mutable KEK
+  wrapping slots.
 - Updated the pinned Rust stable toolchain from `1.97.0` to `1.97.1` after
   `rustup check` reported stable `1.97.1` (`8bab26f4f`, 2026-07-14).
 - Reworked the roadmap so `v1.0.0` is the core production world database,
