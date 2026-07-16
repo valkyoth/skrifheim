@@ -66,24 +66,10 @@
   verifiable fuzz-evidence archives, and table-commitment key-slot rotation
   semantics that separate immutable table-DEK identity from mutable KEK
   wrapping slots.
-- Clarified final release-candidate evidence ordering by separating the
-  reviewed implementation commit from the evidence-only commit, requiring
-  signed or attested external evidence archives, and planning release-readiness
-  validation for mandatory qualification report digests.
-- Added release artifact equivalence planning with executable-input digests,
-  reviewed/evidence-only provenance, exact published-artifact smoke tests,
-  signed tag or external release attestation binding, and mandatory v0.57
-  qualification-manifest validation fixtures.
-- Fixed the release-evidence roadmap to avoid self-referential evidence commits
-  and added canonical qualification-manifest serialization/signature planning.
-- Added release-publication roadmap gates for tag-generated archive handling,
-  post-tag pre-publication validation, transactional publication, hermetic
-  reproducible builds, richer artifact-set identity, and release-signing
-  compromise response.
-- Tightened release publication planning with explicit tag authentication
-  modes, remote tag push authorization, per-channel publication state
-  machines, signed release-completion receipts, evidence freshness windows, and
-  release quorum proof requirements.
+- Simplified the release workflow back to the solo-maintainer process:
+  implementation stop, maintainer pentest, Codex fixes and documents findings,
+  permanent pentest digest commit, GitHub Actions green, then signed tag/push
+  only after explicit maintainer instruction.
 - Updated the pinned Rust stable toolchain from `1.97.0` to `1.97.1` after
   `rustup check` reported stable `1.97.1` (`8bab26f4f`, 2026-07-14).
 - Reworked the roadmap so `v1.0.0` is the core production world database,

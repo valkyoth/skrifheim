@@ -90,14 +90,16 @@ Pentest flow:
 4. The findings are reviewed and fixed.
 5. `PENTEST.md` is removed after the findings are handled.
 6. Local gates are run again.
-7. A permanent report is written at `security/pentest/<tag>.md` only after the
-   release-prep commit is complete and the result is `Status: PASS`.
-8. The evidence-only commit changes only the permanent report and, where
-   required, the machine-readable qualification manifest. It records
-   `Reviewed-Commit:` as its first parent but does not declare its own commit
-   hash. The release gate derives the evidence commit from `HEAD` and verifies
-   `HEAD^` is the reviewed commit.
-9. Tagging and pushing tags happen only when explicitly requested.
+7. When the maintainer reports the pentest is green, Codex writes the permanent
+   report at `security/pentest/<tag>.md`.
+8. Codex commits the implementation state, release metadata, and permanent
+   pentest report together.
+9. The project waits for GitHub Actions.
+10. If GitHub fails, Codex fixes the issue, updates tests/docs/release
+    evidence when relevant, commits again, and the project waits for GitHub
+    again.
+11. If GitHub is green, the maintainer tells Codex. Tagging and pushing tags
+    happen only when explicitly requested.
 
 Root `PENTEST.md` is temporary scratch input. It must not be committed, and the
 release metadata validator fails while it exists.
@@ -558,7 +560,7 @@ Deliverables:
 
 - release-readiness gate that requires committed release notes, committed
   permanent pentest digest, clean root `PENTEST.md` removal, current tag
-  absence, and reviewed-commit binding for final report commits,
+  absence, and matching release version in the permanent pentest report,
 - SBOM generation and non-empty SBOM validation in the release gate,
 - normal, all-features, and security-relevant feature dependency tree snapshots
   for every release where feature gates or dependency sets change,
@@ -572,12 +574,12 @@ Deliverables:
   whenever dependency, toolchain, or GitHub Actions versions change,
 - tests for the release-readiness gate and dependency-policy scripts so the
   gate itself cannot silently regress,
-- signed release provenance and reproducibility plan covering source commit,
-  toolchain, dependency lockfile, container image digests, SBOM, release gate
-  output, and whether bit-for-bit reproducibility is required or explicitly
-  non-claimed for each release profile,
-- release-gate check that final release commits can produce machine-readable
-  provenance evidence without including secrets or local machine paths.
+- practical release provenance covering source commit, toolchain, dependency
+  lockfile, container image digests, SBOM, release gate output, pentest digest,
+  and GitHub Actions status, with bit-for-bit reproducibility explicitly
+  non-claimed until binary/package publication exists,
+- release-gate check that release evidence does not include secrets or local
+  machine paths.
 
 ## v0.18.6 - Cross-Platform Portability Baseline
 
@@ -2826,108 +2828,6 @@ Deliverables:
   qualification, including required 24-hour endurance and target 72-hour
   endurance over mixed backup, restore, legal-policy, sovereign-placement, key
   rotation, compaction, scrub, checkpoint, and foreground read/write traffic,
-- final evidence commit-ordering rule: the reviewed implementation commit is
-  the frozen code/configuration commit on which fuzzing, benchmarks, crash
-  tests, pentesting, and qualification run; the evidence-only commit is its
-  direct child and may change only the permitted permanent evidence report and
-  machine-readable qualification manifest,
-- external fuzz, benchmark, crash, platform, backup/restore, and pentest
-  archives bind to the reviewed implementation commit; the evidence-only
-  commit records their content digests, signatures or
-  attestations, trusted timestamps, storage locations, toolchain/harness
-  versions, and pass/fail results without modifying the reviewed source tree,
-- evidence invalidation rule: any source, configuration, test-harness, or
-  dependency change after the reviewed implementation commit requires rerunning
-  affected qualification before tagging; documentation-only corrections require
-  either a new reviewed implementation commit with affected qualification
-  rerun or evidence reuse only when an executable-input digest proves no
-  qualified build input changed and a signed no-impact decision is recorded,
-- executable-input digest covering source files, build configuration,
-  dependency lockfiles, toolchain specification, build scripts, enabled
-  features, container build inputs, and every other input that can affect
-  executable artifacts; the permitted evidence-only report and qualification
-  manifest are explicitly excluded from executable inputs,
-- hermetic build requirement for reproducibility claims, including a
-  network-disabled build sandbox, pinned builder/container/compiler/linker
-  digests, fixed locale, timezone, timestamps, environment variables, and
-  filesystem ordering, explicit target triple and CPU feature baseline,
-  clean-room or independent second build for bit-for-bit claims, and negative
-  tests for undeclared network access and host-environment leakage,
-- release artifact rule requiring executable binaries, containers, and
-  packages to be built from the reviewed implementation commit's executable
-  inputs, not from the evidence-only commit; if a future profile allows
-  artifacts from the evidence-only commit, their hashes and mechanically
-  verified permitted differences must live in a signed post-commit attestation,
-  not inside the evidence-only commit,
-- source archive rule with two explicit paths: reviewed-commit source bundles
-  are qualified, smoked, and hashed before tagging so the signed annotated tag
-  can bind their hash; hosting-provider or tag-generated source archives are
-  retrieved, smoked, hashed, and attested only after the tag exists by a
-  separate signed post-tag attestation, not by replacing the tag object,
-- provenance for every published artifact recording `Reviewed-Commit`,
-  executable-input digest, artifact name, version, kind, target triple, ABI,
-  minimum CPU/OS baseline, media or package type, byte size, artifact hash,
-  corresponding SBOM digest, provenance digest, required versus optional
-  platform status, signing/notarization state, build profile, feature set,
-  toolchain, container base image digest where relevant, and reproducibility or
-  permitted-difference result,
-- final smoke test of the exact binaries, containers, source archives, and
-  packages built from the reviewed commit before tagging, not only locally
-  rebuilt equivalents; tag-generated archives are explicitly excluded from
-  this pre-tag smoke and move to the post-tag gate,
-- local immutable version tag created after the evidence-only commit and after
-  explicit tagging authorization, binding release tag/version,
-  evidence-only commit, reviewed implementation commit, qualification manifest
-  digest, reviewed-commit artifact hashes, reviewed source-bundle hash where
-  used, and release PASS status through the selected authentication mode,
-- immutable version tag requirement for every release path, authenticated by
-  either a signed annotated tag or a lightweight tag plus detached signed
-  attestation binding tag name and target commit; validators verify the
-  selected authentication mode rather than assuming every mode has a tag
-  signature,
-- release authorization proofs from the `v0.33.1` quorum/threshold model for
-  local tag creation, remote tag push, post-tag attestation, and public
-  publication, with distinct roles, validity windows, and self-approval
-  rejection,
-- release-signing compromise model for tags and post-tag attestations,
-  including authorized signer identities and algorithms, key rotation and
-  revocation, trusted timestamp or transparency evidence, replay and
-  version-rollback rejection, emergency artifact withdrawal, and signed
-  superseding advisories without retagging,
-- explicit remote-tag phase for hosting-generated archives: create and validate
-  the local immutable tag, obtain separate authorization to push it, push the
-  immutable remote tag as an externally visible irreversible publication event,
-  retrieve/smoke/hash the provider-generated archive, create the post-tag
-  attestation, then continue publication,
-- post-tag pre-publication validator that runs only after explicit tag-push
-  authorization and verifies selected tag authentication mode and target,
-  post-tag attestation, tag-generated archive hash and smoke result where used,
-  final downloadable objects from their real distribution endpoints,
-  registry/package-index integrity, artifact signatures, SBOM/provenance links,
-  and no mismatch between the signed release attestation and downloadable
-  bytes,
-- transactional publication protocol: upload artifacts under immutable
-  digest/version identities, download and verify from actual distribution
-  endpoints, verify hashes/signatures/SBOM/provenance links and smoke results,
-  publish registry indexes, release pages, and `latest` pointers last, never
-  overwrite artifacts or move an existing version tag, and handle partial
-  publication by retry or signed yank/revocation metadata,
-- channel-specific publication state machine for Git hosting, container
-  registries, crates.io, package repositories, and website/release pages,
-  defining prepare, publish, verify, and compensate behavior, hidden staging
-  support, first irreversible operation, retry/idempotency key, yank or
-  revocation capability, partial-release handling, and final post-publication
-  verification from public endpoints,
-- signed release-completion receipt listing every publication channel, final
-  public object digest, immutable URL or registry identity, verification time,
-  and PASS/FAIL result,
-- evidence freshness windows checked at tag and publication time for
-  `cargo audit`, dependency advisory snapshots, container/base-image
-  vulnerability scans, pentest evidence, fuzz evidence, signing certificates,
-  attestations, source-lock availability, toolchain review, and build-image
-  review; blocking advisories after the reviewed commit require abandon,
-  signed revocation/yank, or restart from a new reviewed commit and must never
-  silently reuse an already-pushed version tag,
 - crash/recovery and corrupted-backup matrix rerun after final backup and
   placement integration,
 - upgrade from the oldest supported format and downgrade-rejection run against
@@ -2943,36 +2843,14 @@ Deliverables:
   reference-model differential tests, coverage artifacts, minimized corpora,
   and zero unresolved crashes, hangs, resource-bound violations, or correctness
   divergences,
-- machine-readable qualification manifest permitted as the only companion file
-  to the permanent pentest report in the evidence-only commit,
-- qualification manifest canonicalization contract covering canonical
-  serialization, schema version, digest algorithm, signature envelope,
-  trust-root and revocation policy, unknown-field behavior, and schema upgrade
-  rules so validators hash and interpret the same manifest identically,
-- implemented release-readiness validator requiring the permanent report and
-  qualification manifest to name the reviewed commit, executable-input digest,
-  fuzz archive digest, performance/endurance report digest, crash-matrix report
-  digest, platform-qualification report digest, backup/restore qualification
-  digest, toolchain and harness versions, PASS status for every mandatory
-  qualification class, and artifact hashes for binaries, containers,
-  reviewed-commit source bundles, and packages; the validator derives the
-  evidence-only commit from `HEAD` and verifies `HEAD^` equals the reviewed
-  commit instead of requiring the manifest to contain its own commit hash,
-- negative validation fixtures for missing or malformed evidence digests,
-  wrong reviewed commit, untrusted or expired producer attestation, missing
-  mandatory qualification, non-PASS result, toolchain or harness mismatch,
-  evidence archive retrieval failure, evidence digest failure, executable-input
-  digest mismatch, forbidden evidence-only commit contents, self-referential
-  evidence-commit hash declarations, and unverified qualified-versus-published
-  artifact differences,
-- negative publication fixtures for partial upload, registry timeout,
-  mismatched mirrors, duplicate version, forbidden retag, stale `latest`
-  pointer, missing artifact, duplicate artifact, unexpected artifact,
-  cross-platform-substituted artifact, unsigned or expired post-tag
-  attestation, release-signing key revocation, tag-generated archive hash
-  mismatch, stale evidence window, missing release quorum proof, self-approved
-  release proof, wrong tag authentication mode, remote tag push without
-  authorization, and channel completion receipt mismatch,
+- permanent pentest digest committed after the maintainer reports the pentest
+  is green,
+- GitHub Actions must be green after the pentest digest/release-prep commit,
+- if GitHub fails, fix the issue, update tests/docs/release evidence where
+  relevant, commit again, and wait for GitHub to go green,
+- tag and tag push happen only after the maintainer explicitly says GitHub is
+  green and instructs Codex to tag/push,
+- signed tag when local Git signing is available,
 - final optional extension integration checklist,
 - no new feature work without explicit deferral decision.
 

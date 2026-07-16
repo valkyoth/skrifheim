@@ -80,75 +80,14 @@ or client-provided evidence path is used.
 - Release evidence is part of the product. A release is not complete unless its
   pentest digest, release notes, SBOM, relevant dependency-tree snapshots, and
   source-lock evidence are committed where the release gate can verify them.
-- Final qualification evidence is ordered to avoid circular proof. The
-  reviewed implementation commit is the frozen source/configuration commit that
-  fuzzing, benchmarks, crash tests, pentesting, and qualification exercise. The
-  evidence-only commit is its direct child and may change only the permitted
-  permanent evidence report and machine-readable qualification manifest. That
-  manifest records the reviewed commit and evidence digests but never declares
-  its own commit hash; validators derive the evidence-only commit from `HEAD`
-  and verify `HEAD^` is the reviewed commit. External archives bind to the
-  reviewed implementation commit; the evidence-only commit records their
-  digests, signatures or attestations, trusted timestamps, storage locations,
-  toolchain and harness versions, and pass/fail results. Source,
-  configuration, test-harness, or dependency changes invalidate affected
-  evidence and require reruns. Documentation-only amendments may reuse evidence
-  only when an executable-input digest proves no qualified build input changed
-  and a signed no-impact decision is recorded.
-- Tagged artifacts must be proven equivalent to qualified artifacts. The
-  executable-input digest covers source, configuration, lockfiles, toolchain,
-  build scripts, enabled features, container build inputs, and other executable
-  inputs while excluding the permitted evidence-only files. Release provenance
-  records the reviewed commit, artifact hashes, build profile, feature set,
-  toolchain, container base image digest where relevant, and either
-  reproducible equivalence or a mechanically verified permitted difference.
-  Reproducibility claims require hermetic builds: network-disabled sandbox,
-  pinned builder/container/compiler/linker digests, fixed locale, timezone,
-  timestamps, environment variables, filesystem ordering, explicit target
-  triple, CPU baseline, and independent second-build evidence for bit-for-bit
-  claims.
-  Executable artifacts are built from the reviewed implementation commit's
-  executable inputs; if a future profile allows evidence-only-commit artifacts,
-  their hashes and permitted differences are recorded in a signed post-commit
-  attestation, not inside the evidence-only commit. Final smoke tests run
-  against the exact binaries, containers, source archives, and packages that
-  will be published. Reviewed-commit source bundles are qualified before
-  tagging; hosting-provider or tag-generated archives are retrieved, smoked,
-  hashed, and attested after the tag exists. The signed annotated tag or
-  external release attestation created after the evidence-only commit binds the
-  release version, evidence-only commit, reviewed commit, qualification
-  manifest digest, artifact hashes, reviewed source-bundle hash, and PASS
-  status. A separate post-tag attestation binds any tag-generated archive hash.
-- Release publication is transactional. Artifacts are uploaded under immutable
-  digest/version identities, then downloaded from actual distribution
-  endpoints and verified for hashes, signatures, SBOM/provenance links, and
-  smoke results before registry indexes, release pages, and `latest` pointers
-  are published. Existing artifacts and version tags are never overwritten.
-  Partial publication is handled by retry or signed yank/revocation metadata.
-  Release-signing keys for tags and post-tag attestations need authorized
-  signer identities, algorithm policy, rotation, revocation, trusted timestamp
-  or transparency evidence, replay/version-rollback rejection, emergency
-  artifact withdrawal, and signed superseding advisories without retagging.
-  Every release has an immutable version tag authenticated either by a signed
-  annotated tag or by a lightweight tag plus detached signed attestation
-  binding tag name and target commit. Remote tag push is an externally visible
-  publication event and requires separate authorization. If provider-generated
-  source archives are used, the remote tag is pushed first, then the archive is
-  retrieved, smoked, hashed, and bound by a separate signed post-tag
-  attestation.
-- Publication channels have explicit state machines because release publication
-  is not atomic across Git hosting, container registries, crates.io, package
-  repositories, and websites. Each channel defines prepare, publish, verify,
-  and compensate behavior, hidden staging support, first irreversible
-  operation, retry/idempotency key, yank or revocation capability,
-  partial-release handling, and public-endpoint verification. A signed
-  release-completion receipt records each channel and final public object
-  digest. Evidence freshness windows apply at tag and publication time for
-  dependency advisories, container scans, pentest/fuzz evidence, signing
-  certificates, attestations, source locks, toolchain review, and build-image
-  review. Blocking advisories after the reviewed commit require abandoning,
-  revoking/yanking, or restarting from a new reviewed commit without silently
-  reusing the version tag.
+- The release process is intentionally lightweight for a solo maintainer
+  working with Codex. Codex implements a version, calls a pentest stop, fixes
+  any reported findings, writes the permanent pentest digest after the
+  maintainer reports green, commits that state, waits for GitHub Actions, and
+  creates/pushes the tag only when the maintainer explicitly instructs it.
+  If GitHub fails, Codex fixes the failure, updates the release evidence when
+  the fix changes it, commits again, and waits for GitHub to go green before
+  tagging.
 
 ## Workspace Shape
 
@@ -623,8 +562,8 @@ content digests, source-commit binding, authenticated producer identity,
 trusted timestamp, retention period, storage authority, reproducible retrieval
 instructions, toolchain and fuzz-engine versions, and protection against
 silent corpus or coverage-report replacement. The final release candidate
-reruns the qualification against the exact reviewed implementation commit,
-with zero unresolved crashes, hangs, resource-bound violations, or correctness
+reruns the qualification against the exact release-candidate commit, with zero
+unresolved crashes, hangs, resource-bound violations, or correctness
 divergences.
 
 ## Phase 4: Policy And Classification Planner

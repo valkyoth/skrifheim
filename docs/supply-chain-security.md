@@ -22,30 +22,14 @@ Dependency and tooling changes require deliberate review.
 - Release gates must produce enough evidence to audit what was actually
   shipped: release notes, pentest digest, SBOM, relevant dependency tree
   snapshots, and current tool/crate review when versions change.
-- Final release candidates must follow the release runbook's evidence model:
-  reviewed implementation commit, evidence-only commit, executable-input
-  digest, canonical qualification manifest, hermetic build evidence, artifact
-  hashes, exact-artifact smoke tests, and machine-readable release provenance.
-- Reproducibility claims require network-disabled builds with pinned
-  builder/container/compiler/linker digests, fixed locale/time/environment and
-  filesystem ordering, explicit target triples and CPU baselines, and
-  independent rebuild evidence for bit-for-bit claims.
-- Every release needs an immutable version tag authenticated either by a signed
-  annotated tag or by a lightweight tag plus detached signed attestation
-  binding tag name and target commit. Remote tag push is an externally visible
-  publication event requiring explicit authorization.
-- Provider-generated tag archives must be handled after the remote tag exists:
-  retrieve, smoke, hash, and bind them through a separate signed post-tag
-  attestation, or publish a reviewed-commit source bundle instead.
-- Release publication must be channel-specific and transactional where the
-  channel allows it: upload immutable artifacts first, verify downloads from
-  public endpoints, publish indexes/pages/latest pointers last, never overwrite
-  versioned artifacts or move version tags, and use signed yank/revocation
-  metadata for partial or compromised releases.
-- Evidence freshness windows are required for advisory scans, container/base
-  image scans, pentest and fuzz evidence, signing certificates, attestations,
-  source-lock availability, toolchain review, and build-image review at tag and
-  publication time.
+- Version release workflow follows the release runbook: Codex calls a pentest
+  stop, the maintainer pentests, Codex resolves findings, the permanent pentest
+  digest is committed, GitHub Actions must be green, and tags are created and
+  pushed only after explicit maintainer instruction.
+- When `skrifheim` starts publishing binary, container, package, or registry
+  artifacts beyond Git tags, add artifact-specific provenance and publication
+  controls at that time. Do not impose those workflows on the current
+  source-tag release process.
 - External standards, laws, compliance packs, cryptographic specifications,
   file-format references, and conformance fixtures must be source-locked before
   `skrifheim` claims behavior derived from them.
