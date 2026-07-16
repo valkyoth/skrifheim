@@ -42,6 +42,12 @@
   audit-with-commit durability, scrub salvage behavior, and clearer
   `v0.18.3` documentation that concrete block/segment and WAL encryption land
   in `v0.18.11` and `v0.18.12`.
+- Folded the freshness-anchor provider work into SemVer-valid `v0.18.7`, added
+  release-plan validation for strictly increasing SemVer headings, added
+  manifest-key bootstrap and rotation recovery, fixed-width counter exhaustion
+  policy, and a production backup/restore completion milestone.
+- Updated the pinned Rust stable toolchain from `1.97.0` to `1.97.1` after
+  `rustup check` reported stable `1.97.1` (`8bab26f4f`, 2026-07-14).
 - Reworked the roadmap so `v1.0.0` is the core production world database,
   `v1.1.0` through `v1.6.0` are optional application-extension tracks, and
   Hyve clustering starts at `v2.0.0`.

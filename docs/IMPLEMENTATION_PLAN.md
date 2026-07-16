@@ -64,7 +64,7 @@ or client-provided evidence path is used.
 
 ## Non-Negotiable Engineering Rules
 
-- Rust stable `1.97.0`, edition 2024, workspace resolver `3`.
+- Rust stable `1.97.1`, edition 2024, workspace resolver `3`.
 - Latest stable Rust and dependency versions are re-checked before dependency/toolchain changes.
 - Core library crates use `#![no_std]` where possible.
 - External crates are exceptional: discuss, verify, document, and test before use. Prefer local implementation.
@@ -361,6 +361,21 @@ tenant/domain metadata, world heads, schema roots, key-state digests, and audit
 roots belong inside authenticated encrypted metadata unless an explicit
 public-header exception is documented.
 
+Manifest-key bootstrap must not trust the encrypted manifest before the key is
+located. Outer-header fields are only key-location hints; database identity and
+manifest generation construct the key-provider scope, opaque key slots prevent
+unnecessary key-ID disclosure, dual-key rotation handles previous-key fallback,
+and crashes between key activation, manifest publication, checkpoint update,
+and anchor advancement must recover without accepting key redirection.
+
+Fixed-width counters are security boundaries. LSNs, WAL generations,
+transaction IDs, commit sequences, file numbers, manifest generations, crypto
+epochs, lifecycle sequences, anchor generations, and backup generations use
+checked arithmetic, pre-maximum exhaustion thresholds, explicit rollover
+incarnations where safe, and fail-closed behavior where rollover would break
+ordering, nonce uniqueness, deletion safety, checkpoints, backups, or
+freshness anchors.
+
 Space reclamation is a correctness feature, not only housekeeping. WAL pruning,
 obsolete-file sets, oldest-active-snapshot watermarks, explicit snapshot
 leases, maximum snapshot/read-transaction age, per-tenant pin quotas, snapshot
@@ -374,6 +389,14 @@ Hot/cold tiering and blob deduplication are storage features only inside
 compatible security domains. Dedup must not reveal plaintext equality across
 tenant, compartment, policy, key epoch, or legal boundaries. Tier movement must
 preserve snapshot, rollback, backup, audit, and legal-hold liveness.
+
+Backup and restore must graduate from skeleton to production before 1.0.
+Online backups need manifest-generation pinning during concurrent writes,
+full/incremental recovery-point semantics, resumable verified chunks,
+backup-specific key rotation and crypto-erasure behavior, retention and
+orphan-upload cleanup, restore into a new database identity versus authorized
+in-place recovery, automated restore drills, corruption injection, and measured
+RPO, RTO, throughput, and temporary-space requirements.
 
 The storage engine needs a block cache rather than a traditional dirty-page
 buffer pool. Dirty data primarily lives in WAL-backed memtables; immutable

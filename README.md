@@ -44,7 +44,7 @@ It is not a usable database engine.
 
 | Capability | Status | Notes |
 | --- | --- | --- |
-| Rust workspace | Active | Edition 2024, resolver `3`, Rust stable `1.97.0` pinned. |
+| Rust workspace | Active | Edition 2024, resolver `3`, Rust stable `1.97.1` pinned. |
 | Core crate split | Active | Focused crates for core types, facts, worlds, policy, crypto envelopes, storage metadata, query planning, and CLI orchestration. |
 | `no_std` core policy | Active | Library crates under `crates/` use `#![no_std]` and `#![forbid(unsafe_code)]`. |
 | Dependency policy | Active | `cargo deny` policy denies wildcard external dependencies and unknown sources. |

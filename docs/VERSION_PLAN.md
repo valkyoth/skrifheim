@@ -106,7 +106,7 @@ Goal: initialize the serious Rust workspace and policy baseline.
 
 Deliverables:
 
-- Rust stable `1.97.0` pinned.
+- Rust stable `1.97.1` pinned.
 - Focused workspace crates.
 - `scripts/checks.sh`.
 - CI, dependency policy, security policy, release notes.
@@ -621,30 +621,6 @@ Deliverables:
   anchor digest,
 - `FreshnessAnchor` trait shape with `current` and compare-and-advance
   semantics,
-- production profile rule requiring at least one non-rollbackable freshness
-  mechanism: TPM monotonic/NV state, HSM-backed counter, remote witness or
-  transparency service, WORM/offline signed operator checkpoint, or
-  threshold-held external checkpoint,
-- explicit non-claim that signed manifests and AEAD prove authenticity of a
-  state, not freshness of the newest state by themselves,
-- recovery workflow distinction between active startup and historical rollback
-  inspection,
-- crash-ordering rule for anchor advancement versus manifest publication,
-  including how to avoid accepting stale roots and how to recover from a crash
-  after one side advances but before the other side is durable,
-- rule that active startup must fail closed if the selected manifest generation
-  is older than the anchor or if the anchor cannot be checked under a
-  production profile,
-- tests for stale root rejection, generation regression, anchor digest chain
-  mismatch, missing production anchor, and explicit historical recovery open.
-
-## v0.18.7.1 - Freshness Anchor Reference Provider
-
-Goal: implement at least one real non-rollbackable freshness-anchor provider
-before production startup recovery depends on anchor checks.
-
-Deliverables:
-
 - supported reference provider decision, initially remote witness client,
   TPM-backed host adapter, or another explicitly reviewed non-rollbackable
   mechanism,
@@ -661,7 +637,23 @@ Deliverables:
 - permanent-unavailable-anchor recovery policy that allows only explicit
   historical inspection, recovery-world fork, or operator-approved
   re-provisioning without silently replacing the active anchor,
-- tests for compare-and-advance idempotence, stale advance rejection,
+- production profile rule requiring at least one non-rollbackable freshness
+  mechanism: TPM monotonic/NV state, HSM-backed counter, remote witness or
+  transparency service, WORM/offline signed operator checkpoint, or
+  threshold-held external checkpoint,
+- explicit non-claim that signed manifests and AEAD prove authenticity of a
+  state, not freshness of the newest state by themselves,
+- recovery workflow distinction between active startup and historical rollback
+  inspection,
+- crash-ordering rule for anchor advancement versus manifest publication,
+  including how to avoid accepting stale roots and how to recover from a crash
+  after one side advances but before the other side is durable,
+- rule that active startup must fail closed if the selected manifest generation
+  is older than the anchor or if the anchor cannot be checked under a
+  production profile,
+- tests for stale root rejection, generation regression, anchor digest chain
+  mismatch, missing production anchor, explicit historical recovery open,
+  compare-and-advance idempotence, stale advance rejection,
   unavailable-provider fail-closed behavior, timeout behavior, witness
   equivocation, provider replacement, and disaster-recovery opening rules.
 
@@ -723,9 +715,21 @@ Deliverables:
   unauthenticated wall-clock timestamps,
 - trusted-time evidence model for attestation expiry, approval validity,
   freshness-anchor checkpoint time, audit event time, and break-glass windows,
+- fixed-width counter exhaustion policy for LSNs, WAL generations, transaction
+  IDs, commit sequences, file numbers, manifest generations, crypto epochs,
+  lifecycle event sequences, anchor generations, and backup generations,
+- checked arithmetic rule for every ordering or identity counter; wrapping,
+  implicit truncation, and identifier reuse are fail-closed defects,
+- exhaustion thresholds before numeric maximum, rollover mechanisms where safe
+  such as new log or storage incarnation, and fail-closed behavior where
+  rollover cannot preserve identity, ordering, nonce uniqueness, or deletion
+  safety,
+- exhaustion interaction model for nonces, freshness anchors, checkpoints,
+  manifests, backups, rollback roots, and crypto-erasure proofs,
 - tests for stale/future trusted-time evidence, uncertainty overflow, inverted
-  validity windows, wall-clock/logical-time type confusion, and replayed
-  approval windows.
+  validity windows, wall-clock/logical-time type confusion, replayed approval
+  windows, MAX-1 and MAX counter boundaries, replay after exhaustion, attempted
+  reuse after rollover, and fail-closed exhaustion without rollover.
 
 ## v0.18.11 - Physical Storage Layout Decision
 
@@ -877,6 +881,20 @@ Deliverables:
   manifest using the primitives admitted in `v0.18.3`,
 - keyed authentication before any manifest contents are trusted; asymmetric
   signatures and quorum/non-repudiation remain later `v0.33.x` concerns,
+- manifest-key bootstrap contract: outer-header fields are untrusted
+  key-location hints only, database identity and manifest generation determine
+  or locate the manifest key, and key-provider scope is constructed from
+  trusted outer context plus configured database identity before encrypted
+  metadata is trusted,
+- opaque manifest key-slot identifier model when ordinary key IDs would reveal
+  sensitive metadata, including rejection of attacker-controlled redirection to
+  another valid key, database, generation, or provider scope,
+- dual-key and previous-key fallback rules for manifest-key rotation, including
+  crash between key activation, manifest publication, checkpoint update, and
+  freshness-anchor advancement,
+- missing, compromised, rotated, destroyed, crypto-erased, and permanently lost
+  manifest-key behavior, including which paths may open read-only historical
+  state and which fail closed,
 - database identity, storage generation, previous-manifest digest,
   feature-version binding, checkpoint identity, and freshness-anchor reference
   in the authenticated manifest transcript,
@@ -920,7 +938,9 @@ Deliverables:
   write, manifest swap, checkpoint write, WAL-pruning decision, directory sync,
   and crash-after-swap recovery,
 - tests for concurrent opener rejection, stale lease recovery, wrong database
-  identity, wrong storage generation, and lease/anchor mismatch.
+  identity, wrong storage generation, lease/anchor mismatch, manifest key-slot
+  substitution, cross-database key redirection, previous-key fallback, lost
+  manifest key, compromised manifest key, and rotation crash recovery.
 
 ## v0.19.1 - Storage Spine Vertical Slice
 
@@ -2061,6 +2081,42 @@ Deliverables:
 - tests for stale cursor rejection, unauthorized stream reads, replay across
   policy epoch changes, missing manifest generation, rollback/PITR confusion,
   deterministic trace reproduction, and redacted trace output.
+
+## v0.35.4 - Production Backup And Restore Completion
+
+Goal: make backup and restore a production capability rather than a skeleton
+before `v1.0.0` claims operational recovery.
+
+Deliverables:
+
+- online consistent backup protocol during concurrent writes, binding the
+  selected manifest generation, world revisions, schema root, policy epoch,
+  key-state digest, audit root, freshness-anchor generation, and protected-root
+  pins for the backup duration,
+- full and incremental backup formats with explicit base generation, delta
+  chain, WAL/archive requirements, exact recovery-point semantics, and
+  compatibility with the schema/catalog and durable-format feature policies,
+- resumable upload/download model with independently verified chunks, chunk
+  manifests, retry idempotency, orphaned-upload cleanup, and failure-safe
+  temporary storage,
+- backup encryption domain, backup key rotation, key-slot deletion, wrapped-key
+  index, crypto-erasure behavior, lost-key behavior, and retention/legal-hold
+  interaction,
+- retention, deletion, expiration, quarantine, and orphaned-backup cleanup
+  policy that cannot delete audit, rollback, legal-hold, or active restore
+  material without explicit authority,
+- restore modes for new database identity, read-only historical inspection,
+  recovery-world fork, simulation, and authorized in-place recovery with
+  freshness-anchor and manifest-generation checks,
+- regular automated restore-drill procedure with corruption injection,
+  missing-chunk tests, wrong-key tests, stale-policy tests, incompatible-schema
+  tests, and operator evidence recording,
+- measured RPO, RTO, restore throughput, backup throughput, temporary-space
+  requirement, chunk verification cost, and concurrent-write impact,
+- tests for online backup consistency, incremental-chain validation,
+  resumable upload idempotence, orphan cleanup, wrong database identity,
+  unauthorized in-place restore, backup key rotation, crypto-erasure, and
+  corrupted backup rejection.
 
 ## v0.36.0 - Compromise And Recovery Playbooks
 

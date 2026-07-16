@@ -4,7 +4,7 @@ Status: baseline control map
 
 | Area | Control | Current Status | Evidence |
 | --- | --- | --- | --- |
-| Toolchain | Rust stable `1.97.0` pinned | Active | `rust-toolchain.toml` |
+| Toolchain | Rust stable `1.97.1` pinned | Active | `rust-toolchain.toml` |
 | Release arithmetic | Release profile keeps overflow checks enabled | Active | `Cargo.toml` |
 | Core runtime | Core library crates are `no_std` | Active | `scripts/validate-engineering-policy.sh` |
 | Portability baseline | Core crates avoid OS and architecture APIs, durable formats use explicit encodings and endianness, host-specific behavior stays behind explicit adapters, and architecture-specific fast paths require a portable baseline first | Active / Planned | `docs/engineering-policy.md`, `docs/VERSION_PLAN.md` |
@@ -22,6 +22,7 @@ Status: baseline control map
 | Fact identity allocation | Fact ID generation strategy must be selected before transaction write sets and MVCC harden; IDs must not become authorization capabilities or sole tenant/storage isolation keys | Planned | `docs/VERSION_PLAN.md` |
 | Transaction read-your-writes | In-memory transaction state must expose a transaction's own uncommitted writes to its reads while hiding them from other transactions until durable commit | Planned | `docs/VERSION_PLAN.md` |
 | MVCC and commit protocol | Durable writes must use engine-assigned commit sequences, optimistic serializable validation, ordered WAL commit roots, group commit, and publish versions only after the durable barrier succeeds | Planned | `docs/VERSION_PLAN.md`, `docs/IMPLEMENTATION_PLAN.md` |
+| Counter exhaustion | LSNs, WAL generations, transaction IDs, commit sequences, file numbers, manifest generations, crypto epochs, lifecycle sequences, anchor generations, and backup generations require checked arithmetic, pre-maximum exhaustion thresholds, rollover rules where safe, and fail-closed behavior where identity cannot be preserved | Planned | `docs/VERSION_PLAN.md` |
 | World revisions | Stable `WorldId` identifies a branch, while immutable `WorldRevisionId` identifies content/root state; world-head updates require compare-and-swap and promotion uses three-way merge over fork base, current parent head, and candidate head | Planned | `docs/VERSION_PLAN.md` |
 | World promotion safety | Promotion and rollback preflight expose deterministic conflict categories before merge/promotion logic exists, using sorted-slice scans to avoid transient set allocation | Scaffolded | `skrifheim-world` |
 | Local rollback retention | Snapshot roots must be signed, policy-bound facts that restore only through read-only inspection, recovery/archive worlds, simulation, or policy-checked production promotion; compaction must preserve protected rollback roots unless an explicit authorized purge or crypto-erasure proof exists | Planned | `docs/VERSION_PLAN.md`, `docs/IMPLEMENTATION_PLAN.md` |
@@ -86,6 +87,7 @@ Status: baseline control map
 | Format version compatibility | WAL, block/table, segment, and manifest formats must define major/minor semantics, required/ignorable feature bits, minimum reader/writer versions, canonical encoding, unknown-field behavior, and forward/backward read policy before migrations automate upgrades | Planned | `docs/VERSION_PLAN.md`, `docs/IMPLEMENTATION_PLAN.md` |
 | Storage single-writer and migration safety | Manifest roots require a storage-directory identity, single-writer lease, stale-lease recovery bound to freshness/trusted time, and downgrade-protected idempotent format migrations before production hardening | Planned | `docs/VERSION_PLAN.md` |
 | Manifest authentication | Authoritative manifests require keyed authentication and encrypted inner metadata before contents are trusted; asymmetric signatures, quorum proofs, and non-repudiation remain separate later controls | Planned | `docs/VERSION_PLAN.md`, `docs/IMPLEMENTATION_PLAN.md` |
+| Manifest key bootstrap and rotation | Manifest outer headers are key-location hints only; database identity and manifest generation determine key-provider scope, key-slot redirection is rejected, dual-key rotation handles crash recovery, and lost or compromised manifest keys fail closed except for explicit historical/recovery modes | Planned | `docs/VERSION_PLAN.md` |
 | Manifest authority and cleanup safety | The manifest is the sole authority for live tables, world heads, schemas, key state, WAL checkpoint, audit root, freshness anchor, and protected roots; cleanup, migration, writers, checkpointing, manifest changes, and obsolete-file deletion must be serialized by the storage-directory lease | Planned | `docs/VERSION_PLAN.md`, `docs/IMPLEMENTATION_PLAN.md` |
 | Storage parser fuzzing | WAL and segment byte parsers get a dedicated early fuzz baseline before the broader fuzz/property milestone | Planned | `docs/VERSION_PLAN.md` |
 | Physical storage layout | Production storage requires a block-structured layout with canonical key ordering, aligned encrypted blocks, restart/offset metadata, sparse indexes, filters, compression IDs, checksums, AEAD envelopes, and policy-domain partitioning before manifests harden | Planned | `docs/VERSION_PLAN.md`, `docs/IMPLEMENTATION_PLAN.md` |
@@ -118,6 +120,7 @@ Status: baseline control map
 | API credential lifecycle | API credentials and sessions must bind tenant, principal, device, workload, purpose, policy epoch, scopes, expiry, nonce, and revocation epoch, with revocation roots tied into durable state where required | Planned | `docs/VERSION_PLAN.md`, `docs/threat-model.md` |
 | Policy evaluator safety | Law-pack and policy-pack evaluation must be deterministic, resource-bounded, side-effect-free, and unable to use network, filesystem, random, wall-clock, or process state during access decisions | Planned | `docs/VERSION_PLAN.md`, `docs/threat-model.md` |
 | Host runtime isolation | Tenant and classification-aware resource pools must protect audit, recovery, freshness-anchor, query, projection, compaction, backup, export, legal, and AI jobs from noisy-neighbor starvation; microarchitectural isolation is a non-claim unless a stronger deployment profile provides it | Planned | `docs/VERSION_PLAN.md` |
+| Production backup and restore | Backup/restore requires online consistency, full and incremental recovery-point semantics, resumable verified chunks, backup key rotation, retention/orphan cleanup, new-identity versus in-place restore modes, restore drills, corruption injection, and measured RPO/RTO before production claims | Planned | `docs/VERSION_PLAN.md` |
 
 ## Admission Rule
 
