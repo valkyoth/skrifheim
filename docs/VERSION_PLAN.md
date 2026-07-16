@@ -972,9 +972,16 @@ Deliverables:
 - online integrity scrub skeleton that verifies blocks, indexes, filters,
   manifests, and audit roots and quarantines suspect files instead of silently
   repairing them,
+- hot/cold tiering decision for immutable tables, blobs, indexes, and
+  projections while preserving tenant, policy, encryption-domain, snapshot,
+  rollback, and legal-hold boundaries,
+- content-addressed blob deduplication plan limited to equality-safe encrypted
+  domains, with no cross-tenant, cross-compartment, cross-policy, or
+  cross-key-epoch plaintext equality leakage,
 - tests for sorted-run lookup, merge iteration, flush/recover equivalence,
   compacted-state equivalence, protected-root liveness, file-number reuse
-  rejection, and quarantine on scrub failure.
+  rejection, quarantine on scrub failure, cross-domain dedup rejection, and
+  protected hot/cold tier movement.
 
 ## v0.20.8 - Block Cache, I/O Profile, And Capacity Governance
 
@@ -1552,6 +1559,9 @@ Deliverables:
 - source fact range,
 - consistency mode,
 - watermark tracking,
+- incremental materialized projection model with source watermarks, manifest
+  generation binding, rebuild range, stale marker, and policy/legal epoch
+  compatibility,
 - encryption domain tracking,
 - rebuild command skeleton.
 
@@ -1577,6 +1587,9 @@ Deliverables:
 
 - tokenizer boundary,
 - source fact visibility checks,
+- policy-partitioned full-text index plan that partitions or rejects index
+  mixing across incompatible tenant, compartment, classification,
+  releasability, policy epoch, legal basis, and encryption-domain boundaries,
 - projection watermark,
 - rebuild tests,
 - no cross-compartment mixing tests.
@@ -1617,6 +1630,9 @@ Deliverables:
 
 - vector projection encryption domain,
 - AI artifact encryption domain,
+- policy-partitioned vector projection plan, including explicit decision on
+  mutable working-set indexes versus immutable disk ANN projections and
+  rejection of cross-policy embedding/index mixing,
 - AI write capability ceiling metadata,
 - derivation-cone key-domain metadata,
 - source-fact visibility rules,
@@ -1777,6 +1793,31 @@ Deliverables:
   facts, cannot silently become production, cannot resurrect erased data
   without explicit authorization, and prevents compaction from dropping
   protected snapshot material.
+
+## v0.35.3 - Point-In-Time Recovery And Change Streams
+
+Goal: make committed manifest generations usable for recovery, downstream
+sync, and incident reconstruction without bypassing policy or freshness rules.
+
+Deliverables:
+
+- point-in-time recovery model selecting a manifest generation, world revision,
+  policy epoch, schema root, audit root, key-state digest, and freshness-anchor
+  generation,
+- PITR restore modes aligned with `v0.35.2`: read-only inspection,
+  recovery-world fork, simulation replay, and policy-checked promotion back to
+  production,
+- change-stream records tied to committed manifest generations, transaction
+  commit roots, world revisions, policy epoch, schema root, and redacted
+  operation categories,
+- subscriber/cursor model with tenant, purpose, authority, policy epoch,
+  leakage profile, replay window, and revocation behavior,
+- deterministic replay tracing for production incident reconstruction,
+  covering manifest generation, WAL commit roots, applied batches, projection
+  rebuilds, compaction events, policy decisions, and redacted error outcomes,
+- tests for stale cursor rejection, unauthorized stream reads, replay across
+  policy epoch changes, missing manifest generation, rollback/PITR confusion,
+  deterministic trace reproduction, and redacted trace output.
 
 ## v0.36.0 - Compromise And Recovery Playbooks
 

@@ -311,6 +311,11 @@ encryption-domain grouping, file-count growth, write amplification, iterator
 semantics, and WAL checkpointing. Compaction must preserve tenant, policy,
 region, encryption, and MVCC boundaries.
 
+Hot/cold tiering and blob deduplication are storage features only inside
+compatible security domains. Dedup must not reveal plaintext equality across
+tenant, compartment, policy, key epoch, or legal boundaries. Tier movement must
+preserve snapshot, rollback, backup, audit, and legal-hold liveness.
+
 The storage engine needs a block cache rather than a traditional dirty-page
 buffer pool. Dirty data primarily lives in WAL-backed memtables; immutable
 tables can use sharded data/index/filter caches with tenant and security-domain
@@ -536,7 +541,16 @@ Canonical facts drive projections:
 - read-state and watch/subscription indexes,
 - AI artifacts and context packs.
 
-Every projection records its source fact range, consistency level, policy boundary, and rebuild command.
+Every projection records its source fact range, consistency level, policy
+boundary, source watermark, committed manifest generation, and rebuild command.
+Materialized projections should be incremental where possible, using source
+watermarks tied to committed manifest generations.
+
+Change streams expose committed-generation events and redacted operation
+categories, not raw internal state. Point-in-time recovery and deterministic
+replay tracing must use the same manifest-generation, WAL commit-root,
+audit-root, and world-revision evidence instead of inventing a separate history
+mechanism.
 
 Projection metadata must also support taint propagation. If a source fact,
 worker, model, or key is compromised, `skrifheim` must be able to find the

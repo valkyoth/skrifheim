@@ -19,6 +19,11 @@
   block cache and capacity governance, compact policy-token hot paths,
   concurrency model checking, group commit, durable indexes, reference-model
   property testing, and vectorized query execution planning.
+- Added explicit advanced engine planning for compression before encryption,
+  adaptive per-block compression IDs, incremental materialized projections,
+  policy-partitioned vector and full-text projections, hot/cold tiering,
+  equality-safe blob deduplication, point-in-time recovery, change streams, and
+  deterministic replay tracing.
 - Reworked the roadmap so `v1.0.0` is the core production world database,
   `v1.1.0` through `v1.6.0` are optional application-extension tracks, and
   Hyve clustering starts at `v2.0.0`.
