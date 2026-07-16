@@ -57,35 +57,45 @@ the reviewed source tree.
    inputs, and every other input that can affect executable artifacts. Exclude
    only the permitted evidence report and qualification manifest.
 5. Decide and record whether release binaries, containers, source archives, and
-   packages are built from the reviewed implementation commit or the
-   tag-candidate commit. If any artifact is built from the tag-candidate
-   commit, verify reproducible equivalence to the reviewed commit's executable
-   inputs or mechanically verify the narrowly permitted difference, such as
-   embedded commit metadata.
+   packages are built from the reviewed implementation commit. Executable
+   artifacts are not built from the later evidence-only commit. If a future
+   release profile permits evidence-only-commit artifacts, their hashes and any
+   mechanically verified permitted differences must be recorded in a signed
+   post-commit attestation, not inside the evidence-only commit.
 6. Smoke test the exact binaries, containers, source archives, and packages
-   that will be published. Record their hashes.
+   built from the reviewed commit that will be published. Record their hashes.
 7. Write the permanent report at `security/pentest/<tag>.md` and, for final RC
    releases with external evidence, the machine-readable qualification
    manifest. The report/manifest must name the reviewed commit,
-   tag-candidate commit, executable-input digest, fuzz archive digest,
-   performance/endurance report digest, crash-matrix report digest,
-   platform-qualification report digest, backup/restore qualification digest,
-   toolchain and harness versions, artifact hashes, and PASS status for every
-   mandatory qualification class.
+   executable-input digest, fuzz archive digest, performance/endurance report
+   digest, crash-matrix report digest, platform-qualification report digest,
+   backup/restore qualification digest, toolchain and harness versions,
+   artifact hashes for reviewed-commit artifacts, and PASS status for every
+   mandatory qualification class. The manifest must not declare its own future
+   commit hash.
 8. Commit only the permitted permanent evidence report and qualification
-   manifest as the final tag-candidate commit. This report-only commit must be
-   a direct child of the reviewed implementation commit.
+   manifest as the final evidence-only commit. This evidence-only commit must
+   be a direct child of the reviewed implementation commit.
 9. Run final local gates. The release gate must verify the report's
    `Reviewed-Commit:` against the final commit's first parent and reject
    missing evidence digests, non-PASS results, toolchain/harness mismatches,
    untrusted or expired attestations, retrieval or digest failures,
-   executable-input mismatches, forbidden report-only commit contents, and
-   unverified qualified-versus-tagged artifact differences.
+   executable-input mismatches, forbidden evidence-only commit contents,
+   self-referential evidence-commit hash declarations, and unverified
+   qualified-versus-published artifact differences.
 10. If source, configuration, test harnesses, dependencies, or executable-input
     files change after the reviewed implementation commit, rerun affected
     qualification and create a new reviewed implementation commit.
     Documentation-only corrections may reuse evidence only when the
     executable-input digest proves no qualified build input changed and a
     signed no-impact decision is recorded.
-11. Tag only when explicitly instructed.
-12. Push only normal commits unless explicitly instructed to push tags.
+11. Create the signed annotated tag or external signed release attestation only
+    after the evidence-only commit exists. It binds the release tag/version,
+    evidence-only commit, reviewed commit, qualification manifest digest,
+    artifact hashes, source archive hash, and PASS status.
+12. Tag only when explicitly instructed.
+13. Push only normal commits unless explicitly instructed to push tags.
+
+Tag-generated source archives are handled after the tag exists: either publish
+the qualified reviewed-commit source bundle, or hash and attest the generated
+tag archive in the signed annotated tag or external release attestation.

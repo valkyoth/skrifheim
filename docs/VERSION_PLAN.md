@@ -92,9 +92,11 @@ Pentest flow:
 6. Local gates are run again.
 7. A permanent report is written at `security/pentest/<tag>.md` only after the
    release-prep commit is complete and the result is `Status: PASS`.
-8. The permanent report commit changes only that report and records
-   `Reviewed-Commit:` as its first parent, so the tag candidate contains both
-   the reviewed code and committed pentest digest.
+8. The evidence-only commit changes only the permanent report and, where
+   required, the machine-readable qualification manifest. It records
+   `Reviewed-Commit:` as its first parent but does not declare its own commit
+   hash. The release gate derives the evidence commit from `HEAD` and verifies
+   `HEAD^` is the reviewed commit.
 9. Tagging and pushing tags happen only when explicitly requested.
 
 Root `PENTEST.md` is temporary scratch input. It must not be committed, and the
@@ -2826,11 +2828,12 @@ Deliverables:
   rotation, compaction, scrub, checkpoint, and foreground read/write traffic,
 - final evidence commit-ordering rule: the reviewed implementation commit is
   the frozen code/configuration commit on which fuzzing, benchmarks, crash
-  tests, pentesting, and qualification run; the tag-candidate commit is its
-  direct child and may change only the permitted permanent evidence report,
+  tests, pentesting, and qualification run; the evidence-only commit is its
+  direct child and may change only the permitted permanent evidence report and
+  machine-readable qualification manifest,
 - external fuzz, benchmark, crash, platform, backup/restore, and pentest
-  archives bind to the reviewed implementation commit; the report-only
-  tag-candidate commit records their content digests, signatures or
+  archives bind to the reviewed implementation commit; the evidence-only
+  commit records their content digests, signatures or
   attestations, trusted timestamps, storage locations, toolchain/harness
   versions, and pass/fail results without modifying the reviewed source tree,
 - evidence invalidation rule: any source, configuration, test-harness, or
@@ -2844,18 +2847,26 @@ Deliverables:
   features, container build inputs, and every other input that can affect
   executable artifacts; the permitted evidence-only report and qualification
   manifest are explicitly excluded from executable inputs,
-- release artifact equivalence rule defining whether release binaries,
-  containers, source archives, and packages are built from the reviewed
-  implementation commit or the tag-candidate commit; if built from the
-  tag-candidate commit, the release gate must verify reproducible equivalence
-  to the reviewed commit's executable-input digest or mechanically verify the
-  narrowly permitted difference such as embedded commit metadata,
-- provenance for every published artifact recording both `Reviewed-Commit` and
-  `Tag-Candidate-Commit`, executable-input digest, artifact hash, build
-  profile, feature set, toolchain, container base image digest where relevant,
-  and reproducibility or permitted-difference result,
+- release artifact rule requiring executable binaries, containers, and
+  packages to be built from the reviewed implementation commit's executable
+  inputs, not from the evidence-only commit; if a future profile allows
+  artifacts from the evidence-only commit, their hashes and mechanically
+  verified permitted differences must live in a signed post-commit attestation,
+  not inside the evidence-only commit,
+- source archive rule requiring either a reviewed-commit source bundle to be
+  qualified and hashed before the evidence-only commit, or tag-generated source
+  archives to be hashed and attested after tagging in a signed annotated tag or
+  external signed attestation,
+- provenance for every published artifact recording `Reviewed-Commit`,
+  executable-input digest, artifact hash, build profile, feature set,
+  toolchain, container base image digest where relevant, and reproducibility or
+  permitted-difference result,
 - final smoke test of the exact binaries, containers, source archives, and
   packages that will be published, not only locally rebuilt equivalents,
+- signed annotated tag or external signed release attestation created after the
+  evidence-only commit, binding release tag/version, evidence-only commit,
+  reviewed implementation commit, qualification manifest digest, artifact
+  hashes, source archive hash, and release PASS status,
 - crash/recovery and corrupted-backup matrix rerun after final backup and
   placement integration,
 - upgrade from the oldest supported format and downgrade-rejection run against
@@ -2872,20 +2883,27 @@ Deliverables:
   and zero unresolved crashes, hangs, resource-bound violations, or correctness
   divergences,
 - machine-readable qualification manifest permitted as the only companion file
-  to the permanent pentest report in the report-only tag-candidate commit,
+  to the permanent pentest report in the evidence-only commit,
+- qualification manifest canonicalization contract covering canonical
+  serialization, schema version, digest algorithm, signature envelope,
+  trust-root and revocation policy, unknown-field behavior, and schema upgrade
+  rules so validators hash and interpret the same manifest identically,
 - implemented release-readiness validator requiring the permanent report and
-  qualification manifest to name the reviewed commit, tag-candidate commit,
-  executable-input digest, fuzz archive digest, performance/endurance report
-  digest, crash-matrix report digest, platform-qualification report digest,
-  backup/restore qualification digest, toolchain and harness versions, PASS
-  status for every mandatory qualification class, and artifact hashes for
-  binaries, containers, source archives, and packages,
+  qualification manifest to name the reviewed commit, executable-input digest,
+  fuzz archive digest, performance/endurance report digest, crash-matrix report
+  digest, platform-qualification report digest, backup/restore qualification
+  digest, toolchain and harness versions, PASS status for every mandatory
+  qualification class, and artifact hashes for binaries, containers,
+  reviewed-commit source bundles, and packages; the validator derives the
+  evidence-only commit from `HEAD` and verifies `HEAD^` equals the reviewed
+  commit instead of requiring the manifest to contain its own commit hash,
 - negative validation fixtures for missing or malformed evidence digests,
   wrong reviewed commit, untrusted or expired producer attestation, missing
   mandatory qualification, non-PASS result, toolchain or harness mismatch,
   evidence archive retrieval failure, evidence digest failure, executable-input
-  digest mismatch, forbidden report-only commit contents, and unverified
-  qualified-versus-tagged artifact difference,
+  digest mismatch, forbidden evidence-only commit contents, self-referential
+  evidence-commit hash declarations, and unverified qualified-versus-published
+  artifact differences,
 - final optional extension integration checklist,
 - no new feature work without explicit deferral decision.
 

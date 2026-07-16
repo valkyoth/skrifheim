@@ -83,25 +83,34 @@ or client-provided evidence path is used.
 - Final qualification evidence is ordered to avoid circular proof. The
   reviewed implementation commit is the frozen source/configuration commit that
   fuzzing, benchmarks, crash tests, pentesting, and qualification exercise. The
-  tag-candidate commit is its direct child and may change only the permitted
-  permanent evidence report and machine-readable qualification manifest.
-  External archives bind to the reviewed implementation commit; the report-only
-  commit records their digests, signatures or attestations, trusted timestamps,
-  storage locations, toolchain and harness versions, and pass/fail results.
-  Source, configuration, test-harness, or dependency changes invalidate
-  affected evidence and require reruns. Documentation-only amendments may reuse
-  evidence only when an executable-input digest proves no qualified build input
-  changed and a signed no-impact decision is recorded.
+  evidence-only commit is its direct child and may change only the permitted
+  permanent evidence report and machine-readable qualification manifest. That
+  manifest records the reviewed commit and evidence digests but never declares
+  its own commit hash; validators derive the evidence-only commit from `HEAD`
+  and verify `HEAD^` is the reviewed commit. External archives bind to the
+  reviewed implementation commit; the evidence-only commit records their
+  digests, signatures or attestations, trusted timestamps, storage locations,
+  toolchain and harness versions, and pass/fail results. Source,
+  configuration, test-harness, or dependency changes invalidate affected
+  evidence and require reruns. Documentation-only amendments may reuse evidence
+  only when an executable-input digest proves no qualified build input changed
+  and a signed no-impact decision is recorded.
 - Tagged artifacts must be proven equivalent to qualified artifacts. The
   executable-input digest covers source, configuration, lockfiles, toolchain,
   build scripts, enabled features, container build inputs, and other executable
   inputs while excluding the permitted evidence-only files. Release provenance
-  records both reviewed and tag-candidate commits, artifact hashes, build
-  profile, feature set, toolchain, container base image digest where relevant,
-  and either reproducible equivalence or a mechanically verified permitted
-  difference such as embedded commit metadata. Final smoke tests run against
-  the exact binaries, containers, source archives, and packages that will be
-  published.
+  records the reviewed commit, artifact hashes, build profile, feature set,
+  toolchain, container base image digest where relevant, and either
+  reproducible equivalence or a mechanically verified permitted difference.
+  Executable artifacts are built from the reviewed implementation commit's
+  executable inputs; if a future profile allows evidence-only-commit artifacts,
+  their hashes and permitted differences are recorded in a signed post-commit
+  attestation, not inside the evidence-only commit. Final smoke tests run
+  against the exact binaries, containers, source archives, and packages that
+  will be published. The signed annotated tag or external release attestation
+  created after the evidence-only commit binds the release version,
+  evidence-only commit, reviewed commit, qualification manifest digest,
+  artifact hashes, source archive hash, and PASS status.
 
 ## Workspace Shape
 
