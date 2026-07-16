@@ -84,13 +84,24 @@ or client-provided evidence path is used.
   reviewed implementation commit is the frozen source/configuration commit that
   fuzzing, benchmarks, crash tests, pentesting, and qualification exercise. The
   tag-candidate commit is its direct child and may change only the permitted
-  permanent evidence report. External archives bind to the reviewed
-  implementation commit; the report-only commit records their digests,
-  signatures or attestations, trusted timestamps, storage locations, toolchain
-  and harness versions, and pass/fail results. Source, configuration,
-  test-harness, or dependency changes invalidate affected evidence and require
-  reruns; documentation-only amendments require explicit authorization or a
-  documented no-impact decision.
+  permanent evidence report and machine-readable qualification manifest.
+  External archives bind to the reviewed implementation commit; the report-only
+  commit records their digests, signatures or attestations, trusted timestamps,
+  storage locations, toolchain and harness versions, and pass/fail results.
+  Source, configuration, test-harness, or dependency changes invalidate
+  affected evidence and require reruns. Documentation-only amendments may reuse
+  evidence only when an executable-input digest proves no qualified build input
+  changed and a signed no-impact decision is recorded.
+- Tagged artifacts must be proven equivalent to qualified artifacts. The
+  executable-input digest covers source, configuration, lockfiles, toolchain,
+  build scripts, enabled features, container build inputs, and other executable
+  inputs while excluding the permitted evidence-only files. Release provenance
+  records both reviewed and tag-candidate commits, artifact hashes, build
+  profile, feature set, toolchain, container base image digest where relevant,
+  and either reproducible equivalence or a mechanically verified permitted
+  difference such as embedded commit metadata. Final smoke tests run against
+  the exact binaries, containers, source archives, and packages that will be
+  published.
 
 ## Workspace Shape
 

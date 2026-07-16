@@ -2836,8 +2836,26 @@ Deliverables:
 - evidence invalidation rule: any source, configuration, test-harness, or
   dependency change after the reviewed implementation commit requires rerunning
   affected qualification before tagging; documentation-only corrections require
-  either a narrowly authorized evidence amendment or a documented decision that
-  no qualification result is affected,
+  either a new reviewed implementation commit with affected qualification
+  rerun or evidence reuse only when an executable-input digest proves no
+  qualified build input changed and a signed no-impact decision is recorded,
+- executable-input digest covering source files, build configuration,
+  dependency lockfiles, toolchain specification, build scripts, enabled
+  features, container build inputs, and every other input that can affect
+  executable artifacts; the permitted evidence-only report and qualification
+  manifest are explicitly excluded from executable inputs,
+- release artifact equivalence rule defining whether release binaries,
+  containers, source archives, and packages are built from the reviewed
+  implementation commit or the tag-candidate commit; if built from the
+  tag-candidate commit, the release gate must verify reproducible equivalence
+  to the reviewed commit's executable-input digest or mechanically verify the
+  narrowly permitted difference such as embedded commit metadata,
+- provenance for every published artifact recording both `Reviewed-Commit` and
+  `Tag-Candidate-Commit`, executable-input digest, artifact hash, build
+  profile, feature set, toolchain, container base image digest where relevant,
+  and reproducibility or permitted-difference result,
+- final smoke test of the exact binaries, containers, source archives, and
+  packages that will be published, not only locally rebuilt equivalents,
 - crash/recovery and corrupted-backup matrix rerun after final backup and
   placement integration,
 - upgrade from the oldest supported format and downgrade-rejection run against
@@ -2853,12 +2871,21 @@ Deliverables:
   reference-model differential tests, coverage artifacts, minimized corpora,
   and zero unresolved crashes, hangs, resource-bound violations, or correctness
   divergences,
-- release-readiness validation rule for the permanent report, eventually
-  checking that it names the reviewed commit, fuzz archive digest,
-  performance/endurance report digest, crash-matrix report digest,
-  platform-qualification report digest, backup/restore qualification digest,
-  toolchain and harness versions, and PASS status for every mandatory
-  qualification class,
+- machine-readable qualification manifest permitted as the only companion file
+  to the permanent pentest report in the report-only tag-candidate commit,
+- implemented release-readiness validator requiring the permanent report and
+  qualification manifest to name the reviewed commit, tag-candidate commit,
+  executable-input digest, fuzz archive digest, performance/endurance report
+  digest, crash-matrix report digest, platform-qualification report digest,
+  backup/restore qualification digest, toolchain and harness versions, PASS
+  status for every mandatory qualification class, and artifact hashes for
+  binaries, containers, source archives, and packages,
+- negative validation fixtures for missing or malformed evidence digests,
+  wrong reviewed commit, untrusted or expired producer attestation, missing
+  mandatory qualification, non-PASS result, toolchain or harness mismatch,
+  evidence archive retrieval failure, evidence digest failure, executable-input
+  digest mismatch, forbidden report-only commit contents, and unverified
+  qualified-versus-tagged artifact difference,
 - final optional extension integration checklist,
 - no new feature work without explicit deferral decision.
 
