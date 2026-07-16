@@ -24,6 +24,11 @@
   policy-partitioned vector and full-text projections, hot/cold tiering,
   equality-safe blob deduplication, point-in-time recovery, change streams, and
   deterministic replay tracing.
+- Added follow-up gap-analysis gates for WAL-v1 poisoning and durable LSN
+  receipts, manifest authority, storage-directory lease coverage, filesystem
+  durability evidence, obsolete-file cleanup, file-number no-reuse,
+  cache-key/pinning rules, resource governance, the mandatory storage spine
+  vertical slice, database SLOs, and vector-search projection boundaries.
 - Reworked the roadmap so `v1.0.0` is the core production world database,
   `v1.1.0` through `v1.6.0` are optional application-extension tracks, and
   Hyve clustering starts at `v2.0.0`.

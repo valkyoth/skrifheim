@@ -747,11 +747,20 @@ Deliverables:
   distinguishes recoverable torn tail from interior corruption, truncates or
   rotates the WAL safely, and fsyncs the repaired file and parent directory,
 - writer preflight that validates an existing WAL tail before appending,
+- immediate WAL-v1 stopgap rule until v2 is active: host writers must poison
+  themselves after any append, partial write, flush, or sync error; existing
+  tails must be scanned before append; boolean sync options must be replaced
+  with explicit `DurabilityMode`; and append APIs must expose enough state to
+  distinguish durable, failed, and ambiguous outcomes,
+- durable LSN receipt, transaction idempotency key, and commit-status lookup
+  contract so ambiguous sync results can be retried without duplicating a
+  transaction,
 - redo-only ordinary failure model where pre-commit abort records are not
   required for transactions that never became durable,
 - tests for header mutation, frame deletion, duplication, reordering,
   transaction frame omission, commit-root mismatch, appending after corrupt
-  tail, torn header, torn body, torn commit record, and repaired-tail replay.
+  tail, writer reuse after append error, ambiguous sync result, idempotent
+  retry, torn header, torn body, torn commit record, and repaired-tail replay.
 
 ## v0.18.13 - Storage Crash Ordering And Failure Injection Harness
 
@@ -769,6 +778,14 @@ Deliverables:
 - deterministic failpoint harness for writes, vectored writes, short writes,
   interrupted syscalls, sync, link/rename, manifest swap, WAL truncation,
   directory fsync, ENOSPC, quota exhaustion, EIO, and fsync failure,
+- database-directory lease rule covering active writers, staged-file cleanup,
+  manifest changes, migration, checkpointing, and obsolete-file deletion so
+  cleanup cannot race a writer or publisher,
+- supported-filesystem matrix for local filesystems, explicit unsupported
+  stance for network filesystems until locking, rename, fsync, directory sync,
+  and durability semantics are proven,
+- filesystem-specific power-cut tests using loopback, dm-flakey, or equivalent
+  where practical,
 - subprocess crash tests that kill the process at persistence failpoints and
   compare recovered state with an in-memory oracle,
 - torn-sector and corrupted-block matrix fixtures for WAL, block table,
@@ -785,6 +802,12 @@ Goal: record the durable storage root.
 Deliverables:
 
 - manifest structure,
+- rule that the manifest is the sole authority for live immutable tables,
+  world heads, schema roots, key state, WAL checkpoint, audit root, freshness
+  anchor, and protected roots; directory scans may discover candidates only for
+  recovery, quarantine, or cleanup workflows,
+- version-edit format for adding/removing live tables, advancing world heads,
+  publishing schema/key/audit roots, and recording obsolete files,
 - storage-directory identity and single-writer lease contract so two database
   processes cannot concurrently advance the same manifest/WAL directory,
 - checkpoint LSN,
@@ -860,6 +883,11 @@ Deliverables:
 - measurements for mirrored 256-byte segment footer overhead on very small
   segments and normal segment sizes,
 - policy-token fixed-slot scan benchmark for common authority/label shapes,
+- first measurable storage SLOs for WAL bytes per commit, fsyncs per commit,
+  p50/p99 commit latency, write amplification, read amplification, space
+  amplification, recovery MiB/s, maximum startup time, compaction debt, stall
+  time, cache hit rate by block class, and maximum memory per tenant,
+  transaction, iterator, and query,
 - rootless Podman recovery smoke with realistic persisted volume layout,
 - documented thresholds that are non-claims but catch obvious regressions,
 - decision record on whether footer layout, token-slot bounds, or recovery
@@ -965,8 +993,15 @@ Deliverables:
   partition enforcement,
 - minimal domain-local compaction implementation before durable transaction
   load tests, including tombstone and snapshot retention awareness,
+- compaction picker with bounded debt accounting, tombstone retention windows,
+  protected-root retention, and policy/encryption-domain compatibility checks,
+- space-reclamation model covering WAL rotation and pruning, obsolete-file
+  sets, snapshot and iterator pinning, rollback/archive/legal-hold roots,
+  orphan-table recovery, and delayed deletion,
 - file-number allocation bound to database ID, storage generation, and manifest
   generation,
+- no-reuse rule for file numbers across active, obsolete, quarantined,
+  migrated, or recovered files within one database generation,
 - protected-root reference accounting for snapshots, rollback roots, backups,
   audit roots, and legal holds,
 - online integrity scrub skeleton that verifies blocks, indexes, filters,
@@ -992,8 +1027,12 @@ Deliverables:
 
 - sharded block cache with separate budgets for data blocks, index/filter
   blocks, decoded metadata, and projection blocks,
+- cache keys that include database generation, file number, block offset,
+  encryption domain, policy epoch, and key epoch,
 - per-tenant and per-security-domain cache accounting with pin counts for
   active iterators,
+- rule that iterator and snapshot pins prevent physical deletion of referenced
+  files but must not force all pinned blocks to remain resident in cache,
 - explicit rule that decrypted blocks cannot be cached across incompatible
   authority contexts or policy epochs,
 - deployment profile decision between page-cache-heavy operation and larger
@@ -1005,6 +1044,9 @@ Deliverables:
   treats Linux `openat2` constraints as an optional hardened implementation,
 - filesystem capacity, ENOSPC, quota, file-count, open-file, and temporary-disk
   governance before writes reserve resources,
+- WAL/table extent preallocation policy, table size classes, temporary-space
+  reservation, minimum free-space margins, compaction-debt admission, and
+  per-tenant I/O throttling before commits can exhaust shared storage,
 - tests for cache budget enforcement, iterator pinning, cross-authority cache
   rejection, ENOSPC/quota handling, file-count limits, and descriptor-relative
   path replacement attempts.
@@ -1025,6 +1067,31 @@ Deliverables:
 - migration path from scaffold `PolicyTokenSet` slots to catalog-backed tags,
 - tests that homograph rejection, redaction, overflow behavior, non-allow
   masking, and constant-shape scans remain intact after compacting hot paths.
+
+## v0.20.10 - Storage Spine Vertical Slice
+
+Goal: prove the narrow end-to-end database kernel path before later
+transactions, query execution, projections, and extensions depend on the
+storage format.
+
+Deliverables:
+
+- one complete vertical path:
+  `WriteBatch -> WAL v2 -> durable barrier -> memtable -> immutable table
+  flush -> manifest swap -> restart recovery -> point read -> domain-local
+  compaction`,
+- minimal `InternalKey`, `WriteBatch`, `MemTable`, `Snapshot`, `TableBuilder`,
+  `TableReader`, block iterator, merge iterator, filter policy,
+  manifest/version edit, version set, compaction job, obsolete-file manager,
+  database identity/superblock, environment/filesystem abstraction, and
+  resource governor,
+- recovery test proving committed batches reappear after restart and
+  uncommitted or non-durable batches do not,
+- point-read test proving a single fact can be located without reading a whole
+  segment/table body,
+- compaction equivalence test proving compacted output preserves snapshot
+  visibility, tombstones, policy domains, and rollback-protected roots,
+- release-gate smoke that exercises this full spine with a tiny fixture.
 
 ## v0.21.0 - In-Memory Transaction Model
 
@@ -1099,6 +1166,8 @@ Deliverables:
 - group-commit coordinator that batches transaction commit records behind one
   durable barrier without exposing unflushed commits as visible,
 - configurable sync modes with explicit guarantees and non-claims,
+- durable LSN receipts and commit-status lookup integrated with transaction
+  idempotency keys from `v0.18.12`,
 - commit sequence: policy validation, immutable write batch, sequence
   reservation, conflict validation, WAL append, group fsync, version/world-head
   publication, acknowledgement,
@@ -1107,6 +1176,8 @@ Deliverables:
   committed,
 - p50/p99 commit-latency evidence and throughput evidence for single
   transaction, batched transaction, and fsync-heavy profiles,
+- SLO evidence for WAL bytes per commit, fsyncs per commit, and ambiguous
+  commit-status resolution latency,
 - tests for batch barrier ordering, failed fsync, partial batch commit, replay
   after barrier-before-publication crash, and sync-mode misconfiguration.
 
@@ -1633,11 +1704,19 @@ Deliverables:
 - policy-partitioned vector projection plan, including explicit decision on
   mutable working-set indexes versus immutable disk ANN projections and
   rejection of cross-policy embedding/index mixing,
+- vector-search design as a rebuildable projection: mutable HNSW or flat-search
+  delta for fresh writes, immutable DiskANN/IVF-PQ-style snapshots for scale,
+  manifest-bound watermarks and snapshot visibility, policy-first filtering
+  where possible, embedding model/version/provenance fields, and recall
+  regression fixtures,
 - AI write capability ceiling metadata,
 - derivation-cone key-domain metadata,
 - source-fact visibility rules,
 - no lower-domain embedding of higher-domain facts,
 - tests for denied vector/AI projection writes.
+- tests for vector deletion visibility, stale-policy rejection, recall
+  regression, cross-domain leakage rejection, and model-version/provenance
+  mismatch.
 
 ## v0.32.1 - Extension Deferral And Core API Proof Gate
 

@@ -281,6 +281,12 @@ interior corruption, truncate or rotate safely, and validate the existing tail
 before appending. Ordinary pre-commit failures should not need abort records if
 uncommitted state is never flushed into canonical tables.
 
+Until WAL v2 replaces the scaffold format, WAL-v1 writers must be treated as
+dangerous after any append, partial write, flush, or sync error. They should
+poison themselves, force tail validation before further append, report durable
+LSN or ambiguous status where possible, and use transaction idempotency keys so
+retry cannot duplicate a commit.
+
 The database process must not become a god-mode key holder. Production key
 release must go through a scoped KMS, HSM, privilege-separated key service, or
 equivalent provider that checks tenant, compartment, purpose, policy epoch,
@@ -305,11 +311,29 @@ link/rename, manifest swaps, WAL truncation, directory fsync, ENOSPC, quota
 exhaustion, and EIO, with subprocess crash tests comparing recovered state to
 an in-memory oracle.
 
+Filesystem behavior is part of the trust boundary. `skrifheim` needs a
+supported-filesystem matrix, explicit network-filesystem non-claims until
+locking and sync semantics are proven, and practical power-cut tests using
+loopback/dm-flakey or an equivalent mechanism.
+
 Compaction must be designed and minimally implemented early. It determines key
 ordering, tombstone semantics, snapshot retention, rollback-root liveness,
 encryption-domain grouping, file-count growth, write amplification, iterator
 semantics, and WAL checkpointing. Compaction must preserve tenant, policy,
 region, encryption, and MVCC boundaries.
+
+The manifest is the authoritative storage root. It must name live immutable
+tables, world heads, schema roots, key state, WAL checkpoint, audit root,
+freshness anchor, and protected roots. Directory scans may help recovery,
+quarantine, and cleanup, but they must not become an alternative source of
+truth for active state.
+
+Space reclamation is a correctness feature, not only housekeeping. WAL pruning,
+obsolete-file sets, snapshot and iterator pins, tombstone retention,
+rollback/archive/legal-hold roots, orphan-table recovery, staged-file cleanup,
+and file-number no-reuse all need explicit rules before compaction or cleanup
+can delete bytes. Cleanup, migration, manifest changes, writers, checkpointing,
+and obsolete-file deletion must be serialized by the database-directory lease.
 
 Hot/cold tiering and blob deduplication are storage features only inside
 compatible security domains. Dedup must not reveal plaintext equality across
@@ -319,10 +343,26 @@ preserve snapshot, rollback, backup, audit, and legal-hold liveness.
 The storage engine needs a block cache rather than a traditional dirty-page
 buffer pool. Dirty data primarily lives in WAL-backed memtables; immutable
 tables can use sharded data/index/filter caches with tenant and security-domain
-accounting, active-iterator pinning, and rules preventing decrypted blocks from
-being reused across incompatible authority contexts. Deployment profiles should
-choose page-cache-heavy or userspace-cache-heavy behavior instead of
-accidentally double-caching at full size.
+accounting, cache keys that include database generation, file number, block
+offset, encryption domain, policy epoch, and key epoch, active-iterator
+pinning, and rules preventing decrypted blocks from being reused across
+incompatible authority contexts. Iterator and snapshot pins prevent physical
+deletion of referenced files, but they must not force every referenced block to
+remain resident in cache. Deployment profiles should choose page-cache-heavy or
+userspace-cache-heavy behavior instead of accidentally double-caching at full
+size.
+
+Resource governance starts with storage, not query execution. WAL/table extent
+preallocation, table size classes, temporary-space reservation, minimum
+free-space margins, compaction-debt admission, file-count/open-file limits, and
+per-tenant I/O throttling must fail before a commit can exhaust shared storage.
+
+The first real database milestone is a narrow storage spine, not another
+metadata-only model: `WriteBatch -> WAL v2 -> durable barrier -> memtable ->
+immutable table flush -> manifest swap -> restart recovery -> point read ->
+domain-local compaction`. Later transaction, query, projection, and extension
+work should consume that spine instead of evolving beside an unstable storage
+format.
 
 The in-memory transaction model must provide read-your-writes behavior before
 durable commit. Reads inside a transaction should consult transaction-local
@@ -338,6 +378,11 @@ append ordered WAL frames and commit root, group fsync, publish versions and
 world-head CAS updates, then acknowledge. A crash after the durable barrier but
 before publication is redone during recovery; a crash before the barrier must
 never expose the transaction as committed.
+
+Durability and performance must have measurable SLOs early: WAL bytes and
+fsyncs per commit, p50/p99 commit latency, read/write/space amplification,
+recovery rate, maximum startup time, compaction debt, stall time, cache hit
+rates, and memory per tenant, transaction, iterator, and query.
 
 Early performance and integration evidence must be gathered before the storage,
 transaction, query, and API shapes are too expensive to change. `v0.20.2`
@@ -455,6 +500,12 @@ spilling, and a cost model that includes I/O, CPU, memory, policy evaluation,
 leakage, projection freshness, and legal/compliance checks. Optional JIT stays
 deferred until profiling proves it is worth the extra attack surface and an
 interpreter fallback remains mandatory.
+
+Vector search is a rebuildable projection, not canonical truth. The planned
+shape is a policy-partitioned mutable HNSW or flat-search delta for fresh
+writes plus immutable disk ANN snapshots for scale, manifest-bound watermarks,
+snapshot visibility, embedding model/version/provenance fields, recall
+regression fixtures, and stale-policy/deletion/cross-domain leakage tests.
 
 ## Phase 5: Cryptographic Control Plane
 
