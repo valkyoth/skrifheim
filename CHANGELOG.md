@@ -59,6 +59,9 @@
   storage-upgrade support windows with golden databases, and pre-1.0
   cross-platform production qualification for host adapters, filesystem
   durability, cross-platform backup/restore, and architecture execution tests.
+- Added verification-policy roadmap gates for production-grade fuzz campaigns,
+  objective release pass/fail criteria, non-destructive restart repair with
+  preserved evidence, and algorithm/key-bound table commitments.
 - Updated the pinned Rust stable toolchain from `1.97.0` to `1.97.1` after
   `rustup check` reported stable `1.97.1` (`8bab26f4f`, 2026-07-14).
 - Reworked the roadmap so `v1.0.0` is the core production world database,

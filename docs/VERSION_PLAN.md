@@ -765,7 +765,8 @@ Deliverables:
   identities, data block root, index block root, filter block root,
   range-tombstone block root, metadata block root, first and last internal key,
   sequence range, file length, footer location, format/features, database
-  generation, and file identity,
+  generation, file identity, commitment algorithm/version, encryption domain,
+  policy epoch, crypto epoch, and key-slot identity,
 - manifest reference rule requiring the authenticated manifest to name the
   table/segment commitment, not only a file path or per-block digest set,
 - durable-format compatibility contract for block and segment framing: major
@@ -1051,8 +1052,19 @@ Deliverables:
 - restart-storm protection for repeated startup failures, including bounded
   repair attempts, quarantine of repeatedly failing roots, operator-visible
   diagnostics, and fail-closed active open under production profiles,
+- non-destructive restart repair rule: automated repair works only on staged
+  or copy-on-write state, preserves the original manifest, WAL, and damaged
+  files immutably until authorized disposition, never repeatedly truncates or
+  mutates the only recovery copy, and fails closed when disk-space exhaustion
+  prevents evidence preservation,
+- repair provenance and audit records for every automated repair outcome, with
+  destructive salvage requiring explicit operator authority and a chosen
+  recovery point,
 - failure-injection tests for every shutdown stage, restart after forced
   termination, repeated startup failure, and directory-lease release ordering,
+- tests for crashes during repair, repeated repair attempts, rollback to the
+  untouched original evidence set, failed evidence-copy staging, and rejected
+  destructive salvage without operator authority,
 - deterministic recovery fixtures.
 
 ## v0.20.1 - Production Timing Evidence Gate
@@ -2438,6 +2450,20 @@ Deliverables:
 
 - parser fuzz target,
 - storage frame fuzz target,
+- sustained coverage-guided fuzz campaigns for WAL, table/block parsing,
+  manifests, backups, query parsing/planning, and storage migrations,
+- retained minimized regression corpora committed or archived as release
+  evidence for every production-relevant parser and durable format,
+- cross-version and differential storage testing against the reference model,
+- ASan, UBSan, TSan, Miri, or platform-equivalent sanitizer/evidence runs where
+  applicable to host-boundary and parser crates,
+- allocation, recursion, nesting, decoded-size, and execution-time limits for
+  every parser and decoder, with fuzz targets asserting those limits,
+- release-candidate fuzz threshold policy defining required campaign duration
+  or execution count per target and the artifacts required for sign-off,
+- corpus and coverage artifacts bound to the reviewed release commit,
+- failure reproduction commands recorded in the permanent release evidence for
+  every fuzz-discovered defect,
 - transaction property tests,
 - policy decision property tests,
 - CI wiring for non-flaky local runs.
@@ -2560,6 +2586,16 @@ Deliverables:
   dedicated-runner profile, run variance, warm/cold cache state, dataset shape,
   compression ratio, encryption profile, filesystem, mount options, and
   rootless container volume mode,
+- objective release pass/fail criteria: minimum sample count, warm-up policy,
+  confidence interval, permitted measurement noise, maximum permitted p99 and
+  p99.9 regressions, throughput floors, recovery-rate floors, amplification
+  ceilings, and advisory versus release-blocking result classes,
+- zero tolerance for committed-data loss, silent corruption, isolation
+  violations, unauthorized policy bypass, freshness-anchor rollback, or audit
+  deletion/reordering in performance or endurance evidence,
+- baseline-change governance naming who may approve a new baseline, what
+  evidence is required, and a rule that a slower build cannot replace the
+  baseline merely to make future comparisons pass,
 - 24-hour minimum endurance smoke and 72-hour target endurance run before
   production claims, including compaction, scrub, backup, restore drill,
   key-rotation, manifest checkpoint, and policy-planner activity,
@@ -2780,6 +2816,9 @@ Deliverables:
   the final migration and compatibility rules,
 - comparison against stored `v0.50.0` regression budgets for latency,
   throughput, recovery, compaction, backup, restore, and policy planning,
+- final release pass/fail report applying the `v0.50.0` blocking criteria,
+  including confidence intervals, p99/p99.9 decisions, throughput/recovery
+  floors, amplification ceilings, and any approved baseline changes,
 - final optional extension integration checklist,
 - no new feature work without explicit deferral decision.
 

@@ -318,9 +318,11 @@ Per-block authentication is not enough to prove a complete table. Every
 immutable table or segment also needs a keyed commitment over the expected
 block count, ordered block identities, data/index/filter/range-tombstone and
 metadata roots, first and last internal key, sequence range, file length,
-footer location, format/features, database generation, and file identity. The
-authenticated manifest references that commitment so valid blocks cannot be
-removed, reordered, duplicated, or hidden behind an attacker-rebuilt footer.
+footer location, format/features, database generation, file identity,
+commitment algorithm/version, encryption domain, policy epoch, crypto epoch,
+and key-slot identity. The authenticated manifest references that commitment
+so valid blocks cannot be removed, reordered, duplicated, or hidden behind an
+attacker-rebuilt footer.
 
 Every durable format starts with a compatibility contract, not only a byte
 layout: major/minor version semantics, required and safely ignorable feature
@@ -500,6 +502,15 @@ drive-cache mode, dataset distribution, compression ratio, encryption profile,
 warm/cold cache state, concurrency, run variance, and rootless container
 bind-volume versus overlay-filesystem behavior.
 
+Release gates need objective pass/fail rules, not only benchmark summaries.
+Performance and durability evidence must define sample counts, warm-up policy,
+confidence intervals, permitted measurement noise, p99 and p99.9 regression
+limits, throughput and recovery floors, amplification ceilings, and which
+results block release. Committed-data loss, silent corruption, isolation
+violations, policy bypass, freshness rollback, and audit deletion or
+reordering are always release blockers. Baselines require explicit approval
+and cannot be replaced only because the new build is slower.
+
 Operational observability must expose redacted health signals for anchor
 availability, WAL/checkpoint lag, compaction debt, scrub coverage,
 quarantined files, backup health, restore-drill age, key-provider latency,
@@ -520,6 +531,21 @@ policy checks. `v0.23.2` exercises transaction storage under local load and
 crash scenarios. `v0.24.2` validates a minimal authenticated request boundary
 and planner context shape before the native query AST and policy-aware planner
 freeze their assumptions.
+
+Restart repair must preserve evidence by construction. Automated repair works
+on staged or copy-on-write state, keeps the original manifest, WAL, and damaged
+files immutable until an authorized disposition, records provenance and audit
+evidence, and fails closed if disk space is insufficient to preserve the
+original. Destructive salvage requires explicit operator authority and a chosen
+recovery point.
+
+Fuzzing is a production qualification activity, not only a CI smoke. WAL,
+tables, manifests, backups, queries, and migrations need sustained
+coverage-guided campaigns, retained minimized regression corpora,
+cross-version and reference-model differential tests, sanitizer or Miri
+evidence where applicable, parser allocation/recursion/time limits, release
+candidate execution-count or duration thresholds, and reproducible failure
+commands bound to the reviewed release commit.
 
 ## Phase 4: Policy And Classification Planner
 
