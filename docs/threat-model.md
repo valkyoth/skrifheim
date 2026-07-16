@@ -34,6 +34,12 @@ Status: baseline
   audit events, or reusable emergency approvals,
 - concurrent database processes advancing the same storage directory,
 - storage-format downgrade or partial migration attacks,
+- WAL frame deletion, duplication, reordering, torn-tail append, or appending
+  after an unvalidated corrupt tail,
+- malformed physical records, block indexes, filters, compression metadata, or
+  offset tables that trigger misreads, over-allocation, or integrity bypass,
+- policy-domain high cardinality causing pathological small-file amplification
+  or compaction debt,
 - WAL or segment corruption,
 - weak entropy, nonce reuse, or test-only randomness entering production
   crypto paths,
@@ -74,6 +80,13 @@ Status: baseline
   encryption hides which data was touched,
 - reject concurrent writers, stale storage leases, storage-format downgrade
   attempts, and partial migrations before durable roots are trusted,
+- use a block-structured physical layout with authenticated record/block
+  metadata, durable indexes, protected-root accounting, and domain-local
+  compaction instead of whole-segment reads,
+- repair only recoverable torn WAL tails at authenticated frame boundaries and
+  reject interior corruption or append-after-corruption attempts,
+- test storage ordering with failure injection, subprocess crash cases, and
+  reference-model recovery comparisons,
 - make API credential/session revocation part of authenticated access, not an
   application-side afterthought,
 - evaluate law and policy packs through deterministic bounded mechanisms with

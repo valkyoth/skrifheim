@@ -185,11 +185,21 @@ Implement:
 
 - append-only WAL,
 - strict recovery state machine,
-- immutable policy-scoped segments,
+- immutable policy-scoped block tables/segments,
 - manifest snapshots,
 - admitted SHA-3/SHAKE digest strength policy before durable storage keys,
 - full-width `WorldIdentityDigest`, `ContentDigest`, and `ManifestDigest`
   primitives,
+- canonical record and transaction-batch encodings,
+- primary, secondary, causal, supersession, invalidation, and snapshot
+  visibility key formats,
+- logical storage blocks with offset tables or restart arrays, sparse indexes,
+  filters, compression IDs, checksums, AEAD envelopes, and bounded
+  decompression,
+- WAL-backed memtables, immutable sorted runs, version sets, streaming
+  iterators, merge iterators, filters, and block/index caches,
+- physical partitioning by tenant, region, classification, compartment, key
+  epoch, and policy compatibility class,
 - checksums,
 - content-addressed blocks,
 - policy and encryption boundary metadata,
@@ -225,6 +235,13 @@ segment can be accepted. Content-digest verification is a required injected
 trust-boundary operation until the admitted production digest engine computes
 the actual SHA-3/SHAKE body hash.
 
+The opaque whole-segment scaffold must not become the production layout.
+Before manifests harden, `skrifheim` needs a physical storage decision: likely
+an LSM-oriented canonical fact store with a small copy-on-write metadata tree
+for compact mutable metadata. Segment bodies should become aligned encrypted
+blocks with sparse indexes and filters so point lookups do not allocate or read
+entire files.
+
 `v0.18.3` is the release that must admit and implement the production digest
 and AEAD engine. After that milestone, WAL and segment bodies must be encrypted
 and authenticated with domain-separated associated data before manifests,
@@ -258,6 +275,12 @@ concurrently. Storage-format upgrades must be idempotent, signed, audited,
 downgrade-protected, and recoverable after interruption without partially
 trusted state.
 
+WAL v2 must be ordered, authenticated, and repairable. Startup needs to find
+the last authenticated frame boundary, distinguish a recoverable torn tail from
+interior corruption, truncate or rotate safely, and validate the existing tail
+before appending. Ordinary pre-commit failures should not need abort records if
+uncommitted state is never flushed into canonical tables.
+
 The database process must not become a god-mode key holder. Production key
 release must go through a scoped KMS, HSM, privilege-separated key service, or
 equivalent provider that checks tenant, compartment, purpose, policy epoch,
@@ -276,7 +299,25 @@ general fuzz/property baseline remains later, but hand-written parsing of
 untrusted WAL and segment bytes must have a deterministic fuzz smoke from this
 storage phase onward.
 
-Compaction must preserve tenant, policy, region, encryption, and MVCC boundaries.
+Failure injection is part of the storage design, not late hardening. The
+engine needs failpoints for writes, short writes, interrupted syscalls, sync,
+link/rename, manifest swaps, WAL truncation, directory fsync, ENOSPC, quota
+exhaustion, and EIO, with subprocess crash tests comparing recovered state to
+an in-memory oracle.
+
+Compaction must be designed and minimally implemented early. It determines key
+ordering, tombstone semantics, snapshot retention, rollback-root liveness,
+encryption-domain grouping, file-count growth, write amplification, iterator
+semantics, and WAL checkpointing. Compaction must preserve tenant, policy,
+region, encryption, and MVCC boundaries.
+
+The storage engine needs a block cache rather than a traditional dirty-page
+buffer pool. Dirty data primarily lives in WAL-backed memtables; immutable
+tables can use sharded data/index/filter caches with tenant and security-domain
+accounting, active-iterator pinning, and rules preventing decrypted blocks from
+being reused across incompatible authority contexts. Deployment profiles should
+choose page-cache-heavy or userspace-cache-heavy behavior instead of
+accidentally double-caching at full size.
 
 The in-memory transaction model must provide read-your-writes behavior before
 durable commit. Reads inside a transaction should consult transaction-local
@@ -284,6 +325,14 @@ inserts, hides, supersessions, invalidations, and predicate changes before the
 committed snapshot, while other transactions must not see those uncommitted
 writes. This belongs in the v0.21.0 transaction state model, before strict
 serializable validation and WAL commit are wired in.
+
+Durable commit should use MVCC plus optimistic serializable validation, not
+long-lived database-wide locks. The intended commit path is: validate policy,
+construct immutable write batch, reserve commit sequence, validate conflicts,
+append ordered WAL frames and commit root, group fsync, publish versions and
+world-head CAS updates, then acknowledge. A crash after the durable barrier but
+before publication is redone during recovery; a crash before the barrier must
+never expose the transaction as committed.
 
 Early performance and integration evidence must be gathered before the storage,
 transaction, query, and API shapes are too expensive to change. `v0.20.2`
@@ -383,11 +432,24 @@ constant-time evidence, policy-token storage must use fixed-slot authorization
 sets, and label evaluation must avoid exposing compartment or releasability set
 size through variable loop shape.
 
+The current fixed string-slot token sets are safe scaffolding but poor
+long-term hot-path representation. Before query planning becomes performance
+critical, canonical policy strings should move to catalog boundaries while
+authorization hot paths use catalog-assigned compact IDs or keyed fixed-width
+tags with constant-shape set operations and timing evidence.
+
 Future causal-DAG, query, and policy traversals must avoid recursive call paths
 that clone or stack-nest `AuthorityContext`, `SecurityLabel`, or policy-token
 sets. These structures intentionally carry fixed-size token slots for
 constant-shape evaluation; traversal code should use iterative work queues or
 explicit heap ownership when evaluating many graph hops.
+
+Query execution should become batch-oriented before serious execution work:
+selection vectors, bounded columnar intermediate batches, arenas, bounded
+spilling, and a cost model that includes I/O, CPU, memory, policy evaluation,
+leakage, projection freshness, and legal/compliance checks. Optional JIT stays
+deferred until profiling proves it is worth the extra attack surface and an
+interpreter fallback remains mandatory.
 
 ## Phase 5: Cryptographic Control Plane
 

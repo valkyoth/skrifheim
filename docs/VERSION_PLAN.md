@@ -562,7 +562,7 @@ Deliverables:
 - current-tool and current-crate check evidence recorded in release notes
   whenever dependency, toolchain, or GitHub Actions versions change,
 - tests for the release-readiness gate and dependency-policy scripts so the
-  gate itself cannot silently regress.
+  gate itself cannot silently regress,
 - signed release provenance and reproducibility plan covering source commit,
   toolchain, dependency lockfile, container image digests, SBOM, release gate
   output, and whether bit-for-bit reproducibility is required or explicitly
@@ -692,6 +692,91 @@ Deliverables:
 - tests for stale/future trusted-time evidence, uncertainty overflow, inverted
   validity windows, wall-clock/logical-time type confusion, and replayed
   approval windows.
+
+## v0.18.11 - Physical Storage Layout Decision
+
+Goal: choose the physical engine shape before manifests harden around opaque
+whole-segment bodies.
+
+Deliverables:
+
+- storage architecture decision record choosing an LSM-oriented canonical fact
+  layout, hybrid LSM plus compact copy-on-write metadata trees, or another
+  explicitly justified structure,
+- canonical key ordering for facts, world revisions, transaction batches,
+  schema roots, causal edges, supersession edges, invalidation edges, and
+  snapshot visibility indexes,
+- logical block size decision, likely 4 KiB or 16 KiB, independent of host page
+  size and suitable for future optional direct-I/O adapters,
+- block-aligned outer segment layout with padded outer header, independently
+  readable encrypted blocks, and footer/trailer rules that preserve
+  header/body/footer mismatch detection,
+- block format with offset table or restart array, record count, bounded
+  decompressed length, compression algorithm ID, per-block checksum, AEAD
+  envelope, and schema/format marker,
+- sparse index and filter format decision, including partitioned Bloom or XOR
+  filters and workload-adaptive filter budgets,
+- physical partition key decision covering tenant, region, classification,
+  compartment, key epoch, and policy compatibility class so policy isolation
+  does not create uncontrolled small-file amplification,
+- small-file aggregation and domain-local compaction plan for high-cardinality
+  policy deployments,
+- content-addressed blob threshold and encryption-domain boundary for large
+  values that should not be inlined into fact records,
+- tests or format fixtures for block alignment, malformed offset tables,
+  restart bounds, compression-size limits, filter false-positive boundaries,
+  and cross-domain partition rejection.
+
+## v0.18.12 - WAL v2 And Torn-Tail Recovery
+
+Goal: replace the scaffold WAL envelope with an authenticated, ordered,
+repairable log format before manifests and recovery depend on it.
+
+Deliverables:
+
+- WAL v2 header with database ID, log incarnation, WAL generation, LSN,
+  transaction ID, transaction frame ordinal, expected transaction frame count,
+  previous-frame digest, header authentication, and commit transcript root,
+- explicit rule for single-domain transactions versus atomic cross-domain
+  transactions; if cross-domain atomic writes are needed, use a commit-root
+  record containing separately encrypted domain sub-batches rather than
+  weakening key isolation,
+- ordered commit-record transcript binding all transaction frames and their
+  digests,
+- startup scanner that finds the last authenticated frame boundary,
+  distinguishes recoverable torn tail from interior corruption, truncates or
+  rotates the WAL safely, and fsyncs the repaired file and parent directory,
+- writer preflight that validates an existing WAL tail before appending,
+- redo-only ordinary failure model where pre-commit abort records are not
+  required for transactions that never became durable,
+- tests for header mutation, frame deletion, duplication, reordering,
+  transaction frame omission, commit-root mismatch, appending after corrupt
+  tail, torn header, torn body, torn commit record, and repaired-tail replay.
+
+## v0.18.13 - Storage Crash Ordering And Failure Injection Harness
+
+Goal: prove storage root transitions under injected failures before manifest
+publication and checkpoint pruning become trusted.
+
+Deliverables:
+
+- formal crash-ordering state machine for WAL append, group barrier, memtable
+  flush, immutable table publication, manifest write, manifest swap,
+  checkpoint, WAL pruning, audit-root publication, and freshness-anchor
+  advancement,
+- TLA+/PlusCal or equivalent lightweight model for WAL, manifest, checkpoint,
+  and freshness-anchor ordering,
+- deterministic failpoint harness for writes, vectored writes, short writes,
+  interrupted syscalls, sync, link/rename, manifest swap, WAL truncation,
+  directory fsync, ENOSPC, quota exhaustion, EIO, and fsync failure,
+- subprocess crash tests that kill the process at persistence failpoints and
+  compare recovered state with an in-memory oracle,
+- torn-sector and corrupted-block matrix fixtures for WAL, block table,
+  manifest, and audit roots,
+- long-running randomized state-machine test comparing append, recover,
+  compact, checkpoint, and rollback behavior with a reference model,
+- release-gate smoke mode for deterministic failure-injection cases that are
+  stable enough for normal local and CI runs.
 
 ## v0.19.0 - Manifest And Checkpoint Format
 
@@ -863,6 +948,77 @@ Deliverables:
   hidden fact reintroduction, tombstone/legal-deletion conflict, and policy
   revocation visibility.
 
+## v0.20.7 - Real Storage Kernel Skeleton
+
+Goal: introduce the first block-structured storage kernel before transaction
+and query milestones rely on whole-file segment reads.
+
+Deliverables:
+
+- WAL-backed mutable memtable model using the selected canonical key ordering,
+- immutable sorted run/SSTable-style table format using the `v0.18.11` block
+  layout,
+- version-set manager for table files, file numbers, manifest references,
+  compaction candidates, and visible snapshots,
+- streaming table iterators and merge iterators with bounded memory,
+- flush path from memtable to immutable table with policy/encryption-domain
+  partition enforcement,
+- minimal domain-local compaction implementation before durable transaction
+  load tests, including tombstone and snapshot retention awareness,
+- file-number allocation bound to database ID, storage generation, and manifest
+  generation,
+- protected-root reference accounting for snapshots, rollback roots, backups,
+  audit roots, and legal holds,
+- online integrity scrub skeleton that verifies blocks, indexes, filters,
+  manifests, and audit roots and quarantines suspect files instead of silently
+  repairing them,
+- tests for sorted-run lookup, merge iteration, flush/recover equivalence,
+  compacted-state equivalence, protected-root liveness, file-number reuse
+  rejection, and quarantine on scrub failure.
+
+## v0.20.8 - Block Cache, I/O Profile, And Capacity Governance
+
+Goal: establish bounded I/O and cache behavior before realistic storage load
+and query execution.
+
+Deliverables:
+
+- sharded block cache with separate budgets for data blocks, index/filter
+  blocks, decoded metadata, and projection blocks,
+- per-tenant and per-security-domain cache accounting with pin counts for
+  active iterators,
+- explicit rule that decrypted blocks cannot be cached across incompatible
+  authority contexts or policy epochs,
+- deployment profile decision between page-cache-heavy operation and larger
+  userspace block cache to avoid uncontrolled double caching,
+- portable buffered positional/vectored I/O baseline, with optional direct-I/O,
+  io_uring, mmap, SIMD, and aligned-buffer paths isolated behind reviewed host
+  adapters,
+- descriptor-relative host path plan that keeps trusted directory handles and
+  treats Linux `openat2` constraints as an optional hardened implementation,
+- filesystem capacity, ENOSPC, quota, file-count, open-file, and temporary-disk
+  governance before writes reserve resources,
+- tests for cache budget enforcement, iterator pinning, cross-authority cache
+  rejection, ENOSPC/quota handling, file-count limits, and descriptor-relative
+  path replacement attempts.
+
+## v0.20.9 - Policy Token Catalog And Compact Hot-Path Tags
+
+Goal: reduce authorization hot-path cost without reintroducing token leakage or
+unbounded string comparison.
+
+Deliverables:
+
+- catalog-assigned compact policy token IDs or keyed fixed-width token tags for
+  compartments, releasability, sovereignty, and policy compatibility classes,
+- canonical string validation remains at ingestion/catalog boundaries, while
+  policy hot paths use compact fixed-width representations,
+- constant-shape comparison and set membership over compact tags with timing
+  evidence tied to `v0.20.1`,
+- migration path from scaffold `PolicyTokenSet` slots to catalog-backed tags,
+- tests that homograph rejection, redaction, overflow behavior, non-allow
+  masking, and constant-shape scans remain intact after compacting hot paths.
+
 ## v0.21.0 - In-Memory Transaction Model
 
 Goal: model read sets, write sets, predicate sets, commit timestamps, and fact
@@ -906,6 +1062,46 @@ Deliverables:
 - write-write conflict validation,
 - abort reasons,
 - deterministic concurrency tests.
+
+## v0.22.1 - Concurrency Model Checking
+
+Goal: validate the single-node concurrency protocol before durable commit,
+checkpoint, compaction, and world-head publication rely on it.
+
+Deliverables:
+
+- Loom, Shuttle, or equivalent model tests for commit coordinator ordering,
+  world-head compare-and-swap, version-set publication, checkpoint/WAL rotation,
+  cache pinning, memtable flush, compaction publication, key rotation versus
+  segment flush, and cleanup versus active segment publication,
+- global latch ordering document for short-lived latches over world heads,
+  version sets, index shards, cache shards, file deletion, checkpoint, and WAL
+  rotation,
+- linearizability or serializability history checker for generated concurrent
+  transaction histories,
+- tests for lock-order inversion, publication race, stale snapshot deletion,
+  compaction liveness race, group-commit race, and key-rotation race.
+
+## v0.22.2 - Group Commit And Durability SLO
+
+Goal: make WAL durability efficient and explicit before durable transactions
+become the normal write path.
+
+Deliverables:
+
+- group-commit coordinator that batches transaction commit records behind one
+  durable barrier without exposing unflushed commits as visible,
+- configurable sync modes with explicit guarantees and non-claims,
+- commit sequence: policy validation, immutable write batch, sequence
+  reservation, conflict validation, WAL append, group fsync, version/world-head
+  publication, acknowledgement,
+- crash rule proving a crash after the durable barrier but before publication
+  is recovered by redo, while a crash before the barrier is never visible as
+  committed,
+- p50/p99 commit-latency evidence and throughput evidence for single
+  transaction, batched transaction, and fsync-heavy profiles,
+- tests for batch barrier ordering, failed fsync, partial batch commit, replay
+  after barrier-before-publication crash, and sync-mode misconfiguration.
 
 ## v0.23.0 - Durable Transaction Commit
 
@@ -965,13 +1161,50 @@ Deliverables:
 - documented adjustment decision before v0.24 snapshot reads and v0.25 query
   AST depend on the current storage/transaction shape.
 
+## v0.23.3 - Durable Primary And Causal Indexes
+
+Goal: provide durable indexes before snapshot reads and query execution depend
+on in-memory-only fact lookup.
+
+Deliverables:
+
+- durable primary fact index keyed by tenant, world revision or snapshot,
+  fact identity, commit sequence, and visibility state,
+- durable reverse indexes for caused-by, supersedes, invalidates, hidden facts,
+  tombstones, and snapshot visibility,
+- sparse and block-level index use from the `v0.18.11` physical layout,
+- iterator semantics over point lookups, temporal scans, causal traversal,
+  branch overlays, and snapshot visibility,
+- index rebuild and verification path from canonical fact blocks,
+- tests for point lookup, temporal range scan, reverse causal traversal,
+  supersession/invalidation lookup, branch overlay lookup, index corruption,
+  rebuild equivalence, and stale-index rejection.
+
+## v0.23.4 - Storage Reference Models And Property Tests
+
+Goal: keep the storage and transaction engine checked against simpler models
+before query execution and compaction grow complex.
+
+Deliverables:
+
+- deterministic reference-model differential tests for facts, worlds,
+  visibility, transactions, indexes, and compaction,
+- property tests for serialization, replay idempotence, snapshot visibility,
+  compaction equivalence, manifest selection, and rollback protected-root
+  liveness,
+- golden compatibility corpus for every durable format version introduced so
+  far,
+- randomized state-machine tests comparing recovered state with an in-memory
+  oracle over append, flush, compact, checkpoint, crash, recover, and query
+  lookup operations.
+
 ## v0.24.0 - Fact Index And Snapshot Reads
 
 Goal: read facts by world and snapshot from recovered state.
 
 Deliverables:
 
-- in-memory fact index,
+- durable fact indexes from `v0.23.3` integrated into snapshot reads,
 - snapshot timestamp visibility,
 - supersession and invalidation lookup,
 - forward causal-edge lookup for future blast-radius traversal,
@@ -1266,6 +1499,28 @@ Deliverables:
 - confidence-aware allow/redact/reject policy hooks,
 - tests for denied plans.
 
+## v0.27.1 - Cost, Leakage, And Vectorized Execution Plan
+
+Goal: choose the execution architecture before the query prototype hardens
+around row-at-a-time scans.
+
+Deliverables:
+
+- batch-oriented operator model with selection vectors, columnar intermediate
+  batches where useful, bounded arenas, and bounded spilling,
+- cost model that includes storage I/O, CPU, memory, policy evaluation,
+  leakage profile, projection freshness, and legal/compliance checks,
+- explicit interpreter-first rule; optional JIT is deferred until profiling
+  proves CPU-bound expression evaluation dominates and an interpreter fallback,
+  code-cache limit, and sandbox/admission review exist,
+- plan for compression before encryption in WAL/table blocks, with bounded
+  decompression and authenticated original length,
+- benchmark fixtures for YCSB-like point workloads, temporal scans, causal
+  traversal, branch promotion, checkpoint recovery, compaction debt, and
+  policy-heavy queries,
+- tests for bounded batch memory, spill limits, policy/leakage cost influence,
+  compression-bomb rejection, and interpreter/JIT deferral guards.
+
 ## v0.28.0 - Query Execution Prototype
 
 Goal: execute read-only fact and causality queries on a single node.
@@ -1275,6 +1530,8 @@ Deliverables:
 - fact scan execution,
 - point lookup execution,
 - causality edge traversal over fact links,
+- batch-oriented execution using the `v0.27.1` vectorized plan where it
+  improves bounded scans and joins,
 - bounded forward traversal for taint and blast-radius queries,
 - implementation of the selected `v0.23.1` propagated-confidence model over
   evidence and caused-by chains,
@@ -1791,7 +2048,8 @@ Deliverables:
 
 ## v0.46.0 - Retention, Tombstone, And Compaction Policy
 
-Goal: define how old facts, tombstones, segments, and projections age safely.
+Goal: complete the retention and compaction policy over the minimal
+domain-local compaction introduced earlier in the storage kernel.
 
 Deliverables:
 
@@ -1799,6 +2057,8 @@ Deliverables:
 - tombstone retention rules,
 - compaction eligibility checks,
 - policy/key-domain preserving compaction rules,
+- integration with snapshot roots, rollback roots, legal holds, backup roots,
+  audit roots, and freshness-anchor generations,
 - tests that compaction cannot erase required audit history.
 
 ## v0.47.0 - Authenticated API Boundary Hardening
@@ -2014,11 +2274,18 @@ Goal: first serious production-ready `skrifheim`.
 Deliverables:
 
 - durable single-node fact/world engine,
+- physical block-structured storage layout with canonical key ordering,
+- block-structured storage kernel with memtables, immutable sorted runs,
+  version sets, iterators, filters, caches, and minimal compaction,
 - strict transaction semantics,
+- model-checked concurrency and group commit with explicit durability SLO,
+- durable primary, causal, supersession, invalidation, and snapshot visibility
+  indexes,
 - non-rollbackable freshness anchor contract for production profiles,
 - immutable world revisions with compare-and-swap world heads,
 - canonical fact transcript, signature verification, and verified ingest gate,
 - policy-aware query planning,
+- cost, leakage, and vectorized execution plan,
 - trusted planner context and bound query proofs,
 - full result security label propagation, including compartments and
   releasability/dissemination constraints,
@@ -2034,6 +2301,9 @@ Deliverables:
 - encrypted WAL, segments, indexes, projections, backups, exports, and audit logs,
 - WAL anti-splicing identity, chained frame digests, and transaction commit
   roots,
+- WAL v2 torn-tail recovery and append-after-corruption prevention,
+- crash-ordering and failure-injection harness for WAL, flush, manifest,
+  checkpoint, pruning, audit, and freshness-anchor transitions,
 - encrypted inner storage metadata with minimal plaintext outer framing,
 - explicit crypto-erasure granularity and key-slot deletion proofs,
 - admitted entropy/CSPRNG provider and nonce-generation policy,
@@ -2056,6 +2326,8 @@ Deliverables:
 - tamper-evident manifests,
 - storage-directory single-writer lease and downgrade-protected format
   migration model,
+- online integrity scrubbing, protected-root reference accounting, and
+  capacity/file-count governance,
 - externally anchorable chained audit roots,
 - SBOM, dependency-tree, source-lock, and release-evidence gates,
 - local snapshot and rollback retention with locked archive/recovery worlds,
