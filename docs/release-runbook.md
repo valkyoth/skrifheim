@@ -97,25 +97,47 @@ the reviewed source tree.
     Documentation-only corrections may reuse evidence only when the
     executable-input digest proves no qualified build input changed and a
     signed no-impact decision is recorded.
-12. Stop until tagging is explicitly authorized. Creating an annotated tag is
-    tagging and must not happen before that authorization.
-13. After authorization, create the signed annotated tag or external signed
-    release attestation. It binds the release tag/version, evidence-only
-    commit, reviewed commit, qualification manifest digest, reviewed-commit
-    artifact hashes, reviewed source-bundle hash where used, and PASS status.
-14. Run the post-tag pre-publication gate. It verifies tag signature and target,
-    post-tag attestation, tag-generated archive hash and smoke result where
-    used, final downloadable objects from their actual distribution endpoints,
-    registry/package-index integrity, artifact signatures, SBOM/provenance
-    links, and no mismatch between signed release evidence and downloadable
-    bytes.
-15. Publish transactionally: upload artifacts under immutable digest/version
-    identities, download and verify them from actual distribution endpoints,
-    then publish registry indexes, release pages, and `latest` pointers last.
-    Never overwrite artifacts or move an existing version tag. Handle partial
-    publication by retry or signed yank/revocation metadata.
-16. Push only normal commits unless explicitly instructed to push tags.
+12. Stop until tagging is explicitly authorized. Creating any version tag is
+    tagging and must not happen before that authorization. The authorization
+    proof must use the release quorum/threshold policy, distinct roles,
+    validity windows, and self-approval rejection.
+13. After authorization, create and validate the local immutable version tag.
+    Authentication is either a signed annotated tag or a lightweight tag plus a
+    detached signed attestation binding tag name and target commit. The local
+    validation checks the selected authentication mode, evidence-only commit,
+    reviewed commit, qualification manifest digest, reviewed-commit artifact
+    hashes, reviewed source-bundle hash where used, and PASS status.
+14. Obtain separate authorization before pushing the tag. Remote tag push is an
+    externally visible irreversible publication event.
+15. Push the immutable remote tag only after that authorization. If
+    provider-generated archives are used, retrieve, smoke, and hash them after
+    the remote tag exists, then bind those hashes in a separate signed post-tag
+    attestation.
+16. Run the post-tag pre-publication gate. It verifies selected tag
+    authentication mode and target, post-tag attestation, tag-generated archive
+    hash and smoke result where used, final downloadable objects from their
+    actual distribution endpoints, registry/package-index integrity, artifact
+    signatures, SBOM/provenance links, evidence freshness windows, release
+    quorum proofs, and no mismatch between signed release evidence and
+    downloadable bytes.
+17. Publish transactionally per channel. For each channel, follow its
+    prepare/publish/verify/compensate state machine, record whether hidden
+    staging is supported, identify the first irreversible operation, use retry
+    and idempotency keys where available, download and verify public endpoint
+    bytes, then publish registry indexes, release pages, and `latest` pointers
+    last. Never overwrite artifacts or move an existing version tag. Handle
+    partial publication by retry or signed yank/revocation metadata.
+18. Write a signed release-completion receipt listing every channel, final
+    public object digest, immutable URL or registry identity, verification
+    time, and PASS/FAIL result.
+19. Push only normal commits unless explicitly instructed to push tags.
 
 Tag-generated source archives are handled after the tag exists: either publish
 the qualified reviewed-commit source bundle, or retrieve, smoke, hash, and bind
 the generated tag archive in a separate signed post-tag attestation.
+
+Evidence freshness windows are checked before tag push and again before public
+publication. If a blocking advisory appears after the reviewed commit, abandon
+the release, publish signed yank/revocation metadata where applicable, or
+restart from a new reviewed commit. Never silently reuse an already-pushed
+version tag for a changed release.

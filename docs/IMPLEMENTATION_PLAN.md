@@ -129,6 +129,26 @@ or client-provided evidence path is used.
   signer identities, algorithm policy, rotation, revocation, trusted timestamp
   or transparency evidence, replay/version-rollback rejection, emergency
   artifact withdrawal, and signed superseding advisories without retagging.
+  Every release has an immutable version tag authenticated either by a signed
+  annotated tag or by a lightweight tag plus detached signed attestation
+  binding tag name and target commit. Remote tag push is an externally visible
+  publication event and requires separate authorization. If provider-generated
+  source archives are used, the remote tag is pushed first, then the archive is
+  retrieved, smoked, hashed, and bound by a separate signed post-tag
+  attestation.
+- Publication channels have explicit state machines because release publication
+  is not atomic across Git hosting, container registries, crates.io, package
+  repositories, and websites. Each channel defines prepare, publish, verify,
+  and compensate behavior, hidden staging support, first irreversible
+  operation, retry/idempotency key, yank or revocation capability,
+  partial-release handling, and public-endpoint verification. A signed
+  release-completion receipt records each channel and final public object
+  digest. Evidence freshness windows apply at tag and publication time for
+  dependency advisories, container scans, pentest/fuzz evidence, signing
+  certificates, attestations, source locks, toolchain review, and build-image
+  review. Blocking advisories after the reviewed commit require abandoning,
+  revoking/yanking, or restarting from a new reviewed commit without silently
+  reusing the version tag.
 
 ## Workspace Shape
 

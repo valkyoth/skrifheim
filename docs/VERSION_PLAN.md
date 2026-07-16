@@ -2875,27 +2875,59 @@ Deliverables:
   packages built from the reviewed commit before tagging, not only locally
   rebuilt equivalents; tag-generated archives are explicitly excluded from
   this pre-tag smoke and move to the post-tag gate,
-- signed annotated tag or external signed release attestation created after the
-  evidence-only commit, binding release tag/version, evidence-only commit,
-  reviewed implementation commit, qualification manifest digest, artifact
-  hashes, source archive hash, and release PASS status,
+- local immutable version tag created after the evidence-only commit and after
+  explicit tagging authorization, binding release tag/version,
+  evidence-only commit, reviewed implementation commit, qualification manifest
+  digest, reviewed-commit artifact hashes, reviewed source-bundle hash where
+  used, and release PASS status through the selected authentication mode,
+- immutable version tag requirement for every release path, authenticated by
+  either a signed annotated tag or a lightweight tag plus detached signed
+  attestation binding tag name and target commit; validators verify the
+  selected authentication mode rather than assuming every mode has a tag
+  signature,
+- release authorization proofs from the `v0.33.1` quorum/threshold model for
+  local tag creation, remote tag push, post-tag attestation, and public
+  publication, with distinct roles, validity windows, and self-approval
+  rejection,
 - release-signing compromise model for tags and post-tag attestations,
   including authorized signer identities and algorithms, key rotation and
   revocation, trusted timestamp or transparency evidence, replay and
   version-rollback rejection, emergency artifact withdrawal, and signed
   superseding advisories without retagging,
-- post-tag pre-publication validator that runs only after explicit tagging
-  authorization and verifies tag signature and target, post-tag attestation,
-  tag-generated archive hash and smoke result where used, final downloadable
-  objects from their real distribution endpoints, registry/package-index
-  integrity, artifact signatures, SBOM/provenance links, and no mismatch
-  between the signed release attestation and downloadable bytes,
+- explicit remote-tag phase for hosting-generated archives: create and validate
+  the local immutable tag, obtain separate authorization to push it, push the
+  immutable remote tag as an externally visible irreversible publication event,
+  retrieve/smoke/hash the provider-generated archive, create the post-tag
+  attestation, then continue publication,
+- post-tag pre-publication validator that runs only after explicit tag-push
+  authorization and verifies selected tag authentication mode and target,
+  post-tag attestation, tag-generated archive hash and smoke result where used,
+  final downloadable objects from their real distribution endpoints,
+  registry/package-index integrity, artifact signatures, SBOM/provenance links,
+  and no mismatch between the signed release attestation and downloadable
+  bytes,
 - transactional publication protocol: upload artifacts under immutable
   digest/version identities, download and verify from actual distribution
   endpoints, verify hashes/signatures/SBOM/provenance links and smoke results,
   publish registry indexes, release pages, and `latest` pointers last, never
   overwrite artifacts or move an existing version tag, and handle partial
   publication by retry or signed yank/revocation metadata,
+- channel-specific publication state machine for Git hosting, container
+  registries, crates.io, package repositories, and website/release pages,
+  defining prepare, publish, verify, and compensate behavior, hidden staging
+  support, first irreversible operation, retry/idempotency key, yank or
+  revocation capability, partial-release handling, and final post-publication
+  verification from public endpoints,
+- signed release-completion receipt listing every publication channel, final
+  public object digest, immutable URL or registry identity, verification time,
+  and PASS/FAIL result,
+- evidence freshness windows checked at tag and publication time for
+  `cargo audit`, dependency advisory snapshots, container/base-image
+  vulnerability scans, pentest evidence, fuzz evidence, signing certificates,
+  attestations, source-lock availability, toolchain review, and build-image
+  review; blocking advisories after the reviewed commit require abandon,
+  signed revocation/yank, or restart from a new reviewed commit and must never
+  silently reuse an already-pushed version tag,
 - crash/recovery and corrupted-backup matrix rerun after final backup and
   placement integration,
 - upgrade from the oldest supported format and downgrade-rejection run against
@@ -2937,8 +2969,10 @@ Deliverables:
   mismatched mirrors, duplicate version, forbidden retag, stale `latest`
   pointer, missing artifact, duplicate artifact, unexpected artifact,
   cross-platform-substituted artifact, unsigned or expired post-tag
-  attestation, release-signing key revocation, and tag-generated archive hash
-  mismatch,
+  attestation, release-signing key revocation, tag-generated archive hash
+  mismatch, stale evidence window, missing release quorum proof, self-approved
+  release proof, wrong tag authentication mode, remote tag push without
+  authorization, and channel completion receipt mismatch,
 - final optional extension integration checklist,
 - no new feature work without explicit deferral decision.
 

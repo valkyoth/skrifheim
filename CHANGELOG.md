@@ -80,6 +80,10 @@
   post-tag pre-publication validation, transactional publication, hermetic
   reproducible builds, richer artifact-set identity, and release-signing
   compromise response.
+- Tightened release publication planning with explicit tag authentication
+  modes, remote tag push authorization, per-channel publication state
+  machines, signed release-completion receipts, evidence freshness windows, and
+  release quorum proof requirements.
 - Updated the pinned Rust stable toolchain from `1.97.0` to `1.97.1` after
   `rustup check` reported stable `1.97.1` (`8bab26f4f`, 2026-07-14).
 - Reworked the roadmap so `v1.0.0` is the core production world database,
