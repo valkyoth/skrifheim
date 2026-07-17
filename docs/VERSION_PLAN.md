@@ -104,6 +104,55 @@ Pentest flow:
 Root `PENTEST.md` is temporary scratch input. It must not be committed, and the
 release metadata validator fails while it exists.
 
+## Per-Release Structure Rule
+
+Every versioned release section in this plan must have:
+
+- `Goal`: the reason the release exists and the security/compliance boundary it
+  advances,
+- `Deliverables`: the concrete code, documentation, tests, or decision records
+  needed for that release,
+- `Verification`: the inherited verification gate below plus any stricter
+  release-specific commands or evidence called out by the deliverables,
+- `Exit Criteria`: the inherited exit gate below plus any stricter
+  release-specific stop condition.
+
+When a release section does not repeat `Verification` or `Exit Criteria`
+inline, it still inherits the default gates from this rule. Release-specific
+verification and exit criteria may add requirements, but they must not weaken
+the inherited gate.
+
+Default verification for every release:
+
+- `scripts/checks.sh`
+- `cargo test --workspace`
+- `cargo deny check`
+- `cargo audit`
+- rootless Podman smoke when the release touches host/runtime/storage/container
+  behavior,
+- release-specific gate script when one exists for the version,
+- documentation, release notes, README, and permanent pentest-report readiness
+  checks when preparing the final release commit.
+
+Default exit criteria for every release:
+
+- all deliverables for the release are implemented or explicitly deferred in
+  the version plan before the stop,
+- local verification passes,
+- no temporary root `PENTEST.md` remains unless the release is at the maintainer
+  pentest handoff point,
+- Codex clearly calls the implementation stop with:
+
+  ```text
+  vX.Y.Z implementation stop reached. Run pentest for this exact commit.
+  ```
+
+- findings from every root `PENTEST.md` pass are fixed, retested, and removed,
+- a permanent digest exists under `security/pentest/` before a tag can be
+  requested,
+- GitHub Actions is green before tagging,
+- tags are created and pushed only after the maintainer explicitly asks.
+
 ## v0.1.0 - Repository Foundation
 
 Goal: initialize the serious Rust workspace and policy baseline.
