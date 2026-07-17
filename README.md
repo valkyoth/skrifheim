@@ -95,7 +95,7 @@ It is not a usable database engine.
 | Native query parser and execution | Planned | `v0.25.0` through `v0.28.0`. |
 | Approval-role authority model | Planned | `v0.26.2` defines executable roles and single-maintainer fallback policy for break-glass, law-pack admission, key ceremonies, declassification, backup restore, and release operations. |
 | Platform identity and product boundaries | Planned | `v0.26.3` separates identity authority, shared account/profile facts, operator/support/service identities, guardian consent, product-owned data, and minimal derived claims. |
-| Optional extension crate boundary | Planned | `v0.31.1` keeps product-family support in optional `skrifheim-ext-*` crates unless a feature is mandatory generic database core. |
+| Optional extension crate boundary | Planned | `v0.31.2` keeps product-family support in optional `skrifheim-ext-*` crates unless a feature is mandatory generic database core. |
 | Rebuildable projections and extension deferral | Planned | `v0.29.0` through `v0.32.1` adds graph/search/vector projection foundations and proves product-family extensions stay optional until after `v1.0.0`. |
 | Crypto-agile manifest and threshold signatures | Planned | `v0.33.0` signs manifests; `v0.33.1` defines the threshold-signature or bounded quorum multi-signature proof model before approval-sensitive operations depend on multi-party authority. |
 | Audit proofs, backup/restore, and local rollback | Planned | `v0.34.0` through `v0.36.0`, with `v0.35.1` reserved for backup-format evolution and schema compatibility, and `v0.35.2` reserved for local snapshot/rollback retention with locked archive and recovery worlds. |

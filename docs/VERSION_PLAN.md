@@ -959,6 +959,49 @@ Deliverables:
 - release-gate smoke mode for deterministic failure-injection cases that are
   stable enough for normal local and CI runs.
 
+## v0.18.14 - Transcript Dependency And Engine Ownership Model
+
+Goal: define durable transcript dependencies, publication order, and
+cross-crate ownership before manifests, audit roots, fact signatures, and world
+revisions can accidentally form circular commitments.
+
+Deliverables:
+
+- transcript dependency DAG covering transaction intent, fact signing
+  transcripts, audit intent, WAL commit roots, commit receipts, world
+  revisions, manifests, freshness anchors, and external anchor receipts,
+- publication-order rule: actor fact signatures bind pre-state intent and
+  base world revision, WAL commits bind fact digests and audit-intent digest,
+  commit receipts bind resulting world revisions, manifests incorporate
+  completed world/audit roots, and freshness anchors advance over completed
+  manifest digests without embedding a circular anchor receipt in the same
+  manifest,
+- predecessor declaration requirement for every durable transcript, with a
+  release-gate check or test fixture rejecting self-referential root graphs and
+  cycles in signature, audit, manifest, and anchor dependencies,
+- canonical placeholder ID/transcript types for schema roots, world revisions,
+  commit receipts, audit roots, and manifest roots so early milestones can
+  refer to them before full implementations land,
+- `skrifheim-engine` or `skrifheim-txn` ownership decision for commit
+  coordination, MVCC, world-head compare-and-swap, verified ingest,
+  audit-coupled commit, idempotency status, and cross-crate invariants,
+- `skrifheim-catalog` ownership decision for schema roots, predicate metadata,
+  security-label resolution, PII/data-category annotations, policy
+  compatibility classes, and catalog-derived query planning metadata,
+- `skrifheim-projection-api` ownership decision for committed-generation feeds,
+  projection capability declarations, projection journals, and rebuild
+  contracts,
+- `skrifheim-crypto-provider-api` ownership decision for sealed digest, AEAD,
+  signature, KDF/wrapping, entropy, key-provider, and freshness-anchor provider
+  contracts without host implementations,
+- dependency-direction rule that storage, facts, worlds, policy, audit, query,
+  catalog, engine, projection API, and provider API crates do not become
+  mutually dependent; cross-subsystem invariants live in the engine/transaction
+  coordinator instead of the main binary crate or storage crate,
+- tests or compile checks proving the main `skrifheim` crate remains
+  orchestration, provider implementations stay behind host boundaries, and
+  core crates cannot import the engine in a way that creates cycles.
+
 ## v0.19.0 - Manifest And Checkpoint Format
 
 Goal: record the durable storage root.
@@ -1184,13 +1227,33 @@ Deliverables:
   recovery sequencing need adjustment before transaction durability depends on
   them.
 
-## v0.20.3 - Canonical Fact Transcript And Verified Ingest
+## v0.20.3 - Production Signature Engine And Canonical Fact Transcript
 
-Goal: define exactly what a fact signature means before durable transaction
-commit accepts signed facts.
+Goal: admit production signature providers and define exactly what a fact
+signature means before durable transaction commit accepts signed facts. The
+final durable ingest gate is integrated in `v0.20.10` after schema roots and
+world revisions exist.
 
 Deliverables:
 
+- production signature-provider admission and implementation for the selected
+  classical baseline and any selected post-quantum or hybrid profile,
+  including license, maintenance, advisory, `no_std` fit, unsafe boundary,
+  platform support, side-channel posture, key parsing, and test evidence,
+- Ed25519 verification decision if retained as the classical baseline, with
+  strict public-key parsing, canonical signature parsing, invalid-key tests,
+  malleability rejection, batch-verification failure semantics, and provider
+  fault behavior,
+- ML-DSA, SLH-DSA, or other post-quantum signature implementation decision, or
+  an explicit temporary post-quantum signature non-claim until a reviewed
+  provider is admitted,
+- structured hybrid verification rule requiring classical and post-quantum
+  components to verify over the exact same transcript, with downgrade
+  prevention and uniform failure behavior,
+- crypto-suite lifecycle policy for signatures: active write suite, minimum
+  accepted read suite, read-old/write-new migration, deprecation/sunset,
+  mixed-suite manifest behavior, downgrade prevention, and release evidence for
+  suite retirement,
 - canonical fact encoding profile with domain-separation tag and format
   version,
 - FactId allocation and binding decision: choose content-derived,
@@ -1210,8 +1273,10 @@ Deliverables:
   of future or cross-world references unless an explicit import proof exists,
 - actor-to-key authorization model for assertion time,
 - key lifecycle and revocation checks at assertion time,
-- verified fact constructor that requires a key registry and trusted
-  verification result before durable ingest,
+- verified fact constructor shape that requires a key registry and trusted
+  verification result; durable ingest cannot enable it until the concrete
+  schema-root and world-revision contracts from `v0.20.4` and `v0.20.5` are
+  present,
 - signature algorithm/context rule that rejects algorithm confusion and
   signature-context misuse,
 - tests for omitted fields, reordered fields, wrong tenant, wrong world
@@ -1229,6 +1294,13 @@ Deliverables:
 - minimal schema root digest type and canonical schema-root transcript,
 - predicate/model identity and version placeholders used by fact signing,
   world revisions, manifests, backups, and transaction validation,
+- minimal authenticated security catalog containing predicate/schema security
+  labels, PII and data-category annotations, required compartments,
+  releasability metadata, policy compatibility class, schema root, predicate
+  version, and catalog epoch before the full `v0.45.0` schema catalog exists,
+- catalog-derived label-resolution contract for `v0.24.3` trusted planning, so
+  planners have an authoritative source for labels and result metadata before
+  query execution begins,
 - compatibility stance for unknown schema roots before the full `v0.45.0`
   schema catalog exists,
 - rule that durable facts cannot be committed without a schema/predicate root
@@ -1355,6 +1427,13 @@ Deliverables:
 - reusable aligned-buffer pools, allocation limits, and copy-count budgets for
   WAL encoding, compression, AEAD, block reads, decompression, and secure
   zeroization paths,
+- cache and buffer-pool revocation policy requiring decrypted entries,
+  decoded metadata, projection cache entries, spill buffers, and reusable
+  buffers to be evicted and scrubbed when a key is compromised, destroyed, or
+  crypto-erased; when a policy epoch is revoked; or when a compartment/domain
+  is sealed,
+- stale-decryption denial rule proving a block cannot remain readable from
+  cache after its key slot, policy epoch, or domain authority has been removed,
 - rule that iterator and snapshot pins prevent physical deletion of referenced
   files but must not force all pinned blocks to remain resident in cache,
 - explicit rule that decrypted blocks cannot be cached across incompatible
@@ -1403,6 +1482,34 @@ Deliverables:
 - tests that homograph rejection, redaction, overflow behavior, non-allow
   masking, and constant-shape scans remain intact after compacting hot paths.
 
+## v0.20.10 - Verified Fact Ingest Integration Gate
+
+Goal: turn the signature transcript, schema-root contract, world-revision
+model, and transaction reference checks into the first non-forgeable verified
+fact ingest path before transaction milestones accept durable writes.
+
+Deliverables:
+
+- engine-owned verified ingest API that accepts only canonical fact
+  transcripts, trusted signature verification results, catalog-derived schema
+  roots, exact world revision context, policy epoch, crypto epoch, actor
+  authority, and transaction intent from the `v0.18.14` dependency order,
+- durable ingest rule that actor signatures bind the pre-state/base world
+  revision and fact payload digests, while engine commit receipts bind the
+  resulting `WorldRevisionId` after WAL commit and manifest publication,
+- transaction-time validation for same-tenant fact references, existence,
+  snapshot visibility, causal/supersession/invalidation edges, evidence
+  references, schema compatibility, key lifecycle state, and actor authority,
+- rejection of caller-supplied fact IDs or context fields that conflict with
+  the selected `FactId` allocation strategy, catalog state, world revision, or
+  transaction intent,
+- idempotent retry behavior for verified ingest after ambiguous durability
+  outcomes using the durable LSN receipt and commit-status scaffold,
+- tests for forged verification results, wrong schema root, wrong world base
+  revision, stale catalog epoch, revoked signer, future fact reference,
+  cross-tenant edge, replayed commit intent, duplicate idempotency key, and
+  circular transcript dependency.
+
 ## v0.21.0 - In-Memory Transaction Model
 
 Goal: model read sets, write sets, predicate sets, commit timestamps, and fact
@@ -1412,6 +1519,13 @@ Deliverables:
 
 - transaction state type,
 - read/write/predicate set tracking,
+- explicit transaction resource limits for read-set entries and bytes,
+  write-set entries and bytes, predicate-set entries, causal-link expansion,
+  savepoints if supported, transaction-local payload bytes, and total
+  transaction memory,
+- transaction lifetime and snapshot-pin age limits with fail-closed behavior
+  for abandoned clients and long-running transactions that would block
+  compaction, tombstone reclamation, rollback cleanup, or crypto-erasure,
 - read-your-writes overlay for uncommitted writes inside the owning
   transaction,
 - deterministic lookup order for transaction-local writes, tombstones,
@@ -1426,6 +1540,11 @@ Deliverables:
 - decision on whether `FactId` may reveal write ordering or must remain
   order-hiding,
 - write-time uniqueness checks for whichever strategy is selected,
+- cross-tenant and cross-domain transaction policy, including whether such
+  transactions are denied, split into separately authorized subtransactions,
+  or admitted only through an explicit multi-domain commit protocol,
+- idempotency and commit-status record retention, garbage collection, and
+  privacy policy so retry safety does not create an unbounded history oracle,
 - MVCC implications for fact identity, transaction identity, valid time,
   commit time, and causal links,
 - documentation that `FactId` is not an authorization capability and must not
@@ -1945,6 +2064,17 @@ Deliverables:
   batches where useful, bounded arenas, and bounded spilling,
 - cost model that includes storage I/O, CPU, memory, policy evaluation,
   leakage profile, projection freshness, and legal/compliance checks,
+- policy-partitioned statistics rule: optimizer statistics, histograms,
+  samples, cardinality estimates, and cost feedback are partitioned or
+  redacted by authority, tenant, policy epoch, classification, compartment,
+  purpose, and world revision so optimization cannot inspect unauthorized
+  metadata,
+- rewrite correctness property tests proving predicate pushdown, projection
+  pruning, join reorder, aggregate rewrite, index-only scan, projection use,
+  and plan-cache lookup preserve or tighten security annotations,
+- plan-cache isolation rule forbidding reuse across authority, tenant,
+  device/workload evidence, policy epoch, world revision, purpose, leakage
+  profile, or query digest boundaries,
 - explicit interpreter-first rule; optional JIT is deferred until profiling
   proves CPU-bound expression evaluation dominates and an interpreter fallback,
   code-cache limit, and sandbox/admission review exist,
@@ -1972,6 +2102,13 @@ Deliverables:
   evidence and caused-by chains,
 - execution-time revalidation that the bound plan's snapshot root, policy
   epoch, proof, identity, expiry, purpose, and nonce are still valid,
+- periodic authority, policy, revocation, expiry, and snapshot-lease
+  revalidation for long-running or streaming queries,
+- final output gate before every result batch so mid-query revocation,
+  authority expiry, policy change, or domain sealing cannot leak a partially
+  unauthorized stream,
+- encrypted, domain-bound query spill files with secure cleanup, quota
+  accounting, and rejection of spill across incompatible policy/key domains,
 - inference-budget enforcement for aggregate query execution,
 - execution behavior that follows the selected `v0.24.6` leakage profile,
 - bounded result sets,
@@ -1987,6 +2124,16 @@ Deliverables:
 - source fact range,
 - consistency mode,
 - watermark tracking,
+- transactional projection outbox or journal rooted in the WAL commit and
+  manifest generation, with at-least-once delivery, idempotent application,
+  replay after crash, and deterministic duplicate suppression,
+- monotonic per-partition watermarks, lag limits, backpressure behavior,
+  rebuild fallback, and stale-generation cleanup,
+- policy/key revocation handling for queued but not-yet-applied projection
+  work, including quarantine or cancellation before stale work can publish,
+- crash-safe projection publication protocol that writes projection output,
+  verifies compatibility key, publishes the watermark, and cleans stale
+  artifacts without sharing the canonical WAL,
 - incremental materialized projection model with source watermarks, manifest
   generation binding, rebuild range, stale marker, and policy/legal epoch
   compatibility,
@@ -2013,6 +2160,20 @@ Deliverables:
 - adjacency projection,
 - source range tracking,
 - rebuild from canonical facts,
+- versioned `TaintEvent` and `InvalidationEpoch` records for compromised
+  sources, workers, models, keys, imports, decisions, releases, exports,
+  backups, projections, and AI artifacts,
+- explicit blast-radius states such as suspect, tainted, quarantined,
+  superseded, revalidated, and retained-for-audit,
+- checkpointed and resumable traversal jobs with hard node, edge, depth,
+  memory, time, and output budgets plus partial-result semantics,
+- unified dependency-edge model from facts to decisions, projections, releases,
+  exports, backups, AI artifacts, declassification proofs, and cache entries,
+- no in-place untaint rule: revalidation creates a new signed derivation,
+  revision, projection, or release record rather than silently clearing old
+  taint state,
+- confidence memoization keying by world revision, fact ID, and propagation
+  policy digest rather than duplicating full path state in canonical facts,
 - stale projection detection,
 - tainted projection detection from causal blast-radius traversal,
 - encrypted projection metadata,
@@ -2033,7 +2194,30 @@ Deliverables:
 - rebuild tests,
 - no cross-compartment mixing tests.
 
-## v0.31.1 - Optional Extension Crate Boundary
+## v0.31.1 - Columnar Projection Skeleton
+
+Goal: define policy-partitioned columnar projection storage before vectorized
+execution and analytical reads depend on columnar layouts.
+
+Deliverables:
+
+- columnar projection metadata for source world revision, schema root,
+  projection version, policy/legal epoch, encryption domain, key epoch, and
+  manifest generation,
+- column chunk format decision with encrypted chunk bodies, authenticated
+  column statistics, row-group visibility metadata, deletion/tombstone masks,
+  and rebuild watermarks,
+- policy-partitioned statistics rule so min/max, bloom filters, dictionaries,
+  histograms, and null counts cannot reveal unauthorized values across
+  tenant, classification, compartment, releasability, legal, or key domains,
+- vectorized execution compatibility for bounded batches, selection vectors,
+  encrypted/domain-bound spill, and final output security gates,
+- rebuild and invalidation protocol from the projection journal in `v0.29.0`,
+- tests for cross-domain column merge rejection, stale policy/key epoch,
+  unauthorized statistics access, tombstone visibility, rebuild after crash,
+  and vectorized scan result-label preservation.
+
+## v0.31.2 - Optional Extension Crate Boundary
 
 Goal: keep application-family support out of the mandatory database core unless
 the feature is truly generic.
@@ -2178,18 +2362,44 @@ Deliverables:
   while advanced distributed key generation may remain post-1.0 if explicitly
   deferred.
 
-## v0.34.0 - Audit Proof Queries
+## v0.34.0 - Audit Storage, External Receipts, And Proof Queries
 
-Goal: prove what was known, under which policy, and from which manifest.
+Goal: implement the durable audit storage and verification surface needed to
+prove what was known, under which policy, and from which manifest.
 
 Deliverables:
 
+- encrypted audit-segment writer and reader using the chained audit-log root
+  contract from `v0.18.8`,
+- chain continuity verification for stream generation, sequence,
+  previous-record digest, event digest, policy epoch, manifest root, WAL
+  transaction root, and audit segment root,
+- Merkle inclusion and consistency proof format for audit records, audit
+  segments, audit roots, and manifest-bound audit inventories,
+- external receipt and witness persistence model with verification against
+  freshness anchors, WORM/offline checkpoints, or remote transparency
+  services where configured,
+- audit-key rotation and verification across old and new audit signing or
+  encryption keys without breaking proof continuity,
+- recovery of transactional audit outbox records without duplicate emission
+  and without reporting protected operation success before mandatory audit is
+  durable,
+- durable pre-release audit path for protected reads and other mandatory-audit
+  operations that do not otherwise mutate canonical facts,
+- audit segment retention and compaction policy preserving proof continuity,
+  external receipts, legal holds, and mandatory retention windows,
+- offline verifier CLI/API that can verify audit segments, manifest roots,
+  receipt chains, and selected proof queries without trusting the live database
+  process,
 - fact existence proof skeleton,
 - policy epoch proof skeleton,
 - confidence derivation proof skeleton,
 - manifest root reference,
 - audit query output type,
-- tests for missing proof material.
+- tests for missing proof material, removed audit record, reordered record,
+  duplicate outbox replay, stale receipt, key-rotation boundary, protected read
+  without durable audit, compacted audit segment proof, and offline verifier
+  mismatch.
 
 ## v0.35.0 - Backup And Restore Skeleton
 
@@ -2451,21 +2661,33 @@ Deliverables:
   indexes, and cache operations never apply to admin/auth/bootstrap/private
   responses.
 
-## v0.38.4 - Extension API Compatibility Freeze
+## v0.38.4 - Opaque Extension Capability API Preview
 
-Goal: freeze the public core APIs that optional post-1.0 extension crates will
-compile against, without implementing any product-family extension in the
-mandatory database.
+Goal: freeze only the smallest opaque capability surface that optional
+post-1.0 extension crates will compile against, while leaving schema,
+migration, legal/compliance, operation-passport, and placement interfaces
+unstable until their later pre-1.0 milestones complete.
 
 Deliverables:
 
-- public API review for facts, worlds, labels, policy proofs, query plans,
-  storage roots, encryption domains, audit records, and legal/compliance
-  passports,
+- public API review for opaque capabilities over facts, worlds, labels, policy
+  proofs, authorized query handles, projection declarations, audit submission,
+  and storage-root references that are already stable enough to expose,
+- explicit non-freeze list for schema/catalog migration, legal/compliance
+  passports, retention/deletion workflows, placement APIs, operation passports,
+  backup/restore contracts, and product-family extension schemas until the
+  final pre-1.0 extension compatibility review,
 - compile-only extension fixture that depends on the core APIs without being a
   default workspace dependency,
-- documentation of which APIs are stable for v1.1.0 through v1.6.x extension
-  crates,
+- documentation of which opaque APIs are stable for early v1.1.0 through
+  v1.6.x extension planning and which APIs remain intentionally unstable,
+- extension lifecycle semantics covering removal without making canonical
+  facts or schema descriptors unreadable, atomic and resumable extension
+  upgrade/migration, capability revocation for existing sessions and
+  background jobs, panic/resource-exhaustion containment, and cross-extension
+  dependency denial or explicit versioning,
+- trust-boundary statement that compiled-in extensions are trusted code and
+  part of the TCB unless isolated through a future process or WASM boundary,
 - release-gate check proving optional extension fixtures can be omitted from
   the production core build,
 - explicit deferral notes that collaborative text, publishing releases, render
@@ -2575,8 +2797,17 @@ Deliverables:
 - export policy proof skeleton,
 - signed declassification proof skeleton for every write-down/export to a
   lower classification or release boundary,
+- declassification verifier requiring exact source roots, source and target
+  labels, authorized signer roles or quorum proof, policy epoch, legal basis,
+  purpose, expiry, nonce, audit binding, and proof revocation/supersession
+  state before any write-down can proceed,
+- mandatory write-down gate proving no export, cache, projection, AI artifact,
+  mission capsule, public release, backup-derived artifact, or new fact write
+  can lower a label without a verified declassification proof,
 - import verification preflight,
-- rejected downgrade tests.
+- rejected downgrade tests, missing proof tests, stale proof tests, wrong
+  target-label tests, revoked signer tests, and cache/projection/export
+  bypass tests.
 
 ## v0.43.1 - Extension Trust Boundary And Import Deferral
 
@@ -2959,6 +3190,44 @@ Deliverables:
 - tests for Windows reparse-point attacks, Unix symlink attacks, BSD/macOS
   directory sync behavior, Linux filesystem matrix behavior, cross-platform
   backup/restore, and architecture-neutral format replay.
+
+## v0.56.2 - Final Extension API Compatibility Freeze
+
+Goal: freeze the complete optional-extension API only after schema,
+retention, API credentials, legal/compliance passports, sovereign placement,
+backup/restore, resource governance, and cross-platform support are known.
+
+Deliverables:
+
+- final public API review for facts, worlds, labels, catalog/schema contracts,
+  policy proofs, authorized query handles, projection journals, audit
+  submission, storage roots, encryption domains, operation passports,
+  legal/compliance passports, retention/deletion hooks, backup/restore hooks,
+  and migration interfaces exposed to extension crates,
+- compatibility contract for `v1.1.0` through `v1.6.x` extension crates,
+  including stable APIs, explicitly unstable APIs, deprecation windows,
+  feature gates, and minimum supported core database version,
+- extension removal behavior proving canonical facts, schema descriptors,
+  audit records, projection metadata, and backups remain readable or
+  quarantinable without the removed extension loaded,
+- atomic and resumable extension upgrade/migration protocol with dry-run,
+  checkpoint, rollback/restore point, idempotency key, audit proof, and
+  resource budgets,
+- capability revocation behavior for existing extension sessions, queued jobs,
+  background projections, migration tasks, and long-running queries,
+- cross-extension dependency policy: default deny, or explicit versioned
+  dependency declarations with cycle rejection, capability narrowing, and
+  upgrade ordering,
+- extension panic, timeout, memory exhaustion, disk exhaustion, parser failure,
+  and malformed manifest containment tests,
+- final compile-only fixtures for publishing, messenger, forum, forge,
+  relationship/feed/media, mailbox, collaboration, privacy, and source-state
+  extension families proving they compile against the frozen API without
+  entering the mandatory core build,
+- tests for omitted extension, removed extension, upgraded extension,
+  downgraded extension rejection, revoked capability, cross-extension
+  dependency conflict, and extension attempting raw WAL, filesystem,
+  key-provider, or unrestricted database access.
 
 ## v0.57.0 - 1.0 Release Candidate
 
@@ -3432,13 +3701,21 @@ Deliverables:
 - `skrifheim-cluster-protocol` transport-independent signed message types and
   `skrifheim-cluster-host` networking/consensus implementation boundary, with
   no consensus or network dependency in core database crates,
+- explicit crash-fault versus Byzantine-fault threat model for local cells,
+  with non-claims for any failure class not implemented by the selected
+  protocol,
 - node registry,
 - local shard/range assignment,
 - local consensus skeleton,
+- membership-change and joint-consensus model covering voting configuration,
+  fencing tokens, term/index durability, snapshot installation, log
+  compaction, and recovery after interrupted reconfiguration,
 - sovereign-cell rule that consensus is local to a lawful cell and no global
   consensus system may bypass local policy, legal, key, or witness vetoes
   across legal boundaries,
 - local failover preflight,
+- split-brain prevention and fencing tests in the initial local-cell runtime,
+  not deferred only to later failover work,
 - cell health model,
 - tests for one-node loss inside a cell.
 
@@ -3456,6 +3733,10 @@ Deliverables:
 - signed-intent reconciliation rule: the control plane proposes placement,
   replication, backup, failover, projection, and tunnel changes but cannot
   grant data access or override destination-side policy decisions,
+- control-plane storage rule requiring topology, placement intent, membership,
+  witness state, and remediation proposals to use the same authenticated
+  storage, freshness-anchor, audit, backup, and recovery rules as ordinary
+  database state,
 - policy, key, and law-pack epoch tracking,
 - tests for control-plane proposals that cannot bypass local vetoes.
 
@@ -3488,6 +3769,17 @@ Deliverables:
 - replicate only authenticated encrypted blocks whose complete domain is
   admitted at the destination; no plaintext downgrade or cross-domain key
   weakening for convenience,
+- ciphertext portability decision: either bind blocks to a cluster-wide
+  immutable object identity in AEAD associated data, or verify and re-encrypt
+  through an authorized destination transfer boundary when storage generation,
+  file identity, block offset, or key domain differ,
+- privacy-erasure, tombstone, and legal-hold propagation rules for lagging,
+  partitioned, sealed, or recovering replicas, including garbage-collection
+  watermarks and proof that erased key slots cannot remain readable on a
+  delayed replica,
+- explicit rejection of global cross-cell transactions before a narrowly
+  scoped future protocol exists; use durable operation intents or sagas across
+  sovereign cells by default,
 - Merkle repair,
 - hot and async secondary modes,
 - hash-only witness/notary role,
