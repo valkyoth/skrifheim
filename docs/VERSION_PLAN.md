@@ -734,11 +734,12 @@ Deliverables:
   response-stream ID, expiry, and revocation epoch before read release;
   `ReleaseStarted`, recording that protected bytes may be handed to transport;
   zero or more `BatchMayRelease` records naming batch sequence and digest for
-  high-assurance streams; `ReadOutcomeReceipt`, recording completed,
-  partially released, denied, failed, disconnected, expired-unused, or
-  indeterminate read outcomes; and `AdministrativeReceipt`, binding key,
-  policy, backup, break-glass, declassification, or operator outcomes to their
-  proof roots,
+  high-assurance streams; branch-specific read outcome receipts:
+  `DeniedOutcome`, `FailedBeforePermit`, `ExpiredUnused`,
+  `CancelledBeforeRelease`, `Completed`, `Partial`, `FailedAfterStart`,
+  `Disconnected`, and `Indeterminate`; and `AdministrativeReceipt`, binding
+  key, policy, backup, break-glass, declassification, or operator outcomes to
+  their proof roots,
 - canonical protected-read state machine with explicit branches:
   `AuditIntent -> DeniedOutcome`,
   `AuditIntent -> FailedBeforePermit`, or
@@ -754,6 +755,20 @@ Deliverables:
   after terminal outcome; completed high-assurance streams are rejected if
   required batch markers are missing; and only one terminal outcome is allowed
   per operation intent,
+- sealed transition API or typestate implementation for first-party
+  protected-read audit construction, so illegal branch combinations are
+  unconstructable in process while the offline verifier applies the same
+  transition table to serialized records,
+- `BatchMayRelease` canonical transcript binding operation intent ID, audit
+  stream ID, response-stream ID, read-release permit digest, query digest,
+  authorized-plan digest, snapshot or logical root, batch sequence, previous
+  batch-marker digest, canonical batch payload digest, row/item count, encoded
+  byte count, result security-label digest, policy epoch, and revocation epoch,
+- canonical batch digest encoding rule covering deterministic row/item
+  ordering, compression-independent payload bytes, redaction representation,
+  and exclusion or explicit inclusion of transport framing, so a valid marker
+  cannot be substituted across streams, queries, snapshots, labels, or policy
+  contexts,
 - explicit rule that `AuditIntent` must not contain the resulting WAL root,
   resulting manifest root, or resulting audit root, and that commit roots bind
   audit-intent digests rather than final receipts,
@@ -1489,6 +1504,17 @@ Deliverables:
 - permanent or retention-governed descriptor tombstones in the
   descriptor-to-scope index, so retired descriptors cannot be recreated with a
   fresh `TaintScopeId` and clean fence history,
+- two-level retired-scope lookup model: a hot descriptor-to-scope index for
+  active and recently retired scopes, plus an immutable retired-scope
+  accumulator or sparse Merkle tombstone map for permanently retired
+  identities whose audit/legal retention may outlive hot index budgets,
+- retired-scope accumulator records preserving stable scope ID, canonical
+  descriptor digest, final fence root, final dependency root, retirement
+  record, successor IDs, non-membership/recreation protection, and inclusion
+  proof material for historical audit and migration verification,
+- scope-creation rule requiring checks against both the hot descriptor index
+  and retired-scope accumulator before any descriptor is admitted, so moving a
+  tombstone out of the hot index does not permit recreation,
 - signed successor-scope record required for reactivation of a retired scope,
   with successor fence initialized to at least the maximum predecessor fence
   and predecessor dependency root,
@@ -2680,10 +2706,21 @@ Deliverables:
 - durable pre-release permit and final outcome receipt path for protected reads
   and other mandatory-audit operations that do not otherwise mutate canonical
   facts,
-- proof verification for the canonical protected-read state machine, including
-  rejection of missing `ReleaseStarted`, reordered `BatchMayRelease` markers,
-  duplicated batch markers, non-monotonic batch sequences, outcome without a
-  matching permit, and receipt chains that skip required state transitions,
+- proof verification for the canonical protected-read state machine using
+  branch-specific rules: `DeniedOutcome` requires `AuditIntent` and bound
+  policy-denial proof while forbidding permit and release start;
+  `FailedBeforePermit` requires intent while forbidding permit and release
+  start; `ExpiredUnused` and `CancelledBeforeRelease` require permit while
+  forbidding release start and batch markers; `Completed`, `Partial`,
+  `FailedAfterStart`, `Disconnected`, and `Indeterminate` require permit and
+  release start; high-assurance release outcomes require a contiguous sequence
+  of batch markers; and every branch permits exactly one terminal outcome,
+- protected-read verifier rejection for reordered, duplicated, substituted, or
+  non-monotonic `BatchMayRelease` markers, missing high-assurance batch
+  markers, receipt chains that skip required branch transitions, or batch
+  markers whose transcript does not bind the matching operation, stream,
+  permit, query, plan, snapshot, result label, policy epoch, revocation epoch,
+  payload digest, and previous batch-marker digest,
 - audit segment retention and compaction policy preserving proof continuity,
   external receipts, legal holds, and mandatory retention windows,
 - offline verifier CLI/API that can verify audit segments, manifest roots,
@@ -3040,6 +3077,17 @@ Deliverables:
   after every mapping segment, inclusion root, and global bijection check is
   complete; incomplete maps after crash are quarantined rather than partially
   trusted,
+- migration-job resource reservation preflight covering temporary disk for
+  external sorting, mapping-segment count and bytes, CPU budget, I/O budget,
+  open files, quarantine space, reference-rewrite amplification, and concurrent
+  migrations per tenant or encryption domain,
+- migration-start gate forbidding transition to `NewWritesOldAndNewReads`
+  unless required reservations are acquired and recorded in the authenticated
+  migration plan,
+- migration-cancellation rule allowing completed immutable map segments to be
+  retained for resumable work, while forbidding exposure of their root as
+  authoritative until all segments, collision checks, and global bijection
+  checks have succeeded,
 - migration-local `MigrationObjectRef` for objects whose permanent identity may
   be digest-derived, bound to migration job, migration scope, source manifest
   or root, object class, original physical or logical locator, canonical
