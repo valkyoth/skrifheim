@@ -555,6 +555,11 @@ Deliverables:
 - production secret-use API decision removing generic public secret-retention
   closures from real provider paths, replacing them with purpose-specific
   secret types and provider operations that return fixed public result types,
+- distinct provider-buffer types for `SecretKeyBuffer`,
+  `SensitivePlaintextBuffer`, `PublicNonce`, public ciphertext, public digest,
+  and public signature material, so keys/derived secrets/sensitive plaintext
+  receive scrubbing and retention controls while nonces are governed by
+  uniqueness, integrity, and replay rules rather than secrecy rules,
 - provider API rule forbidding secret borrows from crossing `await`,
   scheduler-yield, callback, trait-object escape, thread-spawn, or unbounded
   closure boundaries, so final code-generation and fault-path evidence can be
@@ -933,14 +938,30 @@ Deliverables:
 - WAL hard structural limits for maximum frame size before allocation,
   maximum frames and bytes per transaction, maximum decompressed bytes per
   transaction, maximum incomplete transactions, and maximum buffered verified
-  offsets; violations are authenticated-format corruption and fail closed,
+  offsets only where those maxima are canonical in the WAL feature profile or
+  authenticated manifest; violations of canonical maxima are
+  authenticated-format corruption and fail closed,
+- WAL writer enforcement proving `skrifheim` cannot generate a log exceeding
+  canonical profile maxima, including transaction frame count, transaction
+  byte count, decompressed byte count, and any permitted interleaving shape,
+- transaction-frame contiguity or bounded-interleaving decision; if
+  interleaving is permitted, its maximum active transaction count and buffering
+  requirements must be part of the authenticated profile,
 - WAL operational recovery budgets for scan bytes, elapsed time, I/O work,
   number of WAL generations scanned, and foreground startup budget; exhaustion
   enters resumable recovery, offline recovery, or read-only diagnostic mode
   instead of classifying otherwise authenticated WAL as corrupt,
+- runtime memory limits for replay buffers and verified offsets that may force
+  streaming, spilling, resumable recovery, or offline recovery but do not mark
+  authenticated WAL corrupt when the WAL stays within canonical format maxima,
+- configuration floor rule preventing an operator from lowering local recovery
+  memory, frame, generation, or scan settings below the requirements needed to
+  replay already-written WAL under the active manifest/profile,
 - authenticated recovery-progress record bound to WAL generation, last verified
   frame digest, checkpoint root, manifest generation, and freshness-anchor
-  generation so long legitimate backlogs can resume safely,
+  generation so long legitimate backlogs can resume safely; progress records
+  are optimization aids only and never authorize WAL truncation until normal
+  manifest/checkpoint publication makes the prefix obsolete,
 - durable-format compatibility contract for WAL-v2 frames and commit records:
   major/minor version semantics, required versus safely ignorable feature bits,
   minimum reader and writer versions, canonical encoding rules,
@@ -1429,6 +1450,16 @@ Deliverables:
 - aggregate taint-fence root over scoped invalidation epochs, with authority
   checks over who may advance each scope and proof that low-domain
   invalidations cannot stall unrelated high-domain or other-tenant partitions,
+- stable `TaintScopeId` values that survive catalog metadata changes,
+  reclassification, policy compatibility class changes, world partition
+  changes, and encryption-domain rotation,
+- bounded `DependencyFenceSet` or authenticated dependency-fence root recording
+  every upstream taint scope and epoch relevant to an artifact; exact sets that
+  exceed the bound become saturated and approval-required or deny rather than
+  silently dropping dependencies,
+- signed taint-scope migration, split, merge, rename, and reclassification
+  records carrying all predecessor fence epochs forward so older invalidations
+  cannot become invisible after scope evolution,
 - operation gate requiring dependency projections and blast-radius watermarks
   to be at least the current invalidation epoch before an artifact is treated
   as clean; behind projections deny, quarantine, or return diagnostic-only
@@ -1440,12 +1471,18 @@ Deliverables:
   if the scoped invalidation epoch has not advanced since traversal began;
   otherwise the cone is stale diagnostic evidence and must be rerun or
   quarantined,
+- downstream cone publication rule: if an artifact in one scope depends on
+  upstream scopes, an invalidation in any upstream scope during traversal makes
+  the downstream publication stale unless the dependency-fence set is refreshed
+  and revalidated,
 - precedence rules for conflicting facts and overlapping valid-time intervals,
 - bounded forward and reverse traversal rules for taint/blast-radius queries,
 - tests for multi-fact cycles, invalidation chains, supersession precedence,
   hidden fact reintroduction, tombstone/legal-deletion conflict, policy
   revocation visibility, new invalidation during cone publication, and
-  unrelated scoped invalidations not stalling each other.
+  unrelated scoped invalidations not stalling each other, reclassification not
+  hiding old invalidations, and upstream-scope invalidation during downstream
+  cone publication.
 
 ## v0.20.7 - Storage Kernel Expansion And Scrubbing
 
@@ -2159,6 +2196,10 @@ Deliverables:
   classification, compartment, policy epoch, and purpose where needed, rather
   than arbitrary authority-context partitions, so optimization cannot inspect
   unauthorized metadata and statistics cardinality remains bounded,
+- optimizer-estimate non-authority rule: estimates may affect performance and
+  plan choice only; authorization, minimum-cohort checks, inference budgets,
+  confidence thresholds, declassification, legal decisions, and result-label
+  joins require authoritative runtime/catalog values,
 - rewrite correctness property tests proving predicate pushdown, projection
   pruning, join reorder, aggregate rewrite, index-only scan, projection use,
   and plan-cache lookup preserve or tighten security annotations,
@@ -2200,6 +2241,10 @@ Deliverables:
   allocation, append reservations, and stream-local backpressure,
 - manifest-bound aggregate audit root over all current audit stream roots so
   omitting an entire stream from the inventory is detectable,
+- audit-stream lifecycle rules for atomic stream creation, manifest-bound
+  inclusion before accepting mandatory audit events, retirement tombstones,
+  no stream-ID reuse, and crash recovery when stream creation or retirement
+  races manifest publication,
 - per-tenant audit quotas plus protected emergency reserve capacity for
   break-glass, key compromise, shutdown, anchor failure, and recovery events,
 - backpressure policy that blocks only the affected tenant or audit domain when
@@ -2213,6 +2258,16 @@ Deliverables:
   durable release permits before returning protected data and final
   `ReadOutcomeReceipt` records after completion, partial release, denial,
   failure, disconnection, or indeterminate termination,
+- unmatched permit reconciliation on startup: crash after permit durability but
+  before sending data becomes a signed `ExpiredUnused` or equivalent outcome;
+  crash after partial release becomes signed `Indeterminate` with the last
+  released batch or byte sequence where feasible; client disconnect records a
+  delivery-unknown outcome; expired permits without execution are not silently
+  discarded,
+- one-shot permit rule with maximum lifetime, response-stream ID uniqueness,
+  replay/reuse rejection, expiry enforcement, and binding to authorized plan,
+  snapshot, result security label, response-stream ID, and released sequence
+  metadata,
 - outbox recovery without duplicate emission after crash, ambiguous sync, or
   restart, with idempotency keys and receipt lookup,
 - maximum permitted unanchored audit record count and time window before a
@@ -2228,8 +2283,11 @@ Deliverables:
 - tests for protected read without durable release permit, duplicate outbox
   replay, missing receipt, exceeded witness interval, stream omission from the
   aggregate root, tenant-local audit backpressure, emergency reserve use,
-  break-glass without off-node witness, audit-key epoch rotation, and crash
-  during audit sink publication.
+  emergency reserve exhaustion, break-glass without off-node witness,
+  audit-key epoch rotation, crash during audit sink publication, crash after
+  durable read-release permit before send, crash after partial release before
+  outcome, permit expiry without execution, replayed response-stream ID, and
+  stream creation/retirement racing manifest publication.
 
 ## v0.28.0 - Query Execution Prototype
 
@@ -2882,6 +2940,23 @@ Deliverables:
 - signed old-digest-to-new-digest equivalence maps for multi-digest
   transitions where content IDs, Merkle roots, table commitments, manifest
   roots, or content-derived identifiers change,
+- equivalence-map validation requiring old and new digests to be recomputed
+  over identical canonical bytes and transcript domain; one-to-one mappings
+  only; rejection of collisions, many-to-one mappings, caller-supplied mapping
+  assertions, and mappings not bound to the active migration manifest,
+- migration authority or quorum signature over equivalence maps, with explicit
+  non-claim that a digest equivalence map is not an authorization proof and
+  never substitutes for the original fact signature or actor authority,
+- actor-signed fact migration rule: if a signed transcript contains the old
+  digest suite or digest value, migration must preserve the original signed
+  transcript and add a migration attestation, obtain new actor/quorum
+  re-attestation, retain legacy verification support, or quarantine the fact
+  when the old suite is cryptographically rejected; the engine cannot silently
+  rewrite and re-sign on the actor's behalf,
+- monotonic dual-root migration state machine bound to freshness anchors:
+  `Prepared`, `DualRead`, `NewAuthoritative`, `LegacyRetired`, with rollback
+  prevention so a copied older manifest cannot move the database backward to
+  `DualRead`,
 - reference rewriting for manifests, indexes, projections, backup manifests,
   rollback roots, legal-hold roots, audit segment references, and
   content-addressed blobs after digest or commitment migration,
@@ -2898,8 +2973,10 @@ Deliverables:
 - tests for direct upgrade, sequential migration, read-only old-format
   recovery, unsupported old-format rejection, interrupted migration, replayed
   migration proof, downgrade attack, unknown feature bit, partial projection
-  migration, cross-platform migration, and rollback-protected snapshot
-  preservation.
+  migration, cross-platform migration, rollback-protected snapshot
+  preservation, legal-hold root blocking verification-provider retirement,
+  cryptographic emergency intentionally making retained ciphertext unreadable,
+  invalid digest equivalence mapping, and attempted actor-signature rewrite.
 
 ## v0.40.0 - Host Runtime Isolation And Resource Pools
 
@@ -3912,6 +3989,19 @@ Deliverables:
 - read consistency decision for leader reads, linearizable follower reads,
   stale follower reads, lease reads, and policy-sensitive read denial when the
   local node cannot prove freshness,
+- clustered read proof binding authorized plans to consensus group ID,
+  committed index/term, logical world root, policy/key/law epochs, shard
+  ownership epoch, and query digest,
+- execution binding from clustered plans to the serving node's verified
+  materialization proof, node-local physical manifest root, and applied
+  consensus index,
+- follower-read rule requiring proof that the serving follower has applied at
+  least the plan's bound index for current reads; intentionally stale reads
+  produce a typed consistency/freshness result that export, AI,
+  declassification, and release paths cannot treat as current state,
+- plan invalidation when shard ownership, membership, logical root,
+  materialization proof, policy/key/law epoch, or applied-index guarantee
+  changes,
 - local sharding transaction decision: a world is always co-located within one
   shard, or local cross-shard commits use a reviewed 2PC/consensus-integrated
   protocol; cross-shard writes are denied until the selected model exists,
