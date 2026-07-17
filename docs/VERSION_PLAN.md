@@ -485,6 +485,19 @@ Deliverables:
 - generic AEAD envelope primitive with algorithm ID, nonce strategy,
   associated-data transcript input, key ID, crypto epoch, encryption domain,
   plaintext length, ciphertext length, and versioned domain-separation tag,
+- general crypto-suite lifecycle policy for digest, AEAD, KDF/wrapping,
+  signature, table/segment commitment, manifest authentication, audit signing,
+  and backup/export envelopes: active write suite, minimum accepted read suite,
+  mixed-suite manifest behavior, read-old/write-new migration, suite
+  deprecation and sunset, downgrade prevention, and release evidence for
+  retirement,
+- resumable re-encryption and recommitment plan for suite migration, including
+  multi-digest transitions where content IDs, Merkle roots, table
+  commitments, or manifest roots change,
+- retirement blocker rule proving an old suite or key is disabled only after
+  every readable protected root has migrated, been intentionally quarantined,
+  or remains under a documented legal-hold, backup, rollback, or audit
+  exception,
 - transcript-builder APIs for future WAL, block, segment, manifest, backup,
   export, projection, AI, and audit envelopes without freezing the final
   storage-frame fields in this milestone,
@@ -694,12 +707,23 @@ storage roots.
 
 Deliverables:
 
+- split audit transcript contract with two non-circular transcript types:
+  `AuditIntent`, covering event details, actor, target, policy, trusted time,
+  transaction-intent ID, predecessor manifest root, and protected metadata
+  before commit; and `CommittedAuditRecord` or `AuditReceipt`, binding the
+  intent digest to the completed WAL commit root, resulting world revision,
+  prior audit record, output manifest generation, policy epoch, crypto epoch,
+  and signatures after commit,
+- explicit rule that `AuditIntent` must not contain the resulting WAL root,
+  resulting manifest root, or resulting audit root, and that commit roots bind
+  audit-intent digests rather than audit receipts,
+- publication-generation rule deciding whether manifest `M[n]` contains audit
+  root `A[n]` while audit intents bind predecessor manifest `M[n-1]`, or an
+  equivalent sidecar/generation protocol that avoids audit-root,
+  manifest-root, and WAL-root cycles,
 - chained audit record contract with tenant, sequence, previous-record digest,
-  event digest, manifest root, policy epoch, and signatures,
-- canonical audit-event transcript covering event kind, tenant, actor,
-  target-specific identifiers, trusted time evidence, policy epoch, crypto
-  epoch, manifest/WAL transaction root, and protected metadata before any
-  audit signature is accepted,
+  intent digest, receipt digest, predecessor manifest root, output manifest
+  generation, policy epoch, and signatures,
 - event-kind requirement matrix so fact writes name fact and transaction
   identifiers, world promotion names source/target/base revisions, policy
   decisions name policy identity, key events name key state, and break-glass
@@ -885,6 +909,10 @@ Deliverables:
 - WAL v2 header with database ID, log incarnation, WAL generation, LSN,
   transaction ID, transaction frame ordinal, expected transaction frame count,
   previous-frame digest, header authentication, and commit transcript root,
+- WAL recovery resource budgets for maximum frame size before allocation,
+  maximum frames and bytes per transaction, maximum incomplete transactions,
+  maximum buffered verified offsets, maximum replay work per startup, maximum
+  WAL generations scanned, and fail-closed behavior when any limit is exceeded,
 - durable-format compatibility contract for WAL-v2 frames and commit records:
   major/minor version semantics, required versus safely ignorable feature bits,
   minimum reader and writer versions, canonical encoding rules,
@@ -982,18 +1010,23 @@ Deliverables:
 - canonical placeholder ID/transcript types for schema roots, world revisions,
   commit receipts, audit roots, and manifest roots so early milestones can
   refer to them before full implementations land,
-- `skrifheim-engine` or `skrifheim-txn` ownership decision for commit
-  coordination, MVCC, world-head compare-and-swap, verified ingest,
+- selected and instantiated `skrifheim-engine` or `skrifheim-txn` crate for
+  commit coordination, MVCC, world-head compare-and-swap, verified ingest,
   audit-coupled commit, idempotency status, and cross-crate invariants,
-- `skrifheim-catalog` ownership decision for schema roots, predicate metadata,
+- instantiated `skrifheim-catalog` crate for schema roots, predicate metadata,
   security-label resolution, PII/data-category annotations, policy
   compatibility classes, and catalog-derived query planning metadata,
-- `skrifheim-projection-api` ownership decision for committed-generation feeds,
+- instantiated `skrifheim-projection-api` crate for committed-generation feeds,
   projection capability declarations, projection journals, and rebuild
   contracts,
-- `skrifheim-crypto-provider-api` ownership decision for sealed digest, AEAD,
+- instantiated `skrifheim-crypto-provider-api` crate for sealed digest, AEAD,
   signature, KDF/wrapping, entropy, key-provider, and freshness-anchor provider
   contracts without host implementations,
+- minimal public interfaces for each new crate, with compile-only tests proving
+  the intended dependency graph and failing forbidden dependency directions,
+- documentation update to the workspace shape in `docs/IMPLEMENTATION_PLAN.md`
+  after crate ownership is selected so the project description does not drift
+  behind the actual workspace boundaries,
 - dependency-direction rule that storage, facts, worlds, policy, audit, query,
   catalog, engine, projection API, and provider API crates do not become
   mutually dependent; cross-subsystem invariants live in the engine/transaction
@@ -1325,6 +1358,13 @@ Deliverables:
   base, not only the stable parent world ID,
 - promotion rule requiring a three-way merge over fork base, current parent
   head, and candidate head,
+- pure deterministic merge function over `(fork base, current parent,
+  candidate, schema epoch, policy epoch)` with canonical sort/traversal order
+  and no dependence on hash-map iteration, wall-clock time, thread scheduling,
+  callbacks, locale, filesystem order, or process-specific randomness,
+- explicit conflict ordering for add, hide, supersede, invalidate, tombstone,
+  legal deletion, schema changes, policy revocation, and same-valid-time
+  changes,
 - manifest world-head inventory that names world IDs and revision IDs,
 - durable fact-membership proof model so a world revision records committed,
   tenant-scoped, snapshot-visible fact roots rather than accepting arbitrary
@@ -1335,8 +1375,9 @@ Deliverables:
 - per-world and per-tenant aggregate limits for overlay size, mutation rate,
   pending promotion size, and branch/fork fanout,
 - tests for divergent clones with the same `WorldId`, lost-update rejection,
-  stale fork-base rejection, same-ID/different-state diff rejection, and CAS
-  head advancement.
+  stale fork-base rejection, same-ID/different-state diff rejection, CAS head
+  advancement, permutation-stable merge output, identical `WorldRevisionId`
+  from identical inputs, and replay-versus-live-commit equivalence.
 
 ## v0.20.6 - Causal DAG And Truth Resolution Algebra
 
@@ -1352,6 +1393,17 @@ Deliverables:
 - deterministic state-resolution specification covering caused-by,
   supersedes, invalidates, world hiding, valid-time overlap, tombstones, legal
   deletion, policy revocation, and rollback/archive visibility,
+- canonical `InvalidationEpoch` or taint-fence root in WAL and manifest state,
+  independent of lagging graph projections, that records the newest
+  authoritative compromise/taint source epoch every read/export/release/AI job
+  or declassification operation must observe,
+- operation gate requiring dependency projections and blast-radius watermarks
+  to be at least the current invalidation epoch before an artifact is treated
+  as clean; behind projections deny, quarantine, or return diagnostic-only
+  partial results,
+- atomic cone publication record binding cone root, source invalidation epoch,
+  world revision, projection watermark, policy epoch, and audit proof when a
+  traversal completes,
 - precedence rules for conflicting facts and overlapping valid-time intervals,
 - bounded forward and reverse traversal rules for taint/blast-radius queries,
 - tests for multi-fact cycles, invalidation chains, supersession precedence,
@@ -2075,6 +2127,15 @@ Deliverables:
 - plan-cache isolation rule forbidding reuse across authority, tenant,
   device/workload evidence, policy epoch, world revision, purpose, leakage
   profile, or query digest boundaries,
+- bounded optimizer statistics model using catalog-backed policy
+  compatibility classes rather than arbitrary authority-context partitions, so
+  statistics cardinality stays bounded while still preventing unauthorized
+  metadata inspection,
+- policy-neutral logical plan-template cache separated from nonce, expiry,
+  authority, and proof-bound `AuthorizedPlan` values,
+- per-tenant and per-policy-class plan-cache quotas, TTLs, epoch invalidation,
+  negative-cache limits, and eviction rules to prevent hostile query or
+  authority variation from exhausting memory,
 - explicit interpreter-first rule; optional JIT is deferred until profiling
   proves CPU-bound expression evaluation dominates and an interpreter fallback,
   code-cache limit, and sandbox/admission review exist,
@@ -2085,6 +2146,38 @@ Deliverables:
   policy-heavy queries,
 - tests for bounded batch memory, spill limits, policy/leakage cost influence,
   compression-bomb rejection, and interpreter/JIT deferral guards.
+
+## v0.27.2 - Minimal Durable Audit Sink For Query Execution
+
+Goal: provide the minimum encrypted durable audit sink required before
+protected reads and query execution can fail closed on mandatory-audit
+operations.
+
+Deliverables:
+
+- minimal encrypted audit-segment writer and reader for `AuditIntent` records
+  and committed audit receipts, using the non-circular transcript split from
+  `v0.18.8`,
+- transactional audit outbox and drainer that can persist audit intent before
+  protected reads release data and bind committed receipts to WAL/manifest
+  publication when the operation has a write transaction,
+- protected-read audit path for read-only operations that still require
+  durable audit evidence before returning protected data,
+- outbox recovery without duplicate emission after crash, ambiguous sync, or
+  restart, with idempotency keys and receipt lookup,
+- maximum permitted unanchored audit record count and time window before a
+  configured witness or anchor must receive the audit root,
+- fail-closed behavior when the configured witness interval, receipt interval,
+  audit-key availability, or audit-storage durability requirement is exceeded,
+- mandatory off-node witness or external receipt policy for break-glass,
+  declassification, key lifecycle, policy/law-pack changes, backup restore,
+  and other critical events under high-assurance profiles,
+- forward-secure or epoch-evolving audit signing key model with destruction of
+  prior signing material where the selected provider supports it, and explicit
+  non-claims otherwise,
+- tests for protected read without durable audit, duplicate outbox replay,
+  missing receipt, exceeded witness interval, break-glass without off-node
+  witness, audit-key epoch rotation, and crash during audit sink publication.
 
 ## v0.28.0 - Query Execution Prototype
 
@@ -2369,7 +2462,9 @@ prove what was known, under which policy, and from which manifest.
 
 Deliverables:
 
-- encrypted audit-segment writer and reader using the chained audit-log root
+- full audit storage engine building on the minimal `v0.27.2` audit sink,
+  including encrypted audit-segment compaction, historical reads, receipt
+  indexing, and proof-oriented segment layout using the chained audit-log root
   contract from `v0.18.8`,
 - chain continuity verification for stream generation, sequence,
   previous-record digest, event digest, policy epoch, manifest root, WAL
@@ -2688,6 +2783,8 @@ Deliverables:
   dependency denial or explicit versioning,
 - trust-boundary statement that compiled-in extensions are trusted code and
   part of the TCB unless isolated through a future process or WASM boundary,
+  and that same-process panic-abort, allocator OOM, and undefined host-library
+  failure behavior cannot be reliably contained by Rust crate boundaries alone,
 - release-gate check proving optional extension fixtures can be omitted from
   the production core build,
 - explicit deferral notes that collaborative text, publishing releases, render
@@ -3011,6 +3108,15 @@ Deliverables:
   transaction cancellation, group-commit drain, background publication stop,
   optional flush/checkpoint choice, audit and anchor ordering, directory-lease
   release, bounded timeout, forced termination, and repeated startup failure,
+- secret-cleanup evidence for production providers covering unwind/error
+  paths, temporary provider buffers, buffer-pool reuse, clear-on-drop coverage,
+  panic/abort stance, prohibition on holding secret borrows across `await` or
+  scheduler yield points, code-generation inspection for critical cleanup
+  paths, and optional locked-memory/no-dump deployment profiles,
+- explicit memory-secrecy non-claims stating that heap buffers can be scrubbed
+  on drop, while absolute immediate removal from registers, historical stack
+  copies, optimizer-created copies, swap, process dumps, and privileged
+  snapshots cannot be guaranteed without stronger platform profiles,
 - shutdown/restart-storm failure-injection evidence for active writes,
   background compaction/scrub/deletion, audit emission, anchor advancement,
   manifest publication, checkpointing, and lease release,
@@ -3707,6 +3813,18 @@ Deliverables:
 - node registry,
 - local shard/range assignment,
 - local consensus skeleton,
+- replicated-state-machine command format for local-cell operations, with
+  deterministic application rules, command transcript binding, tenant/world
+  scope, policy/key/law epochs, idempotency nonce, and replay rejection,
+- read consistency decision for leader reads, linearizable follower reads,
+  stale follower reads, lease reads, and policy-sensitive read denial when the
+  local node cannot prove freshness,
+- local sharding transaction decision: a world is always co-located within one
+  shard, or local cross-shard commits use a reviewed 2PC/consensus-integrated
+  protocol; cross-shard writes are denied until the selected model exists,
+- leader-failover behavior for in-flight operations, idempotent command retry,
+  audit/outbox preservation, freshness-anchor interaction, and committed
+  manifest publication after leadership changes,
 - membership-change and joint-consensus model covering voting configuration,
   fencing tokens, term/index durability, snapshot installation, log
   compaction, and recovery after interrupted reconfiguration,
