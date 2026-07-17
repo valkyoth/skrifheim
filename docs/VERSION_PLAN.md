@@ -769,15 +769,18 @@ Deliverables:
   and exclusion or explicit inclusion of transport framing, so a valid marker
   cannot be substituted across streams, queries, snapshots, labels, or policy
   contexts,
-- terminal release-outcome transcript binding the complete possible-release
-  prefix: last `BatchMayRelease` sequence, last batch-marker digest, total
-  possible rows/items, total possible encoded bytes, cumulative or Merkle
-  result-batch digest, zero-batch expectation flag, and audit precision
-  profile,
-- standard-profile release outcome rule using an explicit
-  `ExactPrefixUnknown` state instead of absent batch metadata when the profile
-  does not record every batch marker, so partial-prefix ambiguity is typed and
-  visible to verifiers,
+- terminal release-outcome transcript containing exactly one
+  `ReleasePrefixEvidence` tagged-union variant: `ExactZero` with result digest;
+  `Exact` with last `BatchMayRelease` sequence, last marker digest, total
+  rows/items, total encoded bytes, and cumulative or Merkle batch root; or
+  `Unknown` with `PrefixUnknownReason` and release-started flag,
+- release-prefix evidence rule rejecting optional-field combinations:
+  `ExactPrefixUnknown` with exact totals, zero-batch evidence with a nonzero
+  last sequence, exact completion without a batch root, or standard-profile
+  evidence being interpreted as exact proof,
+- canonical encoding and malformed-combination tests for every
+  `ReleasePrefixEvidence` variant, including standard-profile release outcome
+  evidence where exact batch metadata is intentionally unavailable,
 - explicit rule that `AuditIntent` must not contain the resulting WAL root,
   resulting manifest root, or resulting audit root, and that commit roots bind
   audit-intent digests rather than final receipts,
@@ -1534,6 +1537,11 @@ Deliverables:
   in both the hot index and retired accumulator during migration, but absence
   from both structures is never valid while anti-recreation protection or
   historical proof obligations remain,
+- manifest-generation binding rule for hot/cold taint tombstone state:
+  authenticated manifests bind both hot-index generation and
+  retired-accumulator generation, and restore must select a mutually consistent
+  pair from one manifest generation rather than mixing components from
+  different backups, snapshots, or generations,
 - signed successor-scope record required for reactivation of a retired scope,
   with successor fence initialized to at least the maximum predecessor fence
   and predecessor dependency root,
@@ -1681,9 +1689,20 @@ Deliverables:
   treats Linux `openat2` constraints as an optional hardened implementation,
 - filesystem capacity, ENOSPC, quota, file-count, open-file, and temporary-disk
   governance before writes reserve resources,
+- shared engine/resource-governor boundary for capacity reservations and
+  renewable leases, with storage supplying measured capacity, temporary-space,
+  open-file, and I/O facts while the engine/resource governor owns admission,
+  tenant/operator priority, bundle acquisition, renewal, expiry, and recovery
+  semantics,
 - WAL/table extent preallocation policy, table size classes, temporary-space
   reservation, minimum free-space margins, compaction-debt admission, and
   per-tenant I/O throttling before commits can exhaust shared storage,
+- atomic bundle reservation rule for operations needing multiple scarce
+  resources, including deterministic acquisition ordering for disk, open files,
+  I/O, quarantine capacity, and related resource classes so reservation paths
+  cannot deadlock or partially admit unsafe work,
+- lease recovery rule reconstructing or safely expiring capacity leases after
+  restart without trusting stale process ownership,
 - disk-exhaustion escape reserve for WAL repair, manifest/checkpoint
   publication, audit emission, and orderly shutdown, with write-stall and
   recovery behavior when compaction cannot reserve enough temporary space,
@@ -3113,6 +3132,15 @@ Deliverables:
 - reservation lease model for long-running migrations, binding lease identity,
   owner, expiry, migration generation, tenant or encryption domain, resource
   class, and fixed authenticated source snapshot/root to the migration plan,
+- migration lease ownership rule: migration code consumes the shared
+  engine/resource-governor lease API from `v0.20.8` and must not create a
+  separate migration-specific quota manager; storage reports capacity and
+  temporary-space measurements but does not decide tenant, operator, or
+  priority policy,
+- atomic migration reservation bundle using the shared resource-governor
+  ordering for disk, open files, I/O, quarantine space, and rewrite
+  amplification, so a migration acquires all required resources together or is
+  not admitted,
 - periodic reservation revalidation before each mapping-segment creation and
   before each reference-rewrite phase, so CPU, I/O, temporary disk, quarantine,
   or open-file pressure can pause work before safety assumptions become false,
@@ -3408,6 +3436,9 @@ Deliverables:
 - query budget model,
 - projection job limits,
 - storage growth limits,
+- extension of the shared `v0.20.8` resource-governor lease model to full
+  tenant, query, projection, migration, backup, export, and maintenance quotas
+  rather than introducing a second quota manager,
 - tests for bounded memory/result/query behavior.
 
 ## v0.49.0 - Observability Without Secret Leakage
