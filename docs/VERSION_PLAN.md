@@ -488,6 +488,19 @@ Deliverables:
 - transcript-builder APIs for future WAL, block, segment, manifest, backup,
   export, projection, AI, and audit envelopes without freezing the final
   storage-frame fields in this milestone,
+- separate closed registries for digest, AEAD, KDF/wrapping, signature, and
+  quorum-proof suites, so digest algorithms cannot be confused with signing
+  algorithms and each context admits only the suites it actually supports,
+- provider trait contracts that consume canonical versioned transcripts and
+  return sealed result types such as authenticated plaintext, verified
+  signature, signed commit, or verified digest proof rather than caller-forged
+  booleans,
+- host/provider boundary rule that software crypto, HSM, KMS, TPM, threshold
+  guardian, entropy, and freshness-anchor implementations stay outside pure
+  protocol crates and cannot be required by `no_std` core crates,
+- rule that no crate may bypass the admitted digest abstraction with a direct
+  production hash dependency after this milestone; scaffold identifiers must
+  be migrated or explicitly marked non-authoritative,
 - storage metadata privacy split between a minimal plaintext outer header and
   encrypted inner headers for WAL frames and immutable segments,
 - rule that tenant IDs, world or world-revision IDs, classification,
@@ -504,6 +517,9 @@ Deliverables:
   readable key slot was removed,
 - domain-separated key derivation contract from the key hierarchy to WAL,
   segment, projection, backup, export, AI artifact, and audit-log data keys,
+- key-hierarchy ancestry fix so compartment, segment, and data-key metadata
+  retain deployment and region scope below tenant and cannot validate under the
+  wrong regional parent in multi-region deployments,
 - nonce uniqueness and crash-recovery analysis for append-only WAL writes and
   immutable segment writes,
 - immediate WAL-v1 stopgap hardening before any later storage milestone uses
@@ -519,6 +535,12 @@ Deliverables:
   deterministic test RNGs cannot be compiled into production profiles, and
   generated nonces cannot repeat across restart/crash scenarios covered by the
   storage model,
+- production secret-use API decision removing generic public secret-retention
+  closures from real provider paths, replacing them with purpose-specific
+  secret types and provider operations that return fixed public result types,
+- secret-cleanup non-claims for stack copies, registers, optimizer-created
+  copies, process dumps, swap, panic paths, and privileged memory reads, plus
+  future codegen/fault-path evidence requirements once real providers exist,
 - associated-data tests proving ciphertext cannot be replayed across tenant,
   compartment, world, WAL, segment, projection, backup, export, AI, or audit
   domains,
@@ -674,7 +696,24 @@ Deliverables:
 
 - chained audit record contract with tenant, sequence, previous-record digest,
   event digest, manifest root, policy epoch, and signatures,
+- canonical audit-event transcript covering event kind, tenant, actor,
+  target-specific identifiers, trusted time evidence, policy epoch, crypto
+  epoch, manifest/WAL transaction root, and protected metadata before any
+  audit signature is accepted,
+- event-kind requirement matrix so fact writes name fact and transaction
+  identifiers, world promotion names source/target/base revisions, policy
+  decisions name policy identity, key events name key state, and break-glass
+  events name scope and approval proof,
+- audit stream generation, record sequence, previous-record digest,
+  batch/segment root, and external receipt model for deletion, omission, and
+  reordering detection,
 - audit segment root model included in manifests and freshness anchors,
+- separate audit key or scoped audit-signing provider unavailable as an
+  unrestricted main-database key, with uniform behavior for stale, revoked, or
+  missing audit-signing authority,
+- transactionally coupled audit barrier requiring the audit record digest or
+  audit outbox digest to be committed in the same WAL transcript as any
+  mandatory-audit operation,
 - mandatory-audit operation rule: protected reads, policy changes,
   declassification, key lifecycle changes, break-glass grants, backup restore,
   and release operations must fail closed if required audit emission cannot be
@@ -765,6 +804,23 @@ Deliverables:
   or canonical offset, block kind, format version, feature version, tenant,
   encryption domain, policy epoch, crypto epoch, compression format, and
   authenticated original length,
+- segment metadata authentication rule binding every semantic header and
+  footer field, including transaction range, policy ID, key ID, segment kind,
+  encrypted-inner-header digest, body layout, and footer location, into AEAD
+  associated data or the keyed table/segment commitment,
+- sealed segment-verification boundary replacing publicly implementable
+  verifier booleans with a provider registry that returns a typed
+  `VerifiedSegment`-style proof naming the approved suite, provider, table
+  commitment, and authenticated metadata transcript,
+- legacy footer migration API split: legacy unbound footer decoding returns a
+  distinct migration-only type and cannot become a normal footer or verified
+  segment without explicit migration validation,
+- canonical digest encoding rule requiring all unused digest bytes in fixed
+  digest slots to be zero and rejecting multiple byte encodings for the same
+  logical header or footer,
+- checksum-presence format flag so CRC/checksum value zero is not overloaded
+  as "missing"; CRC remains only an accidental-corruption signal outside the
+  AEAD/table-commitment boundary,
 - keyed table/segment commitment covering expected block count, ordered block
   identities, data block root, index block root, filter block root,
   range-tombstone block root, metadata block root, first and last internal key,
@@ -799,6 +855,9 @@ Deliverables:
   policy deployments,
 - content-addressed blob threshold and encryption-domain boundary for large
   values that should not be inlined into fact records,
+- production reader shape that supports block-level sparse reads, streaming
+  verification, bounded decompression, and cache integration instead of
+  relying on whole-segment materialization beyond the temporary scaffold path,
 - tests or format fixtures for block alignment, malformed offset tables,
   restart bounds, compression-size limits, filter false-positive boundaries,
   range tombstone overlap, snapshot-visible range deletion, cross-domain
@@ -942,6 +1001,10 @@ Deliverables:
   feature-version binding, checkpoint identity, and freshness-anchor reference
   in the authenticated manifest transcript,
 - manifest/checkpoint replay, rollback, and substitution rejection rules,
+- checkpoint record ordering contract binding checkpoint headers to manifest
+  generation, WAL prefix root, audit root, recovery watermark, policy/schema
+  epochs, key epoch, storage generation, and log-chain state before a
+  checkpoint can participate in startup recovery,
 - metadata-confidentiality rules for table inventories, tenant/domain
   information, world heads, schema roots, policy epochs, key-state digests, and
   audit-root references,
@@ -1130,10 +1193,21 @@ Deliverables:
 
 - canonical fact encoding profile with domain-separation tag and format
   version,
+- FactId allocation and binding decision: choose content-derived,
+  engine-assigned, randomized, or hybrid identifiers before MVCC stores them,
+  and document ordering leakage, uniqueness checks, replay behavior, and why
+  FactId is not an authorization capability,
 - signed transcript fields covering tenant, world revision, schema root,
   predicate/schema version, policy epoch, actor, valid time, causality links,
   evidence, payload digest, classification label, and all signature-covered
   fact metadata,
+- fact record binding for tenant ID, crypto epoch, policy epoch, schema root,
+  canonical transcript digest, and world revision so durable ingest cannot
+  accept structurally valid but context-free facts,
+- transaction-time reference validation for causal links, supersession,
+  invalidation, evidence, and world membership, including same-tenant checks,
+  committed-or-same-transaction existence, snapshot visibility, and rejection
+  of future or cross-world references unless an explicit import proof exists,
 - actor-to-key authorization model for assertion time,
 - key lifecycle and revocation checks at assertion time,
 - verified fact constructor that requires a key registry and trusted
@@ -1180,6 +1254,14 @@ Deliverables:
 - promotion rule requiring a three-way merge over fork base, current parent
   head, and candidate head,
 - manifest world-head inventory that names world IDs and revision IDs,
+- durable fact-membership proof model so a world revision records committed,
+  tenant-scoped, snapshot-visible fact roots rather than accepting arbitrary
+  caller-provided fact identifiers,
+- large-overlay representation using persistent sorted runs, copy-on-write
+  pages, or another bounded structure instead of cloned million-item vectors
+  for production world heads,
+- per-world and per-tenant aggregate limits for overlay size, mutation rate,
+  pending promotion size, and branch/fork fanout,
 - tests for divergent clones with the same `WorldId`, lost-update rejection,
   stale fork-base rejection, same-ID/different-state diff rejection, and CAS
   head advancement.
@@ -1586,6 +1668,10 @@ Deliverables:
 - authority-context extraction hook for subject, device, and workload identity,
 - mTLS, passkey, signed-local-token, or equivalent identity-binding decision
   record for the future full API,
+- authenticated authority-context minting rule: subject, device, workload,
+  tenant, purpose, clearance, compartments, attestation, credential epoch, and
+  revocation state come from the API/session boundary and policy registry, not
+  from caller-constructed public structs,
 - tests that forged device/workload context cannot be supplied directly to
   policy evaluation through the API boundary,
 - constant-shape public error response fixture for unauthenticated,
@@ -1611,6 +1697,10 @@ Deliverables:
   are resolved from validated storage, schema metadata, and policy registries,
 - `BoundQueryPlan` shape whose policy proof is bound to authenticated context,
   snapshot, policy epoch, query digest, purpose, expiry, and nonce,
+- non-forgeable plan outcome shape:
+  `Executable(AuthorizedPlan)`, `Redacted(RedactionPlan)`, or `Denied`, where
+  only `AuthorizedPlan` implements the future executor input trait and denied
+  plans cannot become executable by ignoring an advisory flag,
 - execution-time revalidation that snapshot root, policy epoch, identity,
   attestation evidence, and proof binding are still current before execution,
 - denial behavior for stale proof, wrong tenant, wrong principal, wrong world
@@ -1694,6 +1784,11 @@ Deliverables:
 - fact filter AST,
 - causality explain AST,
 - simulation query AST skeleton using the `v0.24.1` isolation model,
+- logical node metadata slots for monotone security transfer functions,
+  schema-derived labels, PII state, sovereignty, releasability,
+  inference-budget class, and leakage profile so scans, filters, joins,
+  aggregates, expressions, caches, and projections cannot be planned without
+  policy propagation hooks,
 - AST validation tests.
 
 ## v0.26.0 - Native Query Parser
@@ -1742,6 +1837,12 @@ Deliverables:
   failed break-glass preconditions,
 - require tamper-evident audit records before, during, and after any granted
   break-glass operation,
+- require a witnessed, one-time, scope-limited grant with nonce consumption,
+  approval proof, revocation state, off-node alert hook, and post-event review
+  workflow before any break-glass access can release protected data,
+- require the grant and the protected operation to pass through the
+  transactionally coupled audit barrier from `v0.18.8`, so protected access
+  fails closed if the audit evidence cannot become durable,
 - add tests that a `BreakGlass` audit event alone does not bypass
   `evaluate_read` or query-planning policy,
 - add tests that stale attestation, missing workload context, overbroad target
@@ -1889,6 +1990,17 @@ Deliverables:
 - incremental materialized projection model with source watermarks, manifest
   generation binding, rebuild range, stale marker, and policy/legal epoch
   compatibility,
+- complete projection compatibility key covering tenant, source world
+  revision, classification, compartments, releasability/dissemination,
+  policy/law-pack epochs, schema root, crypto epoch, projection type/version,
+  model version where relevant, and encryption domain,
+- projection isolation rule requiring separate files, keys, caches, quotas,
+  temporary directories, rebuild watermarks, and manifest references for
+  incompatible compatibility keys,
+- projection worker rule that consumes only authenticated committed-generation
+  events, never writes canonical facts, never shares the canonical WAL, and
+  quarantines stale partitions when policy, model, key, or source revisions
+  change,
 - encryption domain tracking,
 - rebuild command skeleton.
 
@@ -1931,6 +2043,16 @@ Deliverables:
 - extension-crate policy for product-family primitives, including naming,
   dependency direction, default-build behavior, release gates, and pentest
   requirements,
+- `skrifheim-extension-api` boundary decision containing only stable generic
+  capabilities for fact proposals, authorized queries, namespaced schemas,
+  projection declarations, migrations, and audit submission,
+- compiled-in explicit extension registration model; no implicit global
+  constructors, runtime discovery with ambient authority, or extension access
+  to raw WAL, segment, key-provider, filesystem, or unrestricted database
+  handles,
+- extension manifest schema covering API version, schema namespace,
+  capabilities, projection domains, resource budgets, migration
+  compatibility, provenance, SBOM, and pentest/fuzz evidence,
 - extension primitive review template that every `v1.x` extension release must
   complete before implementation,
 - workspace layout plan for optional crates such as `skrifheim-ext-social`,
@@ -1945,6 +2067,10 @@ Deliverables:
   extension crates,
 - tests or compile checks proving extension crates can be omitted by a
   deployment that does not need that product family,
+- independent extension-versioning rule: each optional extension has its own
+  semver, compatibility fixtures, denial/redaction/quarantine tests, resource
+  budgets, and release/pentest gate while the core database remains buildable
+  without it,
 - documentation review that rewrites app-specific schema names into generic
   relationship, object, workflow, projection, and policy-extension primitives
   before implementation starts.
@@ -2036,6 +2162,13 @@ Deliverables:
 - quorum proof envelope for manifests, law-pack admission, key lifecycle
   ceremonies, declassification, break-glass grants, backup restore, and release
   operations,
+- quorum proof transcript binding guardian identity, guardian role, tenant,
+  operation type, authority scope, policy epoch, crypto epoch, transcript
+  digest, threshold rule, signer set, validity window, and anti-replay nonce,
+- hybrid classical/post-quantum signature rule requiring all structured
+  components to verify over the identical transcript with no downgrade to a
+  single surviving component unless a later policy explicitly admits that
+  profile,
 - validation API that rejects insufficient quorum, duplicated participants,
   stale policy or crypto epoch, revoked participants, wrong tenant, wrong
   authority scope, and mixed incompatible algorithms,
@@ -2399,7 +2532,19 @@ Deliverables:
 
 - source fact lineage,
 - model and prompt hash metadata,
+- prompt/context/tool transcript digest, model identity, model version,
+  worker identity, toolchain version, reviewer identity where present, and
+  derivation-cone key-domain metadata,
 - capability-scoped AI write metadata,
+- typestate boundary separating authoritative facts from unreviewed AI
+  artifacts, with private or sealed constructors so extension crates cannot
+  mint authoritative writes or AI work permits directly,
+- policy-engine minted `AiWorkPermit` or equivalent bound to tenant, exact
+  world revision, source root, policy epoch, purpose, model/worker identity,
+  classification ceiling, expiry, nonce, and derivation-cone ID,
+- executor API shape that accepts only authorized AI inputs plus an AI work
+  permit, and always returns unreviewed artifacts until a separate reviewed or
+  quorum-approved promotion creates a signed fact,
 - derivation-cone identity and invalidation,
 - artifact invalidation,
 - human promotion workflow,
@@ -3284,9 +3429,15 @@ Goal: run a local sovereign cell with multiple nodes.
 
 Deliverables:
 
+- `skrifheim-cluster-protocol` transport-independent signed message types and
+  `skrifheim-cluster-host` networking/consensus implementation boundary, with
+  no consensus or network dependency in core database crates,
 - node registry,
 - local shard/range assignment,
 - local consensus skeleton,
+- sovereign-cell rule that consensus is local to a lawful cell and no global
+  consensus system may bypass local policy, legal, key, or witness vetoes
+  across legal boundaries,
 - local failover preflight,
 - cell health model,
 - tests for one-node loss inside a cell.
@@ -3302,6 +3453,9 @@ Deliverables:
 - placement planner,
 - health monitor,
 - lease manager,
+- signed-intent reconciliation rule: the control plane proposes placement,
+  replication, backup, failover, projection, and tunnel changes but cannot
+  grant data access or override destination-side policy decisions,
 - policy, key, and law-pack epoch tracking,
 - tests for control-plane proposals that cannot bypass local vetoes.
 
@@ -3315,6 +3469,11 @@ Deliverables:
 - signed peer maps,
 - tunnel policy model,
 - operation and data-passport binding on streams,
+- stream binding to source and destination passports, operation proof, exact
+  manifest/world roots, law/policy/key epochs, expiry, and idempotency nonce,
+- destination-side veto before protected bytes move, with stale policy,
+  attestation loss, witness loss, or legal disagreement sealing the stream or
+  world instead of silently degrading,
 - replication and health streams,
 - tests that denied labels cannot cross an otherwise healthy tunnel.
 
@@ -3326,6 +3485,9 @@ Deliverables:
 
 - commit-log shipping,
 - snapshot shipping,
+- replicate only authenticated encrypted blocks whose complete domain is
+  admitted at the destination; no plaintext downgrade or cross-domain key
+  weakening for convenience,
 - Merkle repair,
 - hot and async secondary modes,
 - hash-only witness/notary role,
