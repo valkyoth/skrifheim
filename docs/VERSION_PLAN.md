@@ -1450,13 +1450,19 @@ Deliverables:
 - aggregate taint-fence root over scoped invalidation epochs, with authority
   checks over who may advance each scope and proof that low-domain
   invalidations cannot stall unrelated high-domain or other-tenant partitions,
-- stable `TaintScopeId` values that survive catalog metadata changes,
-  reclassification, policy compatibility class changes, world partition
-  changes, and encryption-domain rotation,
+- immutable engine-assigned `TaintScopeId` values that are not derived from
+  mutable classification, policy compatibility, world partition, or
+  key/encryption-domain metadata,
+- versioned `TaintScopeDescriptor` records containing tenant, world or source
+  partition, policy compatibility class, classification/releasability scope,
+  encryption domain, descriptor epoch, and predecessor descriptor references;
+  descriptor transitions carry predecessor fence roots forward through catalog
+  metadata changes, reclassification, policy compatibility class changes,
+  world partition changes, and encryption-domain rotation,
 - bounded `DependencyFenceSet` or authenticated dependency-fence root recording
-  every upstream taint scope and epoch relevant to an artifact; exact sets that
-  exceed the bound become saturated and approval-required or deny rather than
-  silently dropping dependencies,
+  every upstream stable taint scope ID, descriptor epoch, and fence epoch
+  relevant to an artifact; exact sets that exceed the bound become saturated
+  and approval-required or deny rather than silently dropping dependencies,
 - signed taint-scope migration, split, merge, rename, and reclassification
   records carrying all predecessor fence epochs forward so older invalidations
   cannot become invisible after scope evolution,
@@ -2241,6 +2247,10 @@ Deliverables:
   allocation, append reservations, and stream-local backpressure,
 - manifest-bound aggregate audit root over all current audit stream roots so
   omitting an entire stream from the inventory is detectable,
+- aggregate audit stream inventory implemented as an authenticated map or
+  sparse Merkle structure rather than a flat list, so stream-root updates,
+  stream creation, stream retirement, and batched publication remain
+  logarithmic and scalable for large multi-tenant deployments,
 - audit-stream lifecycle rules for atomic stream creation, manifest-bound
   inclusion before accepting mandatory audit events, retirement tombstones,
   no stream-ID reuse, and crash recovery when stream creation or retirement
@@ -2252,18 +2262,25 @@ Deliverables:
   witness publication is compromised,
 - transactional audit outbox and drainer that can persist audit intent before
   protected reads release data, persist `ReadReleasePermit` before the first
-  protected byte, and bind `WriteCommitReceipt` records to WAL/manifest
+  protected byte, persist `ReleaseStarted` before handing the first protected
+  byte to the transport, and bind `WriteCommitReceipt` records to WAL/manifest
   publication when the operation has a write transaction,
+- high-assurance streaming rule that persists `BatchMayRelease(sequence,
+  digest)` or equivalent before each protected result batch, proving the
+  maximum data that may have escaped without claiming client receipt,
 - protected-read audit path for read-only operations that still require
   durable release permits before returning protected data and final
   `ReadOutcomeReceipt` records after completion, partial release, denial,
   failure, disconnection, or indeterminate termination,
 - unmatched permit reconciliation on startup: crash after permit durability but
-  before sending data becomes a signed `ExpiredUnused` or equivalent outcome;
-  crash after partial release becomes signed `Indeterminate` with the last
-  released batch or byte sequence where feasible; client disconnect records a
-  delivery-unknown outcome; expired permits without execution are not silently
-  discarded,
+  before `ReleaseStarted` becomes a signed `ExpiredUnused` or equivalent
+  outcome; crash after `ReleaseStarted` without final outcome becomes signed
+  `Indeterminate`; crash after partial release records the last released batch
+  or byte sequence where feasible; client disconnect records a delivery-unknown
+  outcome; expired permits without execution are not silently discarded,
+- transport acknowledgement rule: acknowledgements may refine operational
+  outcome metadata but are not cryptographic proof that a human, application,
+  or remote system consumed the protected data,
 - one-shot permit rule with maximum lifetime, response-stream ID uniqueness,
   replay/reuse rejection, expiry enforcement, and binding to authorized plan,
   snapshot, result security label, response-stream ID, and released sequence
@@ -2285,9 +2302,11 @@ Deliverables:
   aggregate root, tenant-local audit backpressure, emergency reserve use,
   emergency reserve exhaustion, break-glass without off-node witness,
   audit-key epoch rotation, crash during audit sink publication, crash after
-  durable read-release permit before send, crash after partial release before
-  outcome, permit expiry without execution, replayed response-stream ID, and
-  stream creation/retirement racing manifest publication.
+  durable read-release permit before release start, crash after release start
+  before final outcome, crash after partial release before outcome, permit
+  expiry without execution, replayed response-stream ID, missing batch-release
+  marker under high assurance, and stream creation/retirement racing manifest
+  publication.
 
 ## v0.28.0 - Query Execution Prototype
 
@@ -2940,10 +2959,16 @@ Deliverables:
 - signed old-digest-to-new-digest equivalence maps for multi-digest
   transitions where content IDs, Merkle roots, table commitments, manifest
   roots, or content-derived identifiers change,
-- equivalence-map validation requiring old and new digests to be recomputed
-  over identical canonical bytes and transcript domain; one-to-one mappings
-  only; rejection of collisions, many-to-one mappings, caller-supplied mapping
-  assertions, and mappings not bound to the active migration manifest,
+- equivalence-map validation requiring the same canonical semantic object and
+  object-format version, old digest recomputation through the old suite's
+  transcript builder, new digest recomputation through the new suite's
+  transcript builder, and an equivalence record binding old suite ID, new
+  suite ID, old domain tag, new domain tag, both digests, and canonical
+  semantic-object identity,
+- equivalence-map rejection for different object types, tenants, worlds,
+  transcript purposes, object-format versions, collisions, many-to-one
+  mappings, caller-supplied mapping assertions, and mappings not bound to the
+  active migration manifest,
 - migration authority or quorum signature over equivalence maps, with explicit
   non-claim that a digest equivalence map is not an authorization proof and
   never substitutes for the original fact signature or actor authority,
@@ -2953,10 +2978,15 @@ Deliverables:
   re-attestation, retain legacy verification support, or quarantine the fact
   when the old suite is cryptographically rejected; the engine cannot silently
   rewrite and re-sign on the actor's behalf,
-- monotonic dual-root migration state machine bound to freshness anchors:
-  `Prepared`, `DualRead`, `NewAuthoritative`, `LegacyRetired`, with rollback
-  prevention so a copied older manifest cannot move the database backward to
-  `DualRead`,
+- scoped monotonic dual-root migration state machine keyed by suite family,
+  object class, tenant or encryption domain, and storage generation, with
+  states such as `Prepared`, `NewWritesOldAndNewReads`,
+  `NewAuthoritativeLegacyReadable`, `LegacyQuarantined`, and
+  `LegacyProviderRetired`,
+- migration state bound to freshness anchors and manifest generation so a
+  copied older manifest cannot move a scope backward to an earlier migration
+  state, while different object classes such as WAL, audit, backups, facts, and
+  legal-hold roots can migrate at different rates,
 - reference rewriting for manifests, indexes, projections, backup manifests,
   rollback roots, legal-hold roots, audit segment references, and
   content-addressed blobs after digest or commitment migration,
@@ -3989,18 +4019,27 @@ Deliverables:
 - read consistency decision for leader reads, linearizable follower reads,
   stale follower reads, lease reads, and policy-sensitive read denial when the
   local node cannot prove freshness,
-- clustered read proof binding authorized plans to consensus group ID,
-  committed index/term, logical world root, policy/key/law epochs, shard
-  ownership epoch, and query digest,
-- execution binding from clustered plans to the serving node's verified
-  materialization proof, node-local physical manifest root, and applied
-  consensus index,
+- `AuthorizedLogicalPlan` for clustered reads bound to consensus group ID,
+  committed index/term, logical world root, query digest, authority evidence,
+  policy/key/law epochs, shard ownership epoch, and consistency requirement,
+- short-lived `PhysicalExecutionBinding` from an authorized logical plan to the
+  serving node, node-local physical manifest root, materialization proof,
+  available projection/index watermarks, snapshot lease, and applied consensus
+  index,
+- physical binding regeneration rule allowing local compaction or
+  rematerialization to create a new physical binding without reauthorizing the
+  logical query only when the logical root and committed index still match,
+  authority and policy epochs remain valid, replacement indexes/projections
+  have compatible security domains and watermarks, and no query semantics or
+  result-label decisions change,
 - follower-read rule requiring proof that the serving follower has applied at
   least the plan's bound index for current reads; intentionally stale reads
   produce a typed consistency/freshness result that export, AI,
   declassification, and release paths cannot treat as current state,
-- plan invalidation when shard ownership, membership, logical root,
-  materialization proof, policy/key/law epoch, or applied-index guarantee
+- logical plan invalidation when shard ownership, membership, logical root,
+  policy/key/law epoch, authority, or consistency requirement changes; physical
+  execution binding invalidation when materialization proof, physical manifest,
+  projection/index availability, snapshot lease, or applied-index guarantee
   changes,
 - local sharding transaction decision: a world is always co-located within one
   shard, or local cross-shard commits use a reviewed 2PC/consensus-integrated
