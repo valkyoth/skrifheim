@@ -770,14 +770,21 @@ Deliverables:
   cannot be substituted across streams, queries, snapshots, labels, or policy
   contexts,
 - terminal release-outcome transcript containing exactly one
-  `ReleasePrefixEvidence` tagged-union variant: `ExactZero` with result digest;
-  `Exact` with last `BatchMayRelease` sequence, last marker digest, total
-  rows/items, total encoded bytes, and cumulative or Merkle batch root; or
-  `Unknown` with `PrefixUnknownReason` and release-started flag,
+  `ReleasePrefixEvidence` tagged-union variant: `NoRelease` with
+  `NoReleaseReason`; `ExactZero` with result digest; `Exact` with last
+  `BatchMayRelease` sequence, last marker digest, total rows/items, total
+  encoded bytes, and cumulative or Merkle batch root; or `Unknown` with
+  `PrefixUnknownReason`,
+- release-prefix branch constraints: `DeniedOutcome`, `FailedBeforePermit`,
+  `ExpiredUnused`, and `CancelledBeforeRelease` require `NoRelease`;
+  successful authorized empty results require `ExactZero`; high-assurance
+  nonempty releases require `Exact`; and `Partial`, `Disconnected`, or
+  `Indeterminate` after `ReleaseStarted` may use `Exact` or `Unknown`
+  depending on evidence profile,
 - release-prefix evidence rule rejecting optional-field combinations:
-  `ExactPrefixUnknown` with exact totals, zero-batch evidence with a nonzero
-  last sequence, exact completion without a batch root, or standard-profile
-  evidence being interpreted as exact proof,
+  `Unknown` with exact totals, zero-batch evidence with a nonzero last
+  sequence, exact completion without a batch root, standard-profile evidence
+  being interpreted as exact proof, or `Unknown` before `ReleaseStarted`,
 - canonical encoding and malformed-combination tests for every
   `ReleasePrefixEvidence` variant, including standard-profile release outcome
   evidence where exact batch metadata is intentionally unavailable,
@@ -1691,16 +1698,16 @@ Deliverables:
   governance before writes reserve resources,
 - shared engine/resource-governor boundary for capacity reservations and
   renewable leases, with storage supplying measured capacity, temporary-space,
-  open-file, and I/O facts while the engine/resource governor owns admission,
-  tenant/operator priority, bundle acquisition, renewal, expiry, and recovery
-  semantics,
+  open-file, CPU/worker-slot, and I/O facts while the engine/resource governor
+  owns admission, tenant/operator priority, bundle acquisition, renewal,
+  expiry, and recovery semantics,
 - WAL/table extent preallocation policy, table size classes, temporary-space
   reservation, minimum free-space margins, compaction-debt admission, and
   per-tenant I/O throttling before commits can exhaust shared storage,
 - atomic bundle reservation rule for operations needing multiple scarce
   resources, including deterministic acquisition ordering for disk, open files,
-  I/O, quarantine capacity, and related resource classes so reservation paths
-  cannot deadlock or partially admit unsafe work,
+  I/O, CPU/worker slots, quarantine capacity, and related resource classes so
+  reservation paths cannot deadlock or partially admit unsafe work,
 - lease recovery rule reconstructing or safely expiring capacity leases after
   restart without trusting stale process ownership,
 - disk-exhaustion escape reserve for WAL repair, manifest/checkpoint
@@ -1712,7 +1719,15 @@ Deliverables:
 - tests for cache budget enforcement, iterator pinning, cross-authority cache
   rejection, ENOSPC/quota handling, file-count limits, descriptor-relative
   path replacement attempts, aligned-buffer exhaustion, copy-count budget
-  enforcement, and secure zeroization on buffer reuse.
+  enforcement, secure zeroization on buffer reuse, all-or-nothing
+  multi-resource bundle acquisition, no leaked capacity after partial
+  acquisition failure, concurrent bundle requests in opposite resource order
+  without deadlock, renewal racing expiry and reclamation, restart with stale
+  process ownership, duplicate lease release, idempotent recovery, priority
+  inversion, starvation limits, tenant fairness, normal work being unable to
+  consume emergency audit/recovery reserve, conserved capacity counters after
+  cancellation, panic, timeout, and recovery, and migration pausing safely when
+  one resource in its bundle becomes unavailable.
 
 ## v0.20.9 - Policy Token Catalog And Compact Hot-Path Tags
 
@@ -2767,8 +2782,9 @@ Deliverables:
   possible-release prefix from `v0.18.8`, rejects removed final markers,
   forged zero-result completion, incorrect row/item or byte totals, and
   outcomes bound to a valid but non-final batch marker, and treats standard
-  profile `ExactPrefixUnknown` as an explicit weaker evidence state rather
-  than exact prefix proof,
+  profile `Unknown` as an explicit weaker evidence state rather than exact
+  prefix proof while requiring no-release branches to carry `NoRelease` rather
+  than `ExactZero` or `Unknown`,
 - audit segment retention and compaction policy preserving proof continuity,
   external receipts, legal holds, and mandatory retention windows,
 - offline verifier CLI/API that can verify audit segments, manifest roots,
