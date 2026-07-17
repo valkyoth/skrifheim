@@ -745,9 +745,10 @@ Deliverables:
   `AuditIntent -> FailedBeforePermit`, or
   `AuditIntent -> ReadReleasePermit -> ExpiredUnused`,
   `CancelledBeforeRelease`, or
-  `ReleaseStarted -> BatchMayRelease* -> Completed`, `Partial`, `Failed`,
-  `Disconnected`, or `Indeterminate`, with batch markers proving only the
-  maximum data that may have been released, not client receipt,
+  `ReleaseStarted -> BatchMayRelease* -> Completed`, `Partial`,
+  `FailedAfterStart`, `Disconnected`, or `Indeterminate`, with batch markers
+  proving only the maximum data that may have been released, not client
+  receipt,
 - protected-read verifier rules: denied outcomes require bound policy-denial
   proof and no permit; expired-unused outcomes require a permit and forbid
   `ReleaseStarted`; any outcome claiming possible data release requires
@@ -781,13 +782,27 @@ Deliverables:
   nonempty releases require `Exact`; and `Partial`, `Disconnected`, or
   `Indeterminate` after `ReleaseStarted` may use `Exact` or `Unknown`
   depending on evidence profile,
+- exhaustive terminal-outcome evidence matrix: `DeniedOutcome` permits only
+  `NoRelease(Denied)`, `FailedBeforePermit` permits only
+  `NoRelease(FailedBeforePermit)`, `ExpiredUnused` permits only
+  `NoRelease(ExpiredUnused)`, `CancelledBeforeRelease` permits only
+  `NoRelease(CancelledBeforeRelease)`, empty successful `Completed` permits
+  only `ExactZero`, high-assurance nonempty `Completed` permits only `Exact`,
+  standard nonempty `Completed` without durable batch markers permits only
+  `Unknown`, and `Partial`, `FailedAfterStart`, `Disconnected`, or
+  `Indeterminate` permit `Exact` or `Unknown` according to the audit profile,
 - release-prefix evidence rule rejecting optional-field combinations:
   `Unknown` with exact totals, zero-batch evidence with a nonzero last
   sequence, exact completion without a batch root, standard-profile evidence
-  being interpreted as exact proof, or `Unknown` before `ReleaseStarted`,
+  being interpreted as exact proof, `Unknown` before `ReleaseStarted`, or a
+  `NoReleaseReason` discriminant that does not exactly match the terminal
+  outcome,
 - canonical encoding and malformed-combination tests for every
   `ReleasePrefixEvidence` variant, including standard-profile release outcome
-  evidence where exact batch metadata is intentionally unavailable,
+  evidence where exact batch metadata is intentionally unavailable, plus
+  exhaustive property tests over every terminal-outcome, evidence-variant, and
+  audit-profile combination so serialized verifier logic and in-process
+  typestate logic cannot drift,
 - explicit rule that `AuditIntent` must not contain the resulting WAL root,
   resulting manifest root, or resulting audit root, and that commit roots bind
   audit-intent digests rather than final receipts,
@@ -2785,6 +2800,12 @@ Deliverables:
   profile `Unknown` as an explicit weaker evidence state rather than exact
   prefix proof while requiring no-release branches to carry `NoRelease` rather
   than `ExactZero` or `Unknown`,
+- release-prefix matrix verifier that rejects every terminal-outcome/evidence
+  mismatch, including `ExpiredUnused` with `NoRelease(Denied)`,
+  `FailedBeforePermit` with any release-started evidence, nonempty
+  high-assurance `Completed` without `Exact`, standard nonempty `Completed`
+  being upgraded from `Unknown` to exact proof, and any `NoReleaseReason`
+  discriminant not equal to the terminal outcome,
 - audit segment retention and compaction policy preserving proof continuity,
   external receipts, legal holds, and mandatory retention windows,
 - offline verifier CLI/API that can verify audit segments, manifest roots,
