@@ -769,6 +769,15 @@ Deliverables:
   and exclusion or explicit inclusion of transport framing, so a valid marker
   cannot be substituted across streams, queries, snapshots, labels, or policy
   contexts,
+- terminal release-outcome transcript binding the complete possible-release
+  prefix: last `BatchMayRelease` sequence, last batch-marker digest, total
+  possible rows/items, total possible encoded bytes, cumulative or Merkle
+  result-batch digest, zero-batch expectation flag, and audit precision
+  profile,
+- standard-profile release outcome rule using an explicit
+  `ExactPrefixUnknown` state instead of absent batch metadata when the profile
+  does not record every batch marker, so partial-prefix ambiguity is typed and
+  visible to verifiers,
 - explicit rule that `AuditIntent` must not contain the resulting WAL root,
   resulting manifest root, or resulting audit root, and that commit roots bind
   audit-intent digests rather than final receipts,
@@ -1515,6 +1524,16 @@ Deliverables:
 - scope-creation rule requiring checks against both the hot descriptor index
   and retired-scope accumulator before any descriptor is admitted, so moving a
   tombstone out of the hot index does not permit recreation,
+- crash-atomic hot-to-cold tombstone publication order: write and verify a new
+  retired-scope accumulator version containing the tombstone, publish a
+  manifest generation that references both the old hot entry and the new
+  accumulator entry, publish a later manifest generation that removes the hot
+  entry, and reclaim old hot storage only after snapshots and rollback roots
+  release it,
+- duplicate-presence rule for taint tombstones: a descriptor may safely exist
+  in both the hot index and retired accumulator during migration, but absence
+  from both structures is never valid while anti-recreation protection or
+  historical proof obligations remain,
 - signed successor-scope record required for reactivation of a retired scope,
   with successor fence initialized to at least the maximum predecessor fence
   and predecessor dependency root,
@@ -1563,7 +1582,11 @@ Deliverables:
   unrelated scoped invalidations not stalling each other, reclassification not
   hiding old invalidations, upstream-scope invalidation during downstream cone
   publication, retire-and-recreate attempts, rename-and-recreate attempts, and
-  retire-then-split attempts.
+  retire-then-split attempts, crash before accumulator publication, crash after
+  accumulator publication but before hot removal, corrupt accumulator
+  inclusion/non-membership proofs, descriptor recreation during tombstone
+  migration, compaction dropping retired-scope tombstones, and backup restore
+  where hot-index and accumulator generations differ.
 
 ## v0.20.7 - Storage Kernel Expansion And Scrubbing
 
@@ -2721,6 +2744,12 @@ Deliverables:
   markers whose transcript does not bind the matching operation, stream,
   permit, query, plan, snapshot, result label, policy epoch, revocation epoch,
   payload digest, and previous batch-marker digest,
+- terminal release-outcome verification that the outcome binds the final
+  possible-release prefix from `v0.18.8`, rejects removed final markers,
+  forged zero-result completion, incorrect row/item or byte totals, and
+  outcomes bound to a valid but non-final batch marker, and treats standard
+  profile `ExactPrefixUnknown` as an explicit weaker evidence state rather
+  than exact prefix proof,
 - audit segment retention and compaction policy preserving proof continuity,
   external receipts, legal holds, and mandatory retention windows,
 - offline verifier CLI/API that can verify audit segments, manifest roots,
@@ -3081,13 +3110,29 @@ Deliverables:
   external sorting, mapping-segment count and bytes, CPU budget, I/O budget,
   open files, quarantine space, reference-rewrite amplification, and concurrent
   migrations per tenant or encryption domain,
+- reservation lease model for long-running migrations, binding lease identity,
+  owner, expiry, migration generation, tenant or encryption domain, resource
+  class, and fixed authenticated source snapshot/root to the migration plan,
+- periodic reservation revalidation before each mapping-segment creation and
+  before each reference-rewrite phase, so CPU, I/O, temporary disk, quarantine,
+  or open-file pressure can pause work before safety assumptions become false,
 - migration-start gate forbidding transition to `NewWritesOldAndNewReads`
   unless required reservations are acquired and recorded in the authenticated
   migration plan,
+- fixed-source-root rule requiring migration input to remain bound to the
+  authenticated source snapshot/root selected at preflight; concurrent writes
+  after migration-state advancement use the selected new-write suite instead
+  of silently expanding the old migration input,
+- migration pause/checkpoint behavior for reservation revocation, disk pressure,
+  lease expiry, or fairness throttling, including fail-closed behavior when
+  reservation loss prevents safely recording authenticated progress,
 - migration-cancellation rule allowing completed immutable map segments to be
   retained for resumable work, while forbidding exposure of their root as
   authoritative until all segments, collision checks, and global bijection
   checks have succeeded,
+- migration fairness rule preventing paused migration work from retaining
+  scarce resources indefinitely across tenants, domains, or operator-priority
+  classes,
 - migration-local `MigrationObjectRef` for objects whose permanent identity may
   be digest-derived, bound to migration job, migration scope, source manifest
   or root, object class, original physical or logical locator, canonical
@@ -3149,7 +3194,10 @@ Deliverables:
   migration, cross-platform migration, rollback-protected snapshot
   preservation, legal-hold root blocking verification-provider retirement,
   cryptographic emergency intentionally making retained ciphertext unreadable,
-  invalid digest equivalence mapping, and attempted actor-signature rewrite.
+  invalid digest equivalence mapping, attempted actor-signature rewrite,
+  reservation lease expiry, disk pressure during external sort, cancellation
+  during reference rewriting, resume against a changed source root, and paused
+  migration fairness release.
 
 ## v0.40.0 - Host Runtime Isolation And Resource Pools
 
