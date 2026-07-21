@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Updated the admitted `sanitization` dependency from `1.2.4` to `2.0.2`
+  with `default-features = false` and only the `alloc` feature enabled.
+- Updated CI checkout pinning from `actions/checkout` `v7.0.0` to the reviewed
+  `v7.0.1` commit SHA.
+- Re-checked Rust and Cargo on 2026-07-21; the active project toolchain is
+  pinned to Rust stable `1.97.1`.
+- Re-checked direct security tooling and crate versions; `cargo-deny` `0.20.2`
+  and `cargo-audit` `0.22.2` remain current, and `cargo update` refreshed
+  transitive `cc` and `libc` versions.
 - Added pre-manifest, pre-transaction, and pre-query roadmap gates for
   non-rollbackable freshness anchors, chained audit roots, scoped key release,
   trusted time, WAL anti-splicing, encrypted inner storage metadata,

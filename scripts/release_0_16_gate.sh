@@ -48,18 +48,18 @@ if ! grep -R "structurally_equal_ct" crates/skrifheim-storage/src/wal/replay.rs 
     exit 1
 fi
 
-if ! grep -q 'actions/checkout v7.0.0 reviewed' .github/workflows/ci.yml; then
+if ! grep -q 'actions/checkout v7.0.1 reviewed' .github/workflows/ci.yml; then
     echo "0.16 requires reviewed actions/checkout v7 series evidence" >&2
     exit 1
 fi
 
-if ! grep -q 'actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0' .github/workflows/ci.yml; then
-    echo "0.16 requires pinned actions/checkout v7.0.0 SHA" >&2
+if ! grep -q 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' .github/workflows/ci.yml; then
+    echo "0.16 requires pinned actions/checkout v7.0.1 SHA" >&2
     exit 1
 fi
 
-if ! grep -q 'sanitization = { version = "1.2.2", default-features = false, features = \["alloc"\] }' crates/skrifheim-crypto/Cargo.toml; then
-    echo "0.16 requires sanitization 1.2.2 with only alloc enabled" >&2
+if ! grep -q 'sanitization = { version = "2.0.2", default-features = false, features = \["alloc"\] }' crates/skrifheim-crypto/Cargo.toml; then
+    echo "0.16 requires sanitization 2.0.2 with only alloc enabled" >&2
     exit 1
 fi
 

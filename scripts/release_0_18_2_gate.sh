@@ -178,8 +178,8 @@ if ! grep -q "security/pentest/v0.18.2.md" scripts/validate-release-metadata.sh;
     exit 1
 fi
 
-if ! grep -q 'actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0' .github/workflows/ci.yml; then
-    echo "0.18.2 requires pinned actions/checkout v7.0.0 SHA" >&2
+if ! grep -q 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' .github/workflows/ci.yml; then
+    echo "0.18.2 requires pinned actions/checkout v7.0.1 SHA" >&2
     exit 1
 fi
 

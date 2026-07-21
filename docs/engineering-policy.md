@@ -109,7 +109,7 @@ Removal condition:
 
 Current external dependency exceptions:
 
-- Crate: `sanitization` `1.2.4`
+- Crate: `sanitization` `2.0.2`
   Used by: `skrifheim-crypto`
   Scope: `SecretBytes` clear-on-drop heap secret storage for memory-secrecy
   scaffolding.

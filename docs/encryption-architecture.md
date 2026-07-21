@@ -236,7 +236,7 @@ durable projection builder exists.
 Rust memory safety does not automatically protect secrets in RAM.
 
 The `0.12.0` scaffold admitted `sanitization`; the active dependency admission
-now pins `sanitization` `1.2.4` with only the `alloc` feature and exposes
+now pins `sanitization` `2.0.2` with only the `alloc` feature and exposes
 `SecretBytes` in `skrifheim-crypto`. `SecretBytes` is a bounded, non-clone,
 redacted, clear-on-drop wrapper for future key material, bearer tokens, and
 other crypto-control-plane secrets. See

@@ -4,9 +4,9 @@ Status: policy
 
 `skrifheim` currently pins Rust stable `1.97.1`.
 
-This was checked with `rustup check` on July 16, 2026. The stable channel
-reports Rust `1.97.1` (`8bab26f4f`, 2026-07-14) as available over the previous
-project pin `1.97.0`.
+This was rechecked with `rustup check`, `rustc --version --verbose`, and
+`cargo --version --verbose` on July 21, 2026. The active project override uses
+Rust `1.97.1` (`8bab26f4f`, 2026-07-14).
 
 ## Update Rule
 
