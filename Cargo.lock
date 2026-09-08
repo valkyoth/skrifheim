@@ -73,9 +73,9 @@ checksum = "22053b6a34f84abc97f9129e61334f40174659a1b9bd18c970b83db6a9a6348b"
 
 [[package]]
 name = "sanitization"
-version = "2.0.2"
+version = "2.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a4c9b3aca469f66423764aac0bd26a972efa2dc90f9ce53c76d84fd5756af227"
+checksum = "f6c00771cb2e89cc08c486588aa5b462190634313f8885fbdc375de33ee84612"
 
 [[package]]
 name = "shlex"
