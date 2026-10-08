@@ -14,14 +14,55 @@ use crate::{WalAppendOptions, WalFileError, WalFileReader, WalFileWriter};
 use super::helpers::*;
 
 #[test]
+fn append_rejects_every_truncated_tail_without_modifying_it() -> WalResult<()> {
+    let path = temp_path("append-tail")?;
+    let body = [42; 17];
+    let mut complete = header(100, &body)?.encode().to_vec();
+    complete.extend_from_slice(&body);
+    for end in 1..complete.len() {
+        fs::write(&path, &complete[..end])?;
+        assert!(WalFileWriter::open_append(&path, WalAppendOptions::default()).is_err());
+        assert_eq!(fs::read(&path)?, &complete[..end]);
+    }
+    *complete.last_mut().ok_or(WalFileError::PartialFrame)? ^= 1;
+    fs::write(&path, &complete)?;
+    assert!(WalFileWriter::open_append(&path, WalAppendOptions::default()).is_err());
+    assert_eq!(fs::read(&path)?, complete);
+    fs::remove_file(path)?;
+    Ok(())
+}
+
+#[test]
+fn validated_reopen_continues_receipt_offset() -> WalResult<()> {
+    let path = temp_path("reopen-offset")?;
+    let body = [23; 9000];
+    {
+        let mut writer = WalFileWriter::open_append(&path, WalAppendOptions::default())?;
+        assert!(matches!(writer.append_frame(&header(100, &body)?, &body)?,
+            crate::WalAppendOutcome::Durable(r) if r.start() == 0));
+    }
+    let previous_len = fs::metadata(&path)?.len();
+    {
+        let mut writer = WalFileWriter::open_append(&path, WalAppendOptions::default())?;
+        assert!(matches!(writer.append_frame(&header(101, &body)?, &body)?,
+            crate::WalAppendOutcome::Durable(r) if r.start() == previous_len));
+    }
+    fs::remove_file(path)?;
+    Ok(())
+}
+
+#[test]
 fn wal_writer_and_reader_round_trip_encrypted_frames() -> WalResult<()> {
     let path = temp_path("round-trip")?;
     let first_body = [11_u8; 4];
     let second_body = [12_u8; 5];
     {
-        let mut writer = WalFileWriter::open_append(&path, WalAppendOptions::new(false))?;
-        writer.append_frame(&header(10, &first_body)?, &first_body)?;
-        writer.append_frame(&header(11, &second_body)?, &second_body)?;
+        let mut writer = WalFileWriter::open_append(
+            &path,
+            WalAppendOptions::new(crate::DurabilityMode::Buffered),
+        )?;
+        let _outcome = writer.append_frame(&header(10, &first_body)?, &first_body)?;
+        let _outcome = writer.append_frame(&header(11, &second_body)?, &second_body)?;
     }
 
     let mut reader = WalFileReader::open(&path, wal_domain()?)?;
@@ -40,7 +81,10 @@ fn wal_writer_and_reader_round_trip_encrypted_frames() -> WalResult<()> {
 #[test]
 fn wal_writer_rejects_body_length_mismatch() -> WalResult<()> {
     let path = temp_path("length-mismatch")?;
-    let mut writer = WalFileWriter::open_append(&path, WalAppendOptions::new(false))?;
+    let mut writer = WalFileWriter::open_append(
+        &path,
+        WalAppendOptions::new(crate::DurabilityMode::Buffered),
+    )?;
     let result = writer.append_frame(&header(12, &[1, 2, 3, 4])?, &[1, 2, 3]);
 
     assert!(matches!(
@@ -82,7 +126,10 @@ fn wal_reader_rejects_body_crc_mismatch() -> WalResult<()> {
 fn wal_writer_creates_owner_only_files() -> WalResult<()> {
     let path = temp_path("permissions")?;
     {
-        let _writer = WalFileWriter::open_append(&path, WalAppendOptions::new(false))?;
+        let _writer = WalFileWriter::open_append(
+            &path,
+            WalAppendOptions::new(crate::DurabilityMode::Buffered),
+        )?;
     }
     let mode = fs::metadata(&path)?.permissions().mode() & 0o777;
 
@@ -98,7 +145,10 @@ fn wal_writer_tightens_existing_file_permissions() -> WalResult<()> {
     fs::write(&path, [])?;
     fs::set_permissions(&path, fs::Permissions::from_mode(0o644))?;
     {
-        let _writer = WalFileWriter::open_append(&path, WalAppendOptions::new(false))?;
+        let _writer = WalFileWriter::open_append(
+            &path,
+            WalAppendOptions::new(crate::DurabilityMode::Buffered),
+        )?;
     }
     let mode = fs::metadata(&path)?.permissions().mode() & 0o777;
 
@@ -111,10 +161,16 @@ fn wal_writer_tightens_existing_file_permissions() -> WalResult<()> {
 #[test]
 fn wal_writer_rejects_second_concurrent_writer() -> WalResult<()> {
     let path = temp_path("exclusive-writer")?;
-    let writer = WalFileWriter::open_append(&path, WalAppendOptions::new(false))?;
+    let writer = WalFileWriter::open_append(
+        &path,
+        WalAppendOptions::new(crate::DurabilityMode::Buffered),
+    )?;
 
     assert!(matches!(
-        WalFileWriter::open_append(&path, WalAppendOptions::new(false)),
+        WalFileWriter::open_append(
+            &path,
+            WalAppendOptions::new(crate::DurabilityMode::Buffered)
+        ),
         Err(WalFileError::Io(_))
     ));
 
@@ -134,7 +190,10 @@ fn wal_writer_requires_explicit_parent_for_new_files() -> WalResult<()> {
             .map_err(|error| WalFileError::Io(std::io::Error::other(error)))?
             .as_nanos()
     );
-    let result = WalFileWriter::open_append(&path, WalAppendOptions::new(false));
+    let result = WalFileWriter::open_append(
+        &path,
+        WalAppendOptions::new(crate::DurabilityMode::Buffered),
+    );
 
     assert!(matches!(result, Err(WalFileError::Io(_))));
     assert!(!std::path::Path::new(&path).exists());
@@ -150,7 +209,10 @@ fn wal_writer_rejects_symlink_paths() -> WalResult<()> {
     symlink(&target, &link)?;
 
     assert!(matches!(
-        WalFileWriter::open_append(&link, WalAppendOptions::new(false)),
+        WalFileWriter::open_append(
+            &link,
+            WalAppendOptions::new(crate::DurabilityMode::Buffered)
+        ),
         Err(WalFileError::Io(_))
     ));
 
@@ -182,8 +244,11 @@ fn wal_reader_rejects_unexpected_domain() -> WalResult<()> {
     let path = temp_path("domain")?;
     let body = [21_u8; 4];
     {
-        let mut writer = WalFileWriter::open_append(&path, WalAppendOptions::new(false))?;
-        writer.append_frame(&header(13, &body)?, &body)?;
+        let mut writer = WalFileWriter::open_append(
+            &path,
+            WalAppendOptions::new(crate::DurabilityMode::Buffered),
+        )?;
+        let _outcome = writer.append_frame(&header(13, &body)?, &body)?;
     }
     let other_domain = EncryptionDomain::wal(tenant()?, None, None);
     let mut reader = WalFileReader::open(&path, other_domain)?;

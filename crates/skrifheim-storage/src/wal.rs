@@ -366,7 +366,12 @@ fn require_body_crc64(body_crc64: BodyChecksum) -> Result<u64> {
 
 #[must_use]
 pub fn wal_body_crc64(bytes: &[u8]) -> u64 {
-    let mut crc = 0_u64;
+    wal_body_crc64_update(0, bytes)
+}
+
+/// Continues CRC64 over another chunk. This detects corruption, not tampering.
+#[must_use]
+pub fn wal_body_crc64_update(mut crc: u64, bytes: &[u8]) -> u64 {
     for byte in bytes {
         let index = ((crc >> 56) as u8 ^ *byte) as usize;
         crc = WAL_BODY_CRC64_TABLE[index] ^ (crc << 8);

@@ -53,15 +53,21 @@ pub enum KeyScope {
         tenant_id: TenantId,
     },
     Compartment {
+        deployment_id: DeploymentKeyId,
+        region_id: RegionKeyId,
         tenant_id: TenantId,
         compartment_id: CompartmentKeyId,
     },
     Segment {
+        deployment_id: DeploymentKeyId,
+        region_id: RegionKeyId,
         tenant_id: TenantId,
         compartment_id: CompartmentKeyId,
         segment_id: SegmentKeyId,
     },
     Data {
+        deployment_id: DeploymentKeyId,
+        region_id: RegionKeyId,
         tenant_id: TenantId,
         compartment_id: CompartmentKeyId,
         segment_id: SegmentKeyId,

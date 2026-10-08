@@ -29,8 +29,13 @@ if rg -n 'target_arch|target_feature|std::arch|core::arch' crates --glob '*.rs';
     failed=1
 fi
 
-if rg -n 'zeroize' Cargo.toml Cargo.lock crates; then
-    echo "zeroize is not admitted; use sanitization only after dependency review" >&2
+if rg -n 'zeroize' Cargo.toml crates --glob '!crates/skrifheim-crypto-rustcrypto/Cargo.toml'; then
+    echo "zeroize is restricted to admitted RustCrypto feature flags; project buffers use sanitization" >&2
+    failed=1
+fi
+
+if rg -n '^zeroize[[:space:]]*=' crates/skrifheim-crypto-rustcrypto/Cargo.toml; then
+    echo "direct zeroize dependency is not admitted" >&2
     failed=1
 fi
 

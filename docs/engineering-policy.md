@@ -24,6 +24,12 @@ Host-only code may use `std`:
 - shell scripts,
 - future fuzz, release, and test-only tools.
 
+`crates/skrifheim-entropy-host` is an explicit OS boundary even though its
+library is `no_std`; it depends on OS entropy through getrandom. The optional
+`crates/skrifheim-crypto-rustcrypto` software-provider boundary is also
+`no_std` and forbids project unsafe. Pure protocol crates cannot depend on
+either boundary. The facade composes them only through opt-in features.
+
 Host-only code still follows the dependency review rule.
 
 Application-family extension crates may exist under `crates/` or a future
@@ -109,6 +115,52 @@ Removal condition:
 
 Current external dependency exceptions:
 
+- Crates: `sha3` `0.12.0`, `shake` `0.1.0`, `chacha20poly1305` `0.11.0`
+  Used by: optional `skrifheim-crypto-rustcrypto` provider boundary only.
+  Scope: SHA-3/SHAKE digests and full-round ChaCha20-Poly1305 variants.
+  Reason: v0.18.3 needs standards-based primitives with independent known-answer
+  evidence; locally writing cryptographic algorithms is higher risk.
+  Why not local: brynja is the intended future replacement after qualification.
+  The maintainer approved this temporary provider and its internal cleanup
+  exception on 2026-10-08. No RustCrypto type enters the core provider contracts.
+  Unsafe review: project wrappers forbid unsafe; selected upstream code uses
+  reviewed slice casts, sponge cursor invariants, CPU detection and optional
+  architecture intrinsics behind safe APIs. These remain dependency TCB and
+  do not establish production timing or residue guarantees.
+  Transitive dependency review: `digest`, `crypto-common`, `hybrid-array`,
+  `typenum`, `keccak`, `sponge-cursor`, `aead`, `cipher`, `inout`, `chacha20`,
+  `poly1305` (direct `0.9.1` solely to enable private MAC-state cleanup),
+  `universal-hash`, `block-buffer`, `ctutils`, `cmov`, CPU support and internal
+  `zeroize` cleanup.
+  Default features disabled; no reduced-round algorithms, std, RNG shortcuts,
+  serialization, or third-party runtime selected.
+  License: MIT OR Apache-2.0; resolved licenses/advisories checked at the gate.
+  Review deadline: every provider change and before final storage encryption.
+  Removal condition: replace with a reviewed brynja adapter passing the same
+  algorithm, transcript, failure, portability and compatibility tests.
+- Crate: `zeroize` `1.9.1` (transitive exception only)
+  Used by: admitted RustCrypto internals to wipe otherwise inaccessible key
+  and sponge states. Never imported or directly depended on by project code.
+  Reason: sanitization cannot access private upstream state through safe APIs.
+  Unsafe review: upstream volatile writes and compiler fences; no project unsafe.
+  License: MIT OR Apache-2.0.
+  Review deadline/removal: same as RustCrypto; remove when brynja replaces it.
+  Our owned secret buffers continue using `sanitization` exclusively.
+- Crate: `getrandom` `0.4.3`
+  Used by: `skrifheim-entropy-host` only.
+  Scope: supported OS random source with fail-closed errors; no custom,
+  unsupported, JavaScript or deterministic fallback backend admitted.
+  Reason/why not local: owning cross-platform entropy syscall selection and
+  initialization logic would introduce avoidable unsafe/FFI and portability risk.
+  Unsafe review: OS syscall/FFI inside getrandom and its platform dependencies;
+  project wrapper forbids unsafe and exports no OS-specific types.
+  Transitive dependency review: cfg-if, libc, r-efi where applicable;
+  default features disabled. No userspace PRNG state.
+  License: MIT OR Apache-2.0; target-specific r-efi uses MIT OR Apache-2.0 OR LGPL-2.1-or-later,
+  accepted through the MIT option and checked by cargo deny.
+  Review deadline: every entropy/provider change and before persistent key use.
+  Removal condition: a reviewed brynja platform adapter meets the same failure,
+  fork/restart and platform requirements.
 - Crate: `sanitization` `2.1.0`
   Used by: `skrifheim-crypto`
   Scope: `SecretBytes` clear-on-drop heap secret storage for memory-secrecy
@@ -165,7 +217,7 @@ Current external dependency exceptions:
   incompatible license, pulls mandatory broad transitive dependencies, or an
   admitted project-owned cryptographic hash boundary supersedes it.
 - Crate: `subtle` `2.6.1`
-  Used by: `skrifheim-core`, `skrifheim-crypto`
+  Used by: `skrifheim-core`, `skrifheim-crypto`, `skrifheim-crypto-rustcrypto`
   Scope: policy-token equality in authorization paths and explicit digest
   equality helpers for future identity and manifest checks.
   Reason: compartment and releasability checks must not rely on hand-rolled
@@ -185,7 +237,9 @@ Current external dependency exceptions:
 
 ## Specific Crate Rules
 
-- Do not use `zeroize`; use `sanitization` only if memory cleanup is needed and after dependency admission. This is preferred because it is our own crate.
+- Do not directly use `zeroize`; use `sanitization` for project-owned buffers.
+  The only exception is transitive private-state cleanup inside the admitted
+  RustCrypto provider described above.
 - Do not use the `base64` crate. If base64 is unavoidable, use `base64-ng` only after dependency admission. This is preferred because it is our own crate.
 
 ## Constant-Time Primitive Rule
@@ -250,5 +304,5 @@ generic error serialization on boundary paths as information-disclosure risks.
 - every library under `crates/` has `#![no_std]`,
 - every library under `crates/` has `#![forbid(unsafe_code)]`,
 - core crates do not import `std`,
-- `zeroize` is rejected,
+- direct `zeroize` use is rejected outside admitted provider feature flags,
 - the `base64` crate is rejected.

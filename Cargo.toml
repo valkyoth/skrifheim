@@ -7,6 +7,8 @@ members = [
     "crates/skrifheim-world",
     "crates/skrifheim-policy",
     "crates/skrifheim-crypto",
+    "crates/skrifheim-crypto-rustcrypto",
+    "crates/skrifheim-entropy-host",
     "crates/skrifheim-audit",
     "crates/skrifheim-storage",
     "crates/skrifheim-query",
@@ -15,7 +17,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.18.2"
+version = "0.18.3"
 edition = "2024"
 license = "EUPL-1.2"
 repository = "https://github.com/valkyoth/skrifheim"

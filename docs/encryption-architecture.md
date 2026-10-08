@@ -1,5 +1,12 @@
 # skrifheim Encryption Architecture
 
+The v0.18.3 implementation and exact generic transcript/envelope contract are
+documented in [Crypto Provider Contract](crypto-provider-contract.md).
+SHA-3/SHAKE and optional XChaCha20-Poly1305 primitives now exist behind a
+replaceable provider boundary. Final WAL/block/segment encryption is still
+scheduled for v0.18.11/v0.18.12; these primitives alone do not authenticate
+existing durable files or prevent rollback.
+
 Status: planning document
 
 `skrifheim` must treat encryption as a database control plane, not as a single
@@ -257,9 +264,9 @@ Planned controls:
   before untrusted query results are durable or cross a trust boundary,
 - crypto-erasure metadata such as `KeyErasureMetadata` must be prioritised for
   reviewed cleanup-on-drop with key-material types,
-- `zeroize` is not admitted for this project; if `sanitization` cannot satisfy
-  a future key-material requirement, the unsafe-boundary exception process must
-  be completed before key bytes land,
+- project-owned cleanup uses `sanitization`; the v0.18.3 temporary exception
+  permits only upstream RustCrypto private-state cleanup through its own
+  feature flags, as recorded in the dependency admission,
 - optional locked memory for key material where the OS supports it,
 - no swapping of long-lived key material where practical,
 - separated secure arenas for key material,

@@ -3,6 +3,8 @@ use super::*;
 #[test]
 fn key_lifecycle_accepts_valid_activation_and_rotation() -> Result<()> {
     let scope = KeyScope::Compartment {
+        deployment_id: id(DeploymentKeyId::from_u128(10))?,
+        region_id: id(RegionKeyId::from_u128(11))?,
         tenant_id: id(TenantId::from_u128(12))?,
         compartment_id: id(CompartmentKeyId::from_u128(13))?,
     };
@@ -208,6 +210,8 @@ fn key_rotation_preflight_rejects_wrong_scope_or_epoch() -> Result<()> {
         id(KeyId::from_u128(70))?,
         None,
         KeyScope::Compartment {
+            deployment_id: id(DeploymentKeyId::from_u128(10))?,
+            region_id: id(RegionKeyId::from_u128(11))?,
             tenant_id,
             compartment_id: id(CompartmentKeyId::from_u128(13))?,
         },
@@ -218,6 +222,8 @@ fn key_rotation_preflight_rejects_wrong_scope_or_epoch() -> Result<()> {
         id(KeyId::from_u128(71))?,
         None,
         KeyScope::Segment {
+            deployment_id: id(DeploymentKeyId::from_u128(10))?,
+            region_id: id(RegionKeyId::from_u128(11))?,
             tenant_id,
             compartment_id: id(CompartmentKeyId::from_u128(13))?,
             segment_id: id(SegmentKeyId::from_u128(14))?,

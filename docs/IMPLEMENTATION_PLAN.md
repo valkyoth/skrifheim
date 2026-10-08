@@ -264,6 +264,14 @@ admitted entropy/CSPRNG provider before production crypto paths exist.
 Production builds must fail closed when entropy is unavailable, and
 deterministic test providers must stay test-only.
 
+The v0.18.3 implementation selects optional RustCrypto and OS-entropy adapters
+behind skrifheim-owned traits. The same transcript, envelope and negative-test
+contract must support a future reviewed brynja adapter. See
+[Crypto Provider Contract](crypto-provider-contract.md) for exact framing,
+suite migration, nonce/restart limits, erasure granularity, secret ownership
+and WAL-v1 retry semantics. Provider availability does not remove the later
+storage integration, freshness or production qualification gates.
+
 The storage crypto boundary must also handle log splicing and metadata
 confidentiality. WAL frames need database/log generation, LSN, transaction
 ordinal, previous-frame digest, and commit-root binding so valid encrypted

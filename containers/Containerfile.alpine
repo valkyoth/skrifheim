@@ -2,4 +2,4 @@
 FROM docker.io/library/rust@sha256:0cce0a5e0e8ba67b455257a3a02a1d99005f382748789d6464460028810f1627
 WORKDIR /workspace
 COPY . .
-RUN cargo test --workspace --locked
+RUN cargo test --workspace --locked --all-features

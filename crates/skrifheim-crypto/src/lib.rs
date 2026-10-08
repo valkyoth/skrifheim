@@ -7,16 +7,24 @@ use alloc::{string::String, vec::Vec};
 use core::fmt;
 use skrifheim_core::{Result, SkrifheimError};
 
+mod aead;
 mod digest;
 mod domain;
 mod key;
 mod key_hierarchy;
 mod projection;
+mod provider;
 mod secret;
+mod suites;
+pub use suites::{KdfSuite, KeyWrappingSuite, QuorumProofSuite, SigningSuite, SuiteLifecycle};
 
 #[cfg(test)]
 mod tests;
 
+pub use aead::{
+    AEAD_PLAINTEXT_MAX_BYTES, AEAD_TAG_BYTES, AeadContext, AeadEngine, AeadEnvelope, AeadProvider,
+    AeadSuite, AuthenticatedPlaintext, CryptoError, CryptoResult, EntropySource, PublicNonce,
+};
 pub use digest::{
     ContentDigest, DigestPolicy, DigestStrength, DigestValue, ManifestDigest,
     SHA3_256_DIGEST_BYTES, SHA3_384_DIGEST_BYTES, SHA3_512_DIGEST_BYTES, SHAKE256_256_DIGEST_BYTES,
@@ -29,6 +37,10 @@ pub use key::{
     RegionKeyId, SegmentKeyId,
 };
 pub use projection::{ProjectionEncryptionPolicy, ProjectionSurface};
+pub use provider::{
+    CryptoTranscript, DigestProvider, TRANSCRIPT_MAX_BYTES, TRANSCRIPT_MAX_FIELDS, TranscriptKind,
+    VerifiedDigestProof,
+};
 pub use secret::{SECRET_VALUE_MAX_BYTES, SecretBytes};
 
 pub const ED25519_SIG_BYTES: usize = 64;

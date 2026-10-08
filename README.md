@@ -49,7 +49,7 @@ It is not a usable database engine.
 | `no_std` core policy | Active | Library crates under `crates/` use `#![no_std]` and `#![forbid(unsafe_code)]`. |
 | Dependency policy | Active | `cargo deny` policy denies wildcard external dependencies and unknown sources. |
 | Security reporting | Active | Private-first vulnerability process in `SECURITY.md`. |
-| Release notes | Active | `release-notes/RELEASE_NOTES_0.18.2.md` records scope, verification, and non-claims. |
+| Release notes | Active | `release-notes/RELEASE_NOTES_0.18.3.md` records the current implementation scope, verification, and non-claims. |
 
 ### Initial Models
 
@@ -63,7 +63,9 @@ It is not a usable database engine.
 | Index and projection encryption policy | Scaffolded | Secondary, graph, search, vector, columnar, cache, and compaction projection surfaces require projection encryption domains and reject incompatible domain mixing. |
 | Memory secrecy boundary | Scaffolded | Secret material enters crypto APIs through bounded non-clone redacted `SecretBytes` wrappers backed by admitted `sanitization` clear-on-drop storage. |
 | Identity and audit events | Scaffolded | Typed identities, attestation evidence references, break-glass event shape, signed/encrypted audit-log metadata, and actor-attribution checks. |
-| Crypto-agile envelopes | Scaffolded | Algorithm IDs, crypto epochs, lifecycle event sequences, bounded signature sets, key hierarchy metadata, key lifecycle metadata, encryption-domain metadata, and SHA-3/SHAKE digest policy skeletons exist without locking the database to one permanent algorithm. |
+| Crypto provider primitives | Implemented, pending pentest | Optional SHA3-256/384/512, SHAKE256-256/512, and XChaCha20-Poly1305 providers use skrifheim-owned interfaces. OS entropy is separate. Future brynja replacement must preserve the tested transcripts and envelopes. See [provider contract](docs/crypto-provider-contract.md). |
+| Crypto-agile metadata | Scaffolded | Epochs, signature sets, key hierarchy/lifecycle and encryption domains remain separate from provider primitives. Key descendants now retain deployment and region scope. |
+| WAL append hardening | Implemented, pending pentest | Bounded tail scan, explicit buffered/durable/ambiguous outcomes, poisoned writers after I/O errors, and single-batch retry/status scaffolding. WAL-v1 remains unauthenticated. |
 | Storage metadata | Scaffolded | Immutable segment headers and footers validate magic, version, transaction range, policy, encryption key, crypto epoch, encryption domain, body length, CRC presence, and content digest presence; fixed segment encoding, host-file staged write/read, redacted publication diagnostics, staging cleanup, CRC verification, v2 footer/header kind binding, explicit v1 legacy-unbound footer parsing rejected on normal reads, host memory caps, and verifier injection exist for opaque encrypted segment bodies; WAL frame headers validate fixed append-only encrypted-frame metadata, non-zero CRC presence, expected-domain binding, host-file append/read smoke coverage, and header-driven replay/recovery state transitions. |
 | Query planning primitives | Scaffolded | Query requests become policy decision plans for early read, causality, simulation, and context intents. |
 
@@ -83,10 +85,10 @@ It is not a usable database engine.
 | Capability | Status | Target |
 | --- | --- | --- |
 | WAL replay and recovery | Scaffolded | `v0.16.0` adds header-driven replay reports for committed, aborted, and clean-EOF uncommitted transactions; full state recovery remains planned. |
-| Quantum-aware digest policy | Scaffolded | SHA-3/SHAKE digest-strength profiles and full-width world/content/manifest digest types before compact IDs become durable storage authority. |
+| Quantum-aware digest policy | Primitive implemented | Five SHA-3/SHAKE profiles compute full-width world/content/manifest digests. This is not a whole-database quantum-security claim. |
 | Immutable segment format | Scaffolded | `v0.17.0` adds policy-scoped immutable segment headers and footers with key epoch, encryption-domain, checksum, and algorithm-agile digest metadata. |
 | Immutable segment persistence | Scaffolded | `v0.18.0` adds fixed segment encoding plus host-file writer and reader scaffolds; manifests and indexes remain planned for `v0.19.0` through `v0.20.0`. |
-| Production digest and AEAD storage encryption | Planned | `v0.18.3` admits production SHA-3/SHAKE and AEAD primitives; concrete block/segment encryption lands with `v0.18.11`, and WAL-v2 encryption lands with `v0.18.12` before manifests or recovery claim tamper resistance. |
+| Production storage encryption | Planned | `v0.18.3` implements generic digest/AEAD primitives only; concrete block/segment encryption lands with `v0.18.11`, and WAL-v2 encryption with `v0.18.12` before manifests or recovery claim tamper resistance. |
 | Early WAL/segment fuzzing | Planned | `v0.18.4` adds deterministic fuzz smoke for the hand-written storage byte parsers; the broader fuzz/property baseline remains later. |
 | Release evidence hardening | Planned | `v0.18.5` adds SBOM validation, dependency-tree snapshots, runtime/optional-boundary policy, and release-gate tests before durable storage claims harden. |
 | Cross-platform portability baseline | Planned | `v0.18.6` adds Linux, Windows, macOS, BSD, x86_64, AArch64, and future RISC-V portability checks before manifests and recovery depend on host I/O behavior. |
@@ -154,7 +156,7 @@ cargo run -p skrifheim
 Expected output:
 
 ```text
-skrifheim 0.18.2
+skrifheim 0.18.3
 ```
 
 Run the normal local checks:

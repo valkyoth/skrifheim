@@ -1,7 +1,7 @@
 use std::{
     fmt,
     fs::{File, OpenOptions},
-    io::{self, Read, Write},
+    io::{self, Read, Seek, SeekFrom},
     path::Path,
 };
 
@@ -17,26 +17,33 @@ use skrifheim_storage::{WAL_FRAME_HEADER_BYTES, WalFrameHeader, wal_body_crc64};
 
 use crate::common::{add_no_follow, fsync_parent_dir, require_explicit_parent};
 
+mod append;
+mod scan;
+mod transaction;
+use append::AppendState;
+pub use append::{DurabilityMode, WalAppendOutcome, WalReceipt};
+pub use transaction::{WalCommitStatus, WalTransactionOutcome};
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct WalAppendOptions {
-    sync_on_append: bool,
+    durability: DurabilityMode,
 }
 
 impl WalAppendOptions {
     #[must_use]
-    pub const fn new(sync_on_append: bool) -> Self {
-        Self { sync_on_append }
+    pub const fn new(durability: DurabilityMode) -> Self {
+        Self { durability }
     }
 
     #[must_use]
-    pub const fn sync_on_append(self) -> bool {
-        self.sync_on_append
+    pub const fn durability(self) -> DurabilityMode {
+        self.durability
     }
 }
 
 impl Default for WalAppendOptions {
     fn default() -> Self {
-        Self::new(true)
+        Self::new(DurabilityMode::SyncAll)
     }
 }
 
@@ -46,6 +53,8 @@ pub enum WalFileError {
     InvalidFrame(SkrifheimError),
     BodyLengthMismatch,
     PartialFrame,
+    Poisoned,
+    Ambiguous { receipt: WalReceipt },
 }
 
 impl fmt::Display for WalFileError {
@@ -55,11 +64,25 @@ impl fmt::Display for WalFileError {
             Self::InvalidFrame(error) => write!(f, "WAL frame validation failed: {error}"),
             Self::BodyLengthMismatch => write!(f, "WAL frame body length mismatch"),
             Self::PartialFrame => write!(f, "WAL file ended inside a frame"),
+            Self::Poisoned => write!(f, "WAL writer requires recovery"),
+            Self::Ambiguous { .. } => {
+                write!(f, "WAL append durability is unknown; recovery required")
+            }
         }
     }
 }
 
 impl std::error::Error for WalFileError {}
+
+impl WalFileError {
+    /// Diagnostic evidence only; contains a sensitive transaction identifier.
+    pub fn ambiguous_evidence(&self) -> Option<[u8; 34]> {
+        match self {
+            Self::Ambiguous { receipt } => Some(receipt.encode_evidence(2)),
+            _ => None,
+        }
+    }
+}
 
 impl From<io::Error> for WalFileError {
     fn from(error: io::Error) -> Self {
@@ -76,37 +99,56 @@ impl From<SkrifheimError> for WalFileError {
 pub struct WalFileWriter {
     file: File,
     options: WalAppendOptions,
+    state: AppendState,
 }
 
 impl WalFileWriter {
     pub fn open_append(path: impl AsRef<Path>, options: WalAppendOptions) -> Result<Self> {
         let path = path.as_ref();
         require_explicit_parent(path)?;
-        let file = open_wal_for_append(path)?;
+        let mut file = open_wal_for_append(path)?;
         if !file.metadata()?.is_file() {
             return Err(WalFileError::Io(io::Error::other(
                 "WAL path must be a regular file",
             )));
         }
         lock_wal_writer(&file)?;
+        let next_offset = scan::validate_tail(&mut file)?;
+        file.seek(SeekFrom::End(0))?;
         #[cfg(unix)]
         {
             file.set_permissions(Permissions::from_mode(0o600))?;
             fsync_parent_dir(path)?;
         }
-        Ok(Self { file, options })
+        Ok(Self {
+            file,
+            options,
+            state: AppendState::new(next_offset),
+        })
     }
 
-    pub fn append_frame(&mut self, header: &WalFrameHeader, encrypted_body: &[u8]) -> Result<()> {
+    pub fn append_frame(
+        &mut self,
+        header: &WalFrameHeader,
+        encrypted_body: &[u8],
+    ) -> Result<WalAppendOutcome> {
+        if self.state.is_poisoned() {
+            return Err(WalFileError::Poisoned);
+        }
         validate_body_len(header, encrypted_body)?;
         header.validate()?;
         verify_body_crc(header, encrypted_body)?;
-        self.file.write_all(&header.encode())?;
-        self.file.write_all(encrypted_body)?;
-        if self.options.sync_on_append() {
-            self.file.sync_all()?;
-        }
-        Ok(())
+        self.state.append(
+            &mut self.file,
+            self.options.durability(),
+            header,
+            encrypted_body,
+        )
+    }
+
+    #[must_use]
+    pub fn is_poisoned(&self) -> bool {
+        self.state.is_poisoned()
     }
 }
 

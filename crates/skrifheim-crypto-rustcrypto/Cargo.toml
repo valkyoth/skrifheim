@@ -1,0 +1,22 @@
+[package]
+name = "skrifheim-crypto-rustcrypto"
+description = "Replaceable RustCrypto provider boundary for skrifheim."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+skrifheim-core = { version = "0.18.3", path = "../skrifheim-core" }
+skrifheim-crypto = { version = "0.18.3", path = "../skrifheim-crypto" }
+sha3 = { version = "0.12.0", default-features = false, features = ["zeroize"] }
+shake = { version = "0.1.0", default-features = false, features = ["zeroize"] }
+chacha20poly1305 = { version = "0.11.0", default-features = false, features = ["zeroize"] }
+# Enable cleanup in the transitive authenticator as well as the cipher.
+poly1305 = { version = "0.9.1", default-features = false, features = ["zeroize"] }
+sanitization = { version = "2.1.0", default-features = false, features = ["alloc"] }
+subtle = { version = "2.6.1", default-features = false }
+
+[lints]
+workspace = true

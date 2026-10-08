@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Implemented v0.18.3 optional digest/AEAD providers behind skrifheim-owned
+  interfaces, with future brynja replacement compatibility, OS entropy,
+  canonical transcripts, sealed verification results and purpose-specific
+  scrubbed buffers. Documented the temporary upstream-only cleanup exception.
+- Hardened WAL-v1 append durability, partial-tail admission and single-batch
+  retry/status scaffolding; fixed descendant key deployment/region ancestry.
+- Added primitive golden vectors, cross-domain negative tests, injected WAL
+  failures, provider dependency guards and the v0.18.3 implementation gate.
+- Recorded suite retirement/migration, storage metadata privacy, key derivation
+  and erasure decisions without claiming final authenticated storage.
 - Started v0.18.3 and refreshed tooling on 2026-10-08: Rust 1.99.0,
   sanitization 2.1.0, blake3 1.8.7, current compatible transitive dependencies,
   and multi-platform Rust/distroless container image pins. Checkout 7.0.1,

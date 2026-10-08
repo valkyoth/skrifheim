@@ -4,6 +4,10 @@
 pub use skrifheim_audit as audit;
 pub use skrifheim_core as core;
 pub use skrifheim_crypto as crypto;
+#[cfg(feature = "rustcrypto-provider")]
+pub use skrifheim_crypto_rustcrypto as crypto_provider;
+#[cfg(feature = "os-entropy")]
+pub use skrifheim_entropy_host as entropy;
 pub use skrifheim_fact as fact;
 pub use skrifheim_policy as policy;
 pub use skrifheim_query as query;

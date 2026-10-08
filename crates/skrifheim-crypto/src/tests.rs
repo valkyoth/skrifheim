@@ -3,6 +3,7 @@ use skrifheim_core::{Result, TenantId};
 
 mod digest;
 mod domain;
+mod key_ancestry;
 mod key_lifecycle;
 mod secret;
 mod signature;
@@ -53,6 +54,8 @@ fn key_hierarchy_accepts_valid_edges() -> Result<()> {
         id(KeyId::from_u128(5))?,
         Some(tenant.key_id()),
         KeyScope::Compartment {
+            deployment_id: id(DeploymentKeyId::from_u128(10))?,
+            region_id: id(RegionKeyId::from_u128(11))?,
             tenant_id,
             compartment_id,
         },
@@ -62,6 +65,8 @@ fn key_hierarchy_accepts_valid_edges() -> Result<()> {
         id(KeyId::from_u128(6))?,
         Some(compartment.key_id()),
         KeyScope::Segment {
+            deployment_id: id(DeploymentKeyId::from_u128(10))?,
+            region_id: id(RegionKeyId::from_u128(11))?,
             tenant_id,
             compartment_id,
             segment_id,
@@ -72,6 +77,8 @@ fn key_hierarchy_accepts_valid_edges() -> Result<()> {
         id(KeyId::from_u128(7))?,
         Some(compartment.key_id()),
         KeyScope::Data {
+            deployment_id: id(DeploymentKeyId::from_u128(10))?,
+            region_id: id(RegionKeyId::from_u128(11))?,
             tenant_id,
             compartment_id,
             segment_id,
@@ -206,6 +213,8 @@ fn key_hierarchy_rejects_data_under_non_compartment_parent() -> Result<()> {
         id(KeyId::from_u128(7))?,
         Some(tenant.key_id()),
         KeyScope::Data {
+            deployment_id: id(DeploymentKeyId::from_u128(10))?,
+            region_id: id(RegionKeyId::from_u128(11))?,
             tenant_id,
             compartment_id: id(CompartmentKeyId::from_u128(13))?,
             segment_id: id(SegmentKeyId::from_u128(14))?,
@@ -226,6 +235,8 @@ fn key_hierarchy_rejects_cross_compartment_segment_metadata() -> Result<()> {
         id(KeyId::from_u128(5))?,
         Some(id(KeyId::from_u128(4))?),
         KeyScope::Compartment {
+            deployment_id: id(DeploymentKeyId::from_u128(10))?,
+            region_id: id(RegionKeyId::from_u128(11))?,
             tenant_id,
             compartment_id: id(CompartmentKeyId::from_u128(13))?,
         },
@@ -235,6 +246,8 @@ fn key_hierarchy_rejects_cross_compartment_segment_metadata() -> Result<()> {
         id(KeyId::from_u128(6))?,
         Some(parent_compartment.key_id()),
         KeyScope::Segment {
+            deployment_id: id(DeploymentKeyId::from_u128(10))?,
+            region_id: id(RegionKeyId::from_u128(11))?,
             tenant_id,
             compartment_id: id(CompartmentKeyId::from_u128(99))?,
             segment_id: id(SegmentKeyId::from_u128(14))?,

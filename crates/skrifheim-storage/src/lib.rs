@@ -17,4 +17,5 @@ pub use wal::{
     WAL_FRAME_VERSION_MAX, WAL_REPLAY_MAX_TRANSACTIONS, WalFrameHeader, WalFrameHeaderInput,
     WalRecordKind, WalRecoveredTransaction, WalRecoveryOutcome, WalRecoveryReport, WalReplay,
     WalReplayStop, WalRollbackReason, WalRolledBackTransaction, wal_body_crc64,
+    wal_body_crc64_update,
 };

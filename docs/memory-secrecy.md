@@ -1,5 +1,12 @@
 # skrifheim Memory Secrecy
 
+v0.18.3 adds purpose-specific non-clone key/plaintext owners in the optional
+software provider, with no public generic secret-retention closures. Their
+contract, temporary upstream private-state cleanup exception and residue
+non-claims are in [Crypto Provider Contract](crypto-provider-contract.md).
+The earlier `SecretBytes` callback API remains scaffold-only and is not used
+by production-provider paths.
+
 Status: scaffolded in `v0.12.0`
 
 `skrifheim` treats secret memory as an explicit boundary. Key material, bearer

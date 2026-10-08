@@ -9,7 +9,10 @@ pub use segment::{
     SegmentFileSegment, SegmentFileWriter, SegmentPublishOutcome, SegmentWriteOptions,
     cleanup_staged_segments,
 };
-pub use wal::{WalAppendOptions, WalFileError, WalFileFrame, WalFileReader, WalFileWriter};
+pub use wal::{
+    DurabilityMode, WalAppendOptions, WalAppendOutcome, WalCommitStatus, WalFileError,
+    WalFileFrame, WalFileReader, WalFileWriter, WalReceipt, WalTransactionOutcome,
+};
 
 #[cfg(test)]
 mod tests;

@@ -2,6 +2,11 @@
 
 Status: baseline control map
 
+The current v0.18.3 primitive implementation, provider replacement contract,
+suite lifecycle, metadata privacy and erasure decisions are recorded in
+[Crypto Provider Contract](crypto-provider-contract.md). Optional crypto and
+entropy providers do not yet provide final authenticated storage or recovery.
+
 | Area | Control | Current Status | Evidence |
 | --- | --- | --- | --- |
 | Toolchain | Rust stable `1.99.0` pinned | Active | `rust-toolchain.toml` |
@@ -83,7 +88,7 @@ Status: baseline control map
 | Freshness anchoring | Production profiles require a non-rollbackable freshness anchor such as TPM/HSM monotonic state, remote witness/transparency service, WORM/offline operator checkpoint, or threshold-held external checkpoint; active startup fails closed on stale local roots | Planned | `docs/VERSION_PLAN.md`, `docs/threat-model.md` |
 | Freshness anchor provider | At least one host-boundary reference provider must implement idempotent compare-and-advance, authenticated/versioned transport, secure credential storage, unavailable-provider fail-closed behavior, provisioning/replacement, witness equivocation detection, and disaster-recovery rules before production startup depends on anchors | Planned | `docs/VERSION_PLAN.md`, `docs/IMPLEMENTATION_PLAN.md` |
 | Tamper evidence | Current WAL/segment checks detect structural corruption only: CRC64 and unkeyed content digests are recomputable by a local disk writer. Production tamper resistance requires AEAD authentication, WAL anti-splicing, signed manifests, chained audit roots, freshness anchoring, or another keyed integrity root before stored bytes are trusted against write-capable attackers | Planned | `docs/encryption-architecture.md`, `skrifheim-storage`, `docs/VERSION_PLAN.md` |
-| Crypto primitive sequencing | `v0.18.3` admits production digest/AEAD primitives and generic envelopes only; concrete WAL, block, segment, and manifest formats instantiate those primitives after their byte layouts are frozen, with no production storage-encryption claim before that | Planned | `docs/VERSION_PLAN.md`, `docs/IMPLEMENTATION_PLAN.md` |
+| Crypto primitive sequencing | `v0.18.3` implements optional digest/AEAD primitives and generic envelopes; concrete WAL, block, segment, and manifest formats instantiate them after their byte layouts are frozen, with no production storage-encryption claim before that | Primitive implemented; integration planned | `docs/crypto-provider-contract.md`, `docs/VERSION_PLAN.md` |
 | Durable format compatibility | Every durable format milestone must commit golden compatibility fixtures when the format is introduced, including AEAD envelopes, WAL v2, block tables, compression metadata, range tombstones, and manifests | Planned | `docs/VERSION_PLAN.md`, `docs/IMPLEMENTATION_PLAN.md` |
 | Format version compatibility | WAL, block/table, segment, and manifest formats must define major/minor semantics, required/ignorable feature bits, minimum reader/writer versions, canonical encoding, unknown-field behavior, and forward/backward read policy before migrations automate upgrades | Planned | `docs/VERSION_PLAN.md`, `docs/IMPLEMENTATION_PLAN.md` |
 | Storage upgrade support window | Storage migrations must define directly supported source versions, sequential migration requirements, read-only recovery for older formats, support lifetime, pre-1.0 compatibility guarantees or non-guarantees, golden databases, and cross-platform migration expectations | Planned | `docs/VERSION_PLAN.md`, `docs/IMPLEMENTATION_PLAN.md` |

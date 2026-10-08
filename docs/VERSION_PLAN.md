@@ -511,6 +511,12 @@ Deliverables:
 
 ## v0.18.3 - Production Digest And AEAD Engine Admission
 
+Implementation contract: [Crypto Provider Contract](crypto-provider-contract.md).
+The optional software provider is replaceable by a reviewed brynja adapter;
+the same golden fixtures and negative tests apply to both providers. Current
+release status and verification evidence are in
+[v0.18.3 release notes](../release-notes/RELEASE_NOTES_0.18.3.md).
+
 Goal: admit and implement production-ready cryptographic primitives before
 WAL v2, block tables, manifests, checkpoints, or recovery instantiate them.
 This milestone must not claim final production storage encryption; the final

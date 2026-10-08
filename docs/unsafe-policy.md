@@ -36,4 +36,9 @@ Every unsafe block must include a `SAFETY:` comment covering validity, alignment
 
 ## Current Unsafe Inventory
 
-None.
+No project-authored unsafe code. Upstream unsafe remains part of the admitted
+dependency TCB: sanitization wiping, subtle barriers, legacy BLAKE3 internals,
+RustCrypto utilities/CPU backends and getrandom OS interfaces. See
+[Engineering Policy](engineering-policy.md) and
+[Crypto Provider Contract](crypto-provider-contract.md). Optional providers do
+not relax `forbid(unsafe_code)` in any project crate.

@@ -326,7 +326,9 @@ impl EncryptionDomain {
         self.fixed_bytes().ct_eq(&other.fixed_bytes()).unwrap_u8() == 1
     }
 
-    fn fixed_bytes(&self) -> [u8; DOMAIN_FIXED_BYTES] {
+    /// Canonical internal transcript encoding. Contains sensitive metadata;
+    /// it must not be emitted in a plaintext storage header.
+    pub fn canonical_bytes(&self) -> [u8; DOMAIN_FIXED_BYTES] {
         let mut bytes = [0_u8; DOMAIN_FIXED_BYTES];
         bytes[0] = purpose_tag(self.purpose);
         bytes[1..17].copy_from_slice(&self.tenant_id.get().to_le_bytes());
@@ -340,6 +342,10 @@ impl EncryptionDomain {
         write_optional_u128(&mut bytes, 52, self.world_id.map(WorldId::get));
         write_optional_u128(&mut bytes, 69, self.segment_id.map(SegmentKeyId::get));
         bytes
+    }
+
+    fn fixed_bytes(&self) -> [u8; DOMAIN_FIXED_BYTES] {
+        self.canonical_bytes()
     }
 
     const fn new(

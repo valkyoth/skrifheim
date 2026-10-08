@@ -18,6 +18,9 @@ Status: policy
 - `main.rs` starts the process and delegates behavior.
 - Parsing, validation, state mutation, I/O, policy checks, and tests stay separate.
 - Pure logic should be host-testable without a server.
+- Crypto and entropy implementations are optional provider boundaries. Pure
+  core crates depend only on contracts in `skrifheim-crypto`; the facade may
+  opt into RustCrypto now and a reviewed brynja adapter later.
 
 ## File Size
 

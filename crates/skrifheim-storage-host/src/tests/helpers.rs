@@ -44,7 +44,7 @@ pub(super) fn segment_domain() -> SkrifheimResult<EncryptionDomain> {
     ))
 }
 
-pub(super) fn header(tx: u128, body: &[u8]) -> SkrifheimResult<WalFrameHeader> {
+pub(crate) fn header(tx: u128, body: &[u8]) -> SkrifheimResult<WalFrameHeader> {
     WalFrameHeader::new(WalFrameHeaderInput {
         record_kind: WalRecordKind::FactBatch,
         tenant_id: tenant()?,
@@ -95,6 +95,9 @@ pub(super) fn wal_to_segment_error(error: WalFileError) -> SegmentFileError {
         WalFileError::InvalidFrame(error) => SegmentFileError::InvalidSegment(error),
         WalFileError::BodyLengthMismatch => SegmentFileError::BodyLengthMismatch,
         WalFileError::PartialFrame => SegmentFileError::PartialSegment,
+        WalFileError::Poisoned | WalFileError::Ambiguous { .. } => {
+            SegmentFileError::Io(std::io::Error::other("WAL recovery required"))
+        }
     }
 }
 
