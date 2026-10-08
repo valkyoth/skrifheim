@@ -26,6 +26,45 @@ Every release must have:
 - release notes,
 - no hidden dependency on one developer machine.
 
+## Dependency And Completion Rule
+
+The target remains a standalone world database at `v1.0.0`, optional
+application-family crates at `v1.x`, and clustering at `v2.x`. A longer feature
+list is not evidence of readiness. Before starting each milestone, identify
+its implemented prerequisites, the exact running path it adds, and the
+security claims that remain unavailable. A decision, metadata type, mock,
+compile-only fixture, or skeleton does not complete an operational capability.
+
+The following completion owners are mandatory dependencies, not optional
+future improvements:
+
+| Boundary | Implementation And Integration Owner | Required Before |
+| --- | --- | --- |
+| Persistent scoped keys, derivation/wrapping and nonce lifecycle | `v0.18.9` | Encrypted blocks/WAL in `v0.18.11`/`v0.18.12` |
+| Transcript predecessor contracts | Introduced with each transcript; cross-system check in `v0.18.14` | Each format freeze, then manifests in `v0.19.0` |
+| Physical storage recovery | `v0.19.1` and `v0.20.0` | Durable transaction integration |
+| Durable world fork, head CAS, promotion and semantic recovery | `v0.23.5` | Snapshot/query paths starting at `v0.24.0` |
+| Full result labels and trusted query authority | `v0.24.3`/`v0.24.4` | Executable plans and projections |
+| Audited result release | `v0.27.2`, hardened in `v0.34.0` | Protected query output in `v0.28.0` |
+| Executable standalone legal/compliance controls | `v0.54.1` | Placement and final backup qualification |
+| Complete advertised core operations and production profiles | `v0.55.1`, requalified in `v0.57.0` | `v1.0.0` |
+
+Owning milestones implement their promised running paths as they land. The
+later completion gate checks composition and closes remaining named gaps; it
+is not permission to defer all real implementations to `v0.55.1`.
+
+Early integration may use explicitly test-only authority fixtures while later
+authentication, audit, or legal components are incomplete. Such fixtures must
+not enable a production path. Unsupported operations fail closed, including
+operations on earlier formats that lack the required proof fields.
+
+Deferral requires a named replacement milestone and updates to its consumers
+and public claims. A required `v1.0.0` security control cannot be deferred beyond
+1.0 while retaining the dependent feature or production claim. The final
+candidate checks completion across real providers and the public API, not just
+isolated unit tests. No extra human approval ceremony is introduced: evidence
+is collected during the existing local gate and pentest cycle.
+
 ## Application Support Rule
 
 Application plans may inform database requirements, but they do not define
@@ -77,7 +116,7 @@ Each version has a deliberate clean stop. When implementation criteria are done,
 the work stops before tagging and the maintainer is told:
 
 ```text
-vX.Y.Z implementation stop reached. Run pentest for this exact commit.
+vX.Y.Z is ready for pentest. Test this exact commit before release preparation.
 ```
 
 No tag is created at that point.
@@ -92,8 +131,10 @@ Pentest flow:
 6. Local gates are run again.
 7. When the maintainer reports the pentest is green, Codex writes the permanent
    report at `security/pentest/<tag>.md`.
-8. Codex commits the implementation state, release metadata, and permanent
-   pentest report together.
+8. Codex commits final release metadata and the permanent pentest report using
+   the commit layout required by the [release runbook](release-runbook.md).
+   Any report-only final commit records the exact externally tested code
+   separately from documentation-only preparation; it adds no maintainer step.
 9. The project waits for GitHub Actions.
 10. If GitHub fails, Codex fixes the issue, updates tests/docs/release
     evidence when relevant, commits again, and the project waits for GitHub
@@ -144,7 +185,7 @@ Default exit criteria for every release:
 - Codex clearly calls the implementation stop with:
 
   ```text
-  vX.Y.Z implementation stop reached. Run pentest for this exact commit.
+  vX.Y.Z is ready for pentest. Test this exact commit before release preparation.
   ```
 
 - findings from every root `PENTEST.md` pass are fixed, retested, and removed,
@@ -511,9 +552,9 @@ Deliverables:
 
 ## v0.18.3 - Production Digest And AEAD Engine Admission
 
-Status: implementation and maintainer pentest complete; awaiting GitHub
-confirmation and explicit tag approval. This completes the primitive admission
-scope, not production storage encryption or database qualification.
+Status: released as signed tag `v0.18.3` after clean pentest and GitHub checks.
+This completes the primitive admission scope, not production storage
+encryption or database qualification.
 
 Implementation contract: [Crypto Provider Contract](crypto-provider-contract.md).
 The optional software provider is replaceable by a reviewed brynja adapter;
@@ -658,10 +699,20 @@ Deliverables:
 - fuzz harness for WAL replay frame sequences,
 - fuzz harness for segment header/footer parsing,
 - fuzz harness for segment file length/body/footer layout validation,
+- fuzz harnesses for the admitted generic AEAD envelope decoder and transcript
+  builder, including malformed lengths, unknown suites, trailing bytes,
+  context substitution, rejection without plaintext release, and bounded
+  allocation; fuzzing does not substitute for cryptographic review,
+- differential sequence tests between fixed-memory `WalReplayValidator` and
+  report-producing replay, including rejected-transition atomicity, EOF,
+  incomplete tails, frame/byte budgets, and writer reopen counters,
 - seed corpus from existing malformed WAL and segment fixtures,
 - bounded allocation assertions for body lengths and file lengths,
 - CI/local gate mode that runs a deterministic short fuzz smoke without
   becoming flaky,
+- distinction between reproducible corpus replay and coverage-guided fuzzing;
+  record actual engine runs, seeds/corpora and limits without claiming that a
+  short smoke proves absence of defects,
 - documentation that `v0.44.0` remains the broader fuzz/property baseline but
   storage parser fuzzing is already required from this point forward.
 
@@ -714,6 +765,12 @@ Deliverables:
   `skrifheim-storage-host` scaffold with explicit Unix, Windows, and BSD/macOS
   file-opening, permission, symlink/reparse-point, directory-sync, and atomicity
   semantics,
+- executable host-contract probes for create/open, exclusive ownership,
+  rename/publication and sync on Windows and Unix-family targets before the
+  storage format is frozen. Record missing runner evidence explicitly; a
+  compile-only check is not durability evidence. Later storage milestones
+  must keep running these probes, not wait until `v0.56.1` to discover an
+  incompatible host contract,
 - fail-closed unsupported-platform behavior for any host adapter that cannot
   provide equivalent security semantics,
 - release-gate check rejecting `target_arch`, `target_feature`, `std::arch`,
@@ -765,6 +822,19 @@ Deliverables:
   threshold-held external checkpoint,
 - explicit non-claim that signed manifests and AEAD prove authenticity of a
   state, not freshness of the newest state by themselves,
+- freshness acknowledgement contract: identify exactly which commits,
+  revocations, policy/key changes, one-time approvals and audit releases must
+  be externally anchored before reporting protected success. Checkpoint-only
+  profiles must state the unanchored rollback window and cannot claim
+  per-operation rollback prevention,
+- an offline signed checkpoint is only a lower bound on freshness unless an
+  independent monotonic authority can prove it is the latest required state;
+  a signed file copied beside the database is never that authority. Active
+  high-assurance operation denies when the required freshness cannot be proven,
+- witness trust and equivocation non-claims: chaining and signatures alone do
+  not reveal a malicious witness presenting one consistent old view to an
+  isolated client; document the independent state or cross-check each admitted
+  provider relies on,
 - recovery workflow distinction between active startup and historical rollback
   inspection,
 - crash-ordering rule for anchor advancement versus manifest publication,
@@ -777,7 +847,9 @@ Deliverables:
   mismatch, missing production anchor, explicit historical recovery open,
   compare-and-advance idempotence, stale advance rejection,
   unavailable-provider fail-closed behavior, timeout behavior, witness
-  equivocation, provider replacement, and disaster-recovery opening rules.
+  equivocation, provider replacement, disaster-recovery opening rules, rollback
+  between checkpoints, and crash after local durability but before required
+  anchor acknowledgement.
 
 ## v0.18.8 - Chained Audit Log Root Contract
 
@@ -915,8 +987,9 @@ Deliverables:
 
 ## v0.18.9 - Scoped Key Release And No-God-Mode Boundary
 
-Goal: make the "no god-mode database" claim enforceable before real storage
-encryption depends on key release.
+Goal: implement restart-capable scoped key operations before encrypted storage
+depends on them. The fresh, in-memory keys delivered in `v0.18.3` are not a
+persistent storage key service.
 
 Deliverables:
 
@@ -925,15 +998,48 @@ Deliverables:
   workload identity, and bound policy proof,
 - rule that the database process never holds root, deployment, or unrestricted
   tenant keys in production profiles,
-- privilege-separated key-service, KMS, HSM, or equivalent provider profile
-  for high-assurance deployments,
+- at least one real privilege-separated key-service, KMS, HSM, or equivalent
+  adapter with provisioning, authenticated narrow requests, bounded failure
+  behavior, revocation and restart tests; mocks supplement but do not replace
+  this deliverable,
+- admission and implementation of the selected domain-separated KDF and
+  authenticated key-wrapping suites, with known-answer and negative tests;
+  fresh per-object/erasure-group DEKs, persistent wrapped-key records, opaque
+  slot resolution, and no raw persistent root keys in the database process,
+- erasure independence: destroying an erasure-group key must not leave a
+  retained ancestor or alternate wrapped slot able to regenerate it. Record
+  retained legal-hold copies as retained, never as successfully crypto-erased,
+- bootstrap authority independent of encrypted manifest contents, followed by
+  operation-scoped proof verification at the key-service boundary. A caller
+  boolean or an unrestricted unwrap credential is not proof of authorization;
+  test-only authority fixtures remain unavailable in production composition
+  until the bound planner and authenticated API exist,
+- restart-safe key-use and nonce accounting, including reservation/crash
+  ordering, clone/restore handling, exhaustion, entropy failure and rekeying.
+  Reopening a persisted key must not reset its encryption usage budget,
+- crash-safe KEK rewrap, DEK rotation, slot revocation and key-loss behavior,
+  with reachability inventory for live and protected roots; later format
+  milestones integrate these operations with their concrete objects,
+- provider-neutral contracts and fixtures retaining the brynja replacement
+  path; no hand-written cryptographic algorithm or new dependency is admitted
+  by this planning change,
 - explicit high-assurance option for separate processes or instances per
   classification or compartment domain,
-- tests or mock-provider fixtures proving a process with one scoped proof
+- real-provider integration tests proving a process with one scoped proof
   cannot unwrap keys for another tenant, compartment, policy epoch, purpose, or
   workload,
 - documentation that key hierarchy metadata alone is not least privilege unless
   key release is enforced outside the main database process.
+
+Verification: run the inherited gates plus provision, encrypt, restart,
+decrypt, revoke, rewrap and wrong-scope tests through the actual provider.
+Inject crashes around persisted key-use reservations and rotation. Record
+provider privileges and the compromise boundary, including plaintext that an
+already-authorized database process can see.
+
+Exit Criteria: persistent key operations pass these tests before
+`v0.18.11`/`v0.18.12` use them. No unrestricted production credential or
+mock-only completion is accepted. Call the inherited ready-for-pentest stop.
 
 ## v0.18.10 - Trusted Time And Monotonic Sequence Types
 
@@ -1181,9 +1287,10 @@ Deliverables:
 
 ## v0.18.14 - Transcript Dependency And Engine Ownership Model
 
-Goal: define durable transcript dependencies, publication order, and
-cross-crate ownership before manifests, audit roots, fact signatures, and world
-revisions can accidentally form circular commitments.
+Goal: integrate and verify durable transcript dependencies, publication order,
+and cross-crate ownership before manifests. Every earlier format milestone
+must already declare its predecessor types and reject cycles before freezing
+bytes; this milestone must not postpone those decisions until after WAL v2.
 
 Deliverables:
 
@@ -1211,9 +1318,10 @@ Deliverables:
 - instantiated `skrifheim-projection-api` crate for committed-generation feeds,
   projection capability declarations, projection journals, and rebuild
   contracts,
-- instantiated `skrifheim-crypto-provider-api` crate for sealed digest, AEAD,
-  signature, KDF/wrapping, entropy, key-provider, and freshness-anchor provider
-  contracts without host implementations,
+- provider contracts continue in `skrifheim-crypto`, which already owns the
+  digest, AEAD and entropy boundaries. Extract a separate provider API crate
+  only if a demonstrated dependency cycle or ownership problem requires it;
+  keep one canonical set of contracts and the same provider fixtures,
 - minimal public interfaces for each new crate, with compile-only tests proving
   the intended dependency graph and failing forbidden dependency directions,
 - documentation update to the workspace shape in `docs/IMPLEMENTATION_PLAN.md`
@@ -1356,8 +1464,10 @@ Deliverables:
 
 ## v0.20.0 - Startup Recovery Integration
 
-Goal: provide full production startup recovery, building on the narrow
-storage-spine restart recovery from `v0.19.1`.
+Goal: recover authenticated physical storage state, building on the narrow
+storage-spine restart recovery from `v0.19.1`. Full fact, world and transaction
+semantics are integrated in `v0.23.5`; this is not yet production database
+recovery.
 
 Deliverables:
 
@@ -1376,18 +1486,16 @@ Deliverables:
 - explicit historical recovery workflow for rollback roots that may be opened
   for inspection, recovery-world forks, or simulation, but may not silently
   replace the active freshness anchor,
-- storage-backed world ancestry verification before promotion or rollback
-  execution can be authorized,
-- internal storage-validated promotion and rollback preflight construction that
-  can set the currently private storage-validation marker only after durable
-  ancestor traversal succeeds,
+- typed recovery hooks for world ancestry and promotion/rollback validation;
+  storage-validation markers remain deny-only until immutable revisions,
+  durable transactions and the `v0.23.5` semantic recovery gate exist,
 - corrupted manifest rejection,
 - missing-key and compromised-key rejection,
 - explicit operational recovery modes for normal active open, read-only
   degraded open, historical inspection, recovery-world fork, simulation open,
   and operator-approved anchor/provider re-provisioning,
-- graceful shutdown protocol that stops write admission, cancels or drains
-  in-flight transactions, resolves group commits and ambiguous commits, stops
+- graceful shutdown protocol that stops write admission and defines hooks for
+  draining transactions and group commits once `v0.22.2`/`v0.23.0` exist, stops
   background publication safely, chooses optional flush/checkpoint behavior,
   orders audit emission and freshness-anchor advancement, and releases the
   storage-directory lease only after durable state is safe,
@@ -1410,6 +1518,11 @@ Deliverables:
   untouched original evidence set, failed evidence-copy staging, and rejected
   destructive salvage without operator authority,
 - deterministic recovery fixtures.
+
+Recovery-world and simulation modes are reserved typed outcomes here, not
+permission to execute unfinished workflows. Their running paths require
+`v0.23.5`, the simulation model in `v0.24.1`, and protected-root workflows in
+`v0.35.2`/`v0.35.4` as applicable.
 
 ## v0.20.1 - Production Timing Evidence Gate
 
@@ -1881,9 +1994,10 @@ Deliverables:
   transaction until durable commit succeeds,
 - conflict model,
 - commit timestamp allocation,
-- fact ID allocation strategy decision before write-set validation hardens,
-- explicit evaluation of monotone/timestamp-derived IDs, random IDs,
-  content-derived IDs, and hybrid tenant/world scoped IDs,
+- implement the fact ID allocation strategy decided with the canonical signing
+  transcript in `v0.20.3`; do not reopen that format decision silently,
+- retain the evaluation of monotone/timestamp-derived IDs, random IDs,
+  content-derived IDs, and hybrid tenant/world scoped IDs in the decision record,
 - decision on whether `FactId` may reveal write ordering or must remain
   order-hiding,
 - write-time uniqueness checks for whichever strategy is selected,
@@ -2004,6 +2118,11 @@ Deliverables:
 - prototype the selected model with deterministic fixtures over evidence and
   caused-by chains,
 - define source-reliability weighting and its bounded integer representation,
+- distinguish a conservative confidence score from a calibrated probability;
+  do not describe a heuristic as Bayesian without its probabilistic model,
+- account for shared ancestors, duplicated evidence, correlated sources and
+  adversarial source multiplication; a diamond-shaped causal graph must not
+  count one observation as independent evidence twice,
 - define how direct fact confidence, evidence reliability, and causal depth
   combine into computed confidence,
 - define confidence behavior for supersedes and invalidates links separately
@@ -2016,6 +2135,9 @@ Deliverables:
   reject, and approval-required outcomes,
 - add tests that long causal chains decay or otherwise degrade confidence
   according to the selected model,
+- add fixtures for diamond graphs, duplicated evidence, correlated sources,
+  missing/revoked evidence and bounded rounding, with explicit monotonicity
+  properties and no confidence increase solely from duplicating a source,
 - add documentation that v0.28.0 query execution must implement this model
   rather than inventing propagation semantics during execution work.
 
@@ -2079,6 +2201,43 @@ Deliverables:
 - randomized state-machine tests comparing recovered state with an in-memory
   oracle over append, flush, compact, checkpoint, crash, recover, and query
   lookup operations.
+
+## v0.23.5 - Durable World Operations And Semantic Recovery
+
+Goal: close the gap between physical recovery and a usable transactional world
+database before snapshots and queries depend on recovered world state.
+
+Deliverables:
+
+- one engine path from verified fact proposal through serializable validation,
+  audit-coupled WAL commit, immutable revision and head publication, anchored
+  acknowledgement, crash/restart and authorized fact lookup,
+- durable world creation and fork at an exact base revision, head CAS,
+  three-way promotion and recovery-world promotion; conflicts compare fork
+  base, current target and candidate rather than stable world IDs alone,
+- canonical reconstruction of schema roots, fact visibility, causal edges,
+  world heads, revocation/key state, audit intents and idempotency receipts;
+  fail closed on any inconsistent cross-root reference,
+- storage-validated preflights issued only from complete authenticated ancestry
+  and snapshot checks, with concurrent target-head movement forcing retry,
+- crash-safe publication across multi-world operations; either implement the
+  admitted transaction model or explicitly reject unsupported cross-domain
+  operations before writing anything,
+- actual group-commit drain, ambiguous-commit reconciliation and shutdown
+  hooks promised by `v0.20.0`, using the `v0.18.13` crash harness,
+- no silent rewind of policy, audit, revocation, key or erasure history when
+  selecting an older fact/world view. Historical inspection is not active
+  production state and cannot restore a consumed emergency grant.
+
+Verification: inherited gates plus reference-model histories spanning fork,
+concurrent edits, conflicting promotion, visibility/tombstones, commit, failed
+fsync, publication, anchor failure, crash, restart and retry. Run the actual
+storage/provider path; fixtures for later API/legal layers must be test-only.
+
+Exit Criteria: acknowledged world operations recover consistently, retries do
+not duplicate effects, stale heads cannot publish, and unsupported paths deny.
+No production API/legal claim is made yet. Call the ready-for-pentest stop;
+the inherited release evidence and approval rules apply.
 
 ## v0.24.0 - Fact Index And Snapshot Reads
 
@@ -2212,6 +2371,12 @@ Deliverables:
 - minimum cohort-size, contribution-bound, rate-limit, result-budget,
   consistent-suppression, and query-history-aware differencing controls,
 - cross-session, cross-device, and cross-service budget aggregation rules,
+- atomic durable budget reservation before result release, shared by concurrent
+  requests and bound to the audited output gate; retries, crashes, credential
+  rotation or opening a historical snapshot cannot replenish spent budget,
+- dataset-family accounting across overlapping snapshots/worlds so changing
+  the dataset digest does not silently obtain a fresh budget for the same
+  protected population; document collusion and identity assumptions,
 - differential-privacy decision for cases where exact aggregates are not
   required,
 - purpose-specific audit for inference-sensitive queries,
@@ -2340,7 +2505,7 @@ Deliverables:
 - documentation that deployments with no legal authority or threshold group
   must configure explicit local roles before enabling approval-gated features.
 
-## v0.26.3 - Platform Identity And Product Boundary Model
+## v0.26.3 - Identity Authority And Service Boundary Model
 
 Goal: support multi-application deployments where authentication, shared
 account/profile data, operator identity, support identity, and product data stay
@@ -2350,17 +2515,18 @@ Deliverables:
 
 - identity-authority metadata for member, operator, support-agent, service,
   guardian, and high-assurance certificate/public-key actors,
-- shared-account profile boundary model that separates public display fields,
-  private encrypted account fields, product activation state, app launcher
-  state, and product-owned data,
+- generic authority separation between identity issuers, operators, services
+  and data owners; shared-account profiles, activation and launcher schemas
+  stay in consuming applications or optional extensions,
 - product/service passport model for product identifier, tenant scope,
   database/storage boundary, secret-policy boundary, allowed identity claims,
   and deletion/export contract,
-- minimal derived-claim model for age band, minor status, child-mode required,
-  guardian required, age-policy jurisdiction, and consent state without
-  exposing raw birthdate or private identity fields to products by default,
-- guardian consent and oversight proof skeleton with revocation, validity
-  window, jurisdiction, actor, child account, and audit binding,
+- minimal derived-claim and delegated-approval envelopes with issuer,
+  subject, audience, purpose, validity, revocation, jurisdiction and audit
+  binding, without requiring raw private evidence to be disclosed,
+- age bands, child accounts and guardian workflows are example consumers, not
+  mandatory core schema; their vocabulary and application consent workflows
+  belong to optional extensions or product code,
 - service-secret and external key/secret provider policy boundary metadata
   showing which service may read which secret path, unwrap which key, or sign
   which token,
@@ -2951,9 +3117,9 @@ Deliverables:
   source snapshot root, target recovery/archive/production world, legal basis,
   policy epoch, crypto epoch, affected fact ranges, and audit-log binding,
 - policy rules that rollback reads still use the active or explicitly selected
-  historical policy epoch, and that restoration cannot resurrect privacy-erased
-  or legally deleted material unless a legal hold, retention rule, or explicit
-  break-glass style override authorizes the recovery,
+  historical policy epoch constrained by current non-bypassable revocation and
+  erasure state. A hold may preserve keys before destruction, but an override
+  cannot recover truly crypto-erased material or reset deletion evidence,
 - purge/override design for exceptional removal of rollback-protected material,
   requiring scoped authority, reason, legal basis, quorum or local fallback
   approval, audit proof, and preferably crypto-erasure over raw byte deletion,
@@ -2961,8 +3127,9 @@ Deliverables:
   references, account for space retained only by rollback policy, and refuse to
   compact segments/blobs/keys needed by non-expired rollback archives,
 - tests that rollback cannot bypass policy, cannot delete or rewrite audit
-  facts, cannot silently become production, cannot resurrect erased data
-  without explicit authorization, and prevents compaction from dropping
+  facts, cannot silently become production, cannot resurrect crypto-erased
+  data, cannot access retained data without current authority, and prevents
+  compaction from dropping
   protected snapshot material.
 
 ## v0.35.3 - Point-In-Time Recovery And Change Streams
@@ -3099,55 +3266,46 @@ Deliverables:
   administrator names are not assumed by the database, and bootstrap cannot
   overwrite existing tenants, worlds, or users.
 
-## v0.38.2 - Site Identity, Public Origin, Alias, And Descriptor Model
+## v0.38.2 - Endpoint Identity And Trusted Origin Model
 
-Goal: provide generic public-site identity and descriptor primitives while
-keeping administrative origins, passkey origins, and private mode policy
-separate from public rendering aliases.
+Goal: bind database administrative and API endpoints to configured trust
+origins without making website identity or rendering a core responsibility.
 
 Deliverables:
 
-- site/instance identity settings for public title, tagline, language, locale,
-  timezone, date/time formats, reading/writing defaults, privacy state, and
-  public-safe logo/icon/asset references,
-- canonical public origin and explicit public alias origin metadata,
-- strict separation between public serving aliases and administrator,
-  passkey/WebAuthn, bootstrap, API, and trusted internal origins,
-- descriptor record model for robots, security contact metadata, feeds,
-  sitemaps, OpenSearch-style descriptors, web app manifests, and public asset
-  icon references,
-- private-site and maintenance-mode policy that forces conservative public
-  descriptors regardless of owner overrides,
-- audited narrow operations for enabling/disabling redirects, changing
-  canonical origin, updating descriptor overrides, and changing search
-  visibility,
-- tests that public aliases do not expand admin or passkey origins, private and
-  maintenance modes override public indexing, descriptor generation uses only
-  public-safe fields, and redirects cannot be changed without audit.
+- configured endpoint identity, allowed administrative/API/bootstrap origins,
+  authenticated internal peers and explicit trusted-proxy rules,
+- strict separation between application serving aliases and database
+  authentication, passkey/WebAuthn, bootstrap and administrative audiences,
+- fail-closed validation of origin/authority headers, proxy chains and
+  transport identity without trusting arbitrary forwarded headers,
+- audited configuration changes and secret-free configuration export,
+- tests for origin confusion, forged forwarding, unauthorized alias expansion
+  and stale endpoint configuration,
+- explicit ownership transfer of site title, locale, logos, robots, feeds,
+  sitemaps, search descriptors and public redirects to `v1.1.3` or the
+  consuming application; none become required database catalog fields.
 
 ## v0.38.3 - Scheduled Operation And Cache Control Model
 
-Goal: make scheduled publishing, descriptor rebuilds, cache purge/warm actions,
-and maintenance operations private, audited, policy-bound operations instead of
-public cron URLs or application-side shortcuts.
+Goal: make database maintenance and projection-cache operations private,
+audited, policy-bound operations. Product scheduling composes this boundary.
 
 Deliverables:
 
 - scheduled operation metadata with due time, limit, actor/service identity,
   policy epoch, target scope, replay guard, and audit binding,
-- publish-due operation model that keeps scheduled content private until the
-  operation commits,
-- cache eligibility metadata for immutable public assets and public
-  projections, with explicit no-store policy for admin, auth, bootstrap,
-  preview, API, private, and sensitive responses,
-- cache purge/warm operation records for one URL, one asset, related public
-  URLs after publish, public media, or all eligible public projections,
-- trusted reverse-proxy/header context metadata for operations that depend on
-  public origin or cache status,
+- restart-safe claims, bounded retries, cancellation, missed-deadline behavior
+  and execution-time authority revalidation using existing resource leases,
+- projection-cache eligibility and invalidation bound to source roots, tenant,
+  policy/key/law epochs, authority and watermark, with no implicit public cache,
+- database maintenance and projection rebuild/invalidation operations with
+  idempotency and audit records; no public unauthenticated cron endpoint,
+- publishing schedules, URL/asset purge, descriptor rebuilds and web cache
+  headers belong to `v1.1.2`/`v1.1.3`, not the core scheduler,
 - tests that scheduled operations require private authenticated authority,
-  cannot publish early, cannot execute twice, cannot expose previews to public
-  indexes, and cache operations never apply to admin/auth/bootstrap/private
-  responses.
+  cannot run before their admitted window, cannot duplicate committed effects,
+  stop after revocation and cannot reuse incompatible projection cache entries.
 
 ## v0.38.4 - Opaque Extension Capability API Preview
 
@@ -3429,8 +3587,8 @@ Deliverables:
   core functionality,
 - compile-only omission test proving the core database does not require
   plugin/theme/import/source-state crates,
-- documentation mapping source-state/forge work to v1.4.0 through v1.4.4,
-  import/migration work to v1.4.4, and extension/plugin/theme work to the
+- documentation mapping source-state/forge work to v1.4.0 through v1.4.3,
+  import/migration work to v1.4.3, and extension/plugin/theme work to the
   relevant post-1.0 extension crate,
 - tests that the core API rejects undeclared capabilities and policy-bypassing
   extension proofs even before real extension crates exist.
@@ -3500,7 +3658,9 @@ integration smoke and before production hardening.
 
 Deliverables:
 
-- local server API skeleton,
+- runnable authenticated server API over the actual engine, not merely a
+  request-context skeleton; bounded framing, deadlines, backpressure and
+  cancellation use the engine's existing resource and output-audit gates,
 - authenticated authority-context extraction for subject, device, and workload,
 - mTLS or equivalent identity binding hook for device and workload context,
 - service/node identity hook,
@@ -3727,6 +3887,39 @@ Deliverables:
 - tests for denied optional publishing-extension reads from disallowed request
   contexts.
 
+## v0.54.1 - Standalone Compliance Enforcement Integration
+
+Goal: replace the legal decision skeleton with an executable, fail-closed
+standalone control before final placement and backup qualification.
+
+Deliverables:
+
+- real evaluator and admitted law-pack registry wired into authenticated
+  reads, writes, world promotion, queries, projections, AI jobs, exports,
+  backup/restore, retention and protected historical inspection,
+- constrained-allow outcomes carry executable obligations; minimisation,
+  approval, retention, purpose and placement constraints must be satisfied
+  before effects or bytes are released, not merely returned as advisory text,
+- atomic law/policy activation and revocation with current-epoch checks for
+  cached plans, streams, queued jobs and scoped key operations; crash/restart
+  cannot re-enable superseded authority,
+- authenticated request provenance for location and jurisdiction evidence;
+  source IP or a forwarded country header alone is not proof of lawful access,
+- reviewed, versioned conformance fixtures supplied by the configured legal
+  authority, plus explicit deny/more-evidence behavior for missing, conflicting,
+  expired or unavailable packs. The database enforces policy, not invented law,
+- single-node operation with no cluster dependency and no self-approval
+  fallback in profiles that require independent approval.
+
+Verification: inherited gates plus end-to-end allowed, denied and
+constrained operations through the real API/engine/key/audit boundaries.
+Include mid-stream revocation, forged location, stale backup policy, failed
+obligation execution, rollback and law-pack activation crash tests.
+
+Exit Criteria: no production operation bypasses the evaluator or treats an
+unfulfilled obligation as permission. Record legal scope and non-claims,
+then call the ready-for-pentest stop under the normal release process.
+
 ## v0.55.0 - Sovereign Placement Intent Compiler
 
 Goal: compile declared placement intent into lawful single-node and future-cluster planning metadata.
@@ -3739,6 +3932,52 @@ Deliverables:
 - stale-placement marker when policy, law-pack, key, or data-passport epochs change,
 - tests for denied cross-boundary placement.
 
+## v0.55.1 - Core Capability Completion And Production Profiles
+
+Goal: finish the promised standalone operations before qualification; a
+skeleton or model cannot stand in for a usable production capability.
+
+Deliverables:
+
+- a capability-to-evidence matrix mapping each `v1.0.0` claim to its owning
+  crate, public entry point, real provider, persistent state, recovery path,
+  denial tests and operator command; absence of an implementation blocks the
+  dependent claim, rather than being silently accepted as planned work,
+- complete snapshot creation, retention/pinning, historical inspection,
+  recovery-world restore and authorized promotion over `v0.35.x` protected
+  roots, preserving current erasure, audit and freshness authority,
+- executable bounded simulation using the `v0.24.1` model, actual signed
+  declassification and export/import verification using `v0.43.0`, and AI
+  permit enforcement/promotion using `v0.41.0`; metadata alone is insufficient,
+- runnable bootstrap, tenant/world administration, commit/status, query,
+  backup/restore, key rotation, recovery and diagnostics through the native
+  binary/API and rootless container, with no raw-storage bypass command,
+- explicit supported query and projection surface with operational rebuild,
+  revocation and recovery evidence. Unsupported query intents or projection
+  types return typed errors and cannot appear as working product claims,
+- production-profile validator rejecting test providers, unrestricted key
+  credentials, missing anchors, mandatory-audit bypasses, untrusted time and
+  incompatible cryptographic suites before serving requests,
+- algorithm/profile evidence separating digest output size from signature,
+  encryption and whole-system security. A post-quantum profile requires
+  implemented admitted signing/key-establishment providers wherever that
+  profile depends on them, interoperability tests and downgrade rejection;
+  metadata and a future migration plan cannot qualify that profile,
+- at least one concrete standard production profile with fully specified
+  trust, platform and operational prerequisites; stronger assurance profiles
+  remain disabled until their extra requirements pass. No blanket classified,
+  FIPS or quantum-proof claim follows from releasing 1.0.
+
+Verification: inherited gates and end-to-end scenarios using real providers
+and the public interface, including backup/restore, simulation, declassification,
+revocation during streaming, key-provider loss, anchor loss and process crash.
+Check core-only builds and rejection of unfinished/unsafe configurations.
+
+Exit Criteria: every retained 1.0 capability has executable evidence or an
+explicit scope change with all dependent claims removed. Security controls
+cannot be waived to make a feature available. Call the ready-for-pentest stop;
+`v0.56.x` and `v0.57.0` then qualify this completed surface.
+
 ## v0.56.0 - Final Backup And Restore Qualification
 
 Goal: qualify backup and restore after schema catalog, retention, quotas,
@@ -3748,8 +3987,9 @@ Deliverables:
 
 - end-to-end backup qualification across the `v0.35.4` backup engine,
   `v0.40.0` runtime resource pools, `v0.45.0` schema catalog, `v0.46.0`
-  retention policy, `v0.48.0` quotas, `v0.49.0` observability, and `v0.54.0`
-  legal operation decision engine, plus `v0.55.0` sovereign placement intent,
+  retention policy, `v0.48.0` quotas, `v0.49.0` observability, and `v0.54.1`
+  legal operation enforcement, plus `v0.55.0` sovereign placement intent and
+  the completed operational surface from `v0.55.1`,
 - schema-evolution backup/restore tests covering compatible, incompatible,
   migrated, unknown, and intentionally deferred schema/catalog states,
 - retention, legal-hold, privacy-erasure, tombstone, rollback-root,
@@ -3853,6 +4093,9 @@ Deliverables:
 
 - release-candidate notes,
 - complete security review checklist,
+- rerun the `v0.55.1` capability matrix against the exact candidate with real
+  providers and public entry points; there must be no required capability
+  satisfied only by a model, metadata, mock or unimplemented hook,
 - rootless Podman release gate,
 - final performance and durability rerun after legal, placement, and backup
   qualification, including required 24-hour endurance and target 72-hour
@@ -3930,7 +4173,8 @@ Deliverables:
 - legal/compliance passport foundations,
 - law-pack metadata admission,
 - deterministic bounded policy/law-pack evaluator safety,
-- legal operation and transfer decision skeleton,
+- executable standalone legal operation enforcement with verified obligations;
+  transfer intents for future clusters remain non-executable until `v2.x`,
 - sovereign placement intent compiler,
 - compromise and recovery playbooks,
 - schema catalog and versioned contracts,
@@ -3964,13 +4208,15 @@ Deliverables:
   runtime-scheduling, and legal-policy qualification,
 - secure first-run bootstrap and instance identity primitives,
 - read-only secret-free configuration export,
-- platform identity, shared-account, product-boundary, guardian-consent, and
-  derived-claim primitives,
+- generic identity-authority, service-boundary, delegated-approval and
+  minimal derived-claim primitives, without product account schemas,
 - resource-budgeted verification modes,
 - operation, event, explanation, and context-pack records,
 - extension API compatibility freeze proving optional application-family crates
   can compile against core without being mandatory dependencies,
 - AI artifact provenance,
+- completed core capability matrix and validated production profiles from
+  `v0.55.1`, requalified on the release candidate,
 - complete release runbook,
 - security review PASS for exact commit.
 
@@ -4042,6 +4288,31 @@ Deliverables:
   operations,
 - tests for precise invalidation, no private-preview leakage, and cache
   operations never applying to admin/auth/bootstrap/private responses.
+
+### v1.1.3 - Publishing Site Metadata And Public Descriptors
+
+Goal: provide optional website metadata and public output rules without making
+them part of the mandatory world database.
+
+Deliverables:
+
+- publishing-owned site title, language/locale, timezone, asset references,
+  public origins and aliases, separate from database administrative origins,
+- robots, feeds, sitemaps, search and application descriptors generated only
+  from authorized published projections; private/maintenance modes deny public
+  indexing and cannot be overridden by a less privileged owner setting,
+- audited public redirects, scheduled descriptor refresh and URL/asset cache
+  purge/warm operations using the `v0.38.3` scheduler and `v1.1.2` dependency
+  graph, without granting raw storage or key-provider access,
+- product-owned vocabulary and renderers remain replaceable and optional.
+
+Verification: inherited gates plus alias-to-admin escalation, private-preview
+leakage, stale policy cache, redirect authorization, scheduling retry and
+extension-omission tests.
+
+Exit Criteria: the core-only build contains no website schema or descriptor
+renderer; all public outputs pass core policy and audit gates. Call the
+ready-for-pentest stop and follow the inherited release process.
 
 ### v1.2.0 - Messenger/Private-Channel Extension Crate
 

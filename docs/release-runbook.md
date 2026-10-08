@@ -21,7 +21,7 @@ maintainer. Tags are never created or pushed unless explicitly requested.
 Use this handoff text:
 
 ```text
-vX.Y.Z implementation stop reached. Run pentest for this exact commit.
+vX.Y.Z is ready for pentest. Test this exact commit before release preparation.
 ```
 
 Do not tag at this stop.

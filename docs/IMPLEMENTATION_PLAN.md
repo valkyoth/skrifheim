@@ -11,6 +11,14 @@ compiled-in extension crates that compose facts, worlds, policies, releases,
 projections, audit, and AI artifact provenance without becoming mandatory core
 database semantics.
 
+The [version plan](VERSION_PLAN.md#dependency-and-completion-rule) owns the
+delivery order. Models and skeletons are not production implementations:
+`v0.18.9` completes persistent scoped keys before encrypted storage,
+`v0.23.5` integrates durable world operations and semantic recovery,
+`v0.54.1` enforces standalone legal obligations, and `v0.55.1` completes the
+advertised core surface before final qualification. A capability missing real
+provider, public-path and crash/denial evidence cannot satisfy the 1.0 gate.
+
 ## Core Position
 
 `skrifheim` stores signed, versioned, policy-bound facts about worlds. It is not a SQL compatibility project and not a generic multi-model database. Relational, document, graph, vector, search, render graphs, AI context packs, and analytics are projections over canonical facts.
@@ -273,9 +281,10 @@ and WAL-v1 retry semantics. Provider availability does not remove the later
 storage integration, freshness or production qualification gates.
 
 The implementation and six-finding pentest/retest chain are complete for this
-primitive scope. The [permanent pentest digest](../security/pentest/v0.18.3.md)
-records verification and residual risks; GitHub confirmation and explicit tag
-approval remain the release stop.
+primitive scope, released as signed tag `v0.18.3` after GitHub passed. The
+[permanent pentest digest](../security/pentest/v0.18.3.md) records verification
+and residual risks. Persistent key import/reopen, KDF/wrapping and a real
+scoped key service are deliverables of `v0.18.9`, not this primitive release.
 
 The storage crypto boundary must also handle log splicing and metadata
 confidentiality. WAL frames need database/log generation, LSN, transaction
@@ -292,6 +301,12 @@ transparency service, WORM/offline operator checkpoint, or threshold-held
 external checkpoint. Active startup must fail closed when local storage is
 older than the anchor; historical roots can be opened only through explicit
 recovery workflows.
+
+An offline checkpoint is only a freshness lower bound unless an independent
+authority establishes the latest required generation. Each profile specifies
+which operations require anchor acknowledgement before reporting success and
+any remaining rollback window. Signatures and a chained witness history alone
+cannot detect every consistent stale view shown to an isolated client.
 
 The freshness anchor needs a real provider before startup recovery depends on
 it. At least one reference provider, such as a remote witness client or
@@ -375,10 +390,11 @@ keys, wrapped-key indexes, backup key-slot deletion, compaction/re-encryption
 rules, snapshot and legal-hold exceptions, and proof that every readable key
 slot was removed.
 
-`v0.18.4` pulls fuzzing forward for the WAL and segment byte parsers. The
-general fuzz/property baseline remains later, but hand-written parsing of
-untrusted WAL and segment bytes must have a deterministic fuzz smoke from this
-storage phase onward.
+`v0.18.4` pulls fuzzing forward for WAL/segment parsers, generic AEAD envelopes
+and transcripts, and differential replay validation. Reproducible corpus smoke
+and actual coverage-guided fuzzing are recorded separately. The general
+fuzz/property baseline remains later, but these boundaries must already have
+bounded hostile-input tests from this storage phase onward.
 
 Failure injection is part of the storage design, not late hardening. The
 engine first needs reusable failpoints for writes, short writes, interrupted
@@ -753,6 +769,13 @@ Required models:
 The database must not invent law. It consumes signed, reviewed, versioned packs
 and turns them into deterministic planning inputs.
 
+`v0.54.1` turns these inputs into enforced standalone obligations on reads,
+writes, promotion, derived jobs, key use and recovery before production
+qualification. Returning an advisory constrained-allow result is insufficient:
+unfulfilled minimisation, approval, purpose or placement requirements block
+effects and output. IP-derived location alone is not trusted jurisdiction
+evidence. Missing or conflicting legal inputs fail closed.
+
 Law and policy packs must not become unbounded scripts. Evaluation must be
 deterministic, resource-bounded, side-effect-free, and independent of network,
 filesystem, random, wall-clock, or process state. Declarative data is preferred
@@ -955,8 +978,9 @@ application-family behavior in optional post-1.0 extension crates:
 - auditable explanation objects,
 - bounded context packs.
 
-Operational application deployments need secure bootstrap and public-origin
-metadata primitives, but `skrifheim` must keep them generic and policy-bound:
+Core operation needs secure bootstrap, endpoint identity, maintenance and
+projection-cache controls in `v0.38.x`. Website-specific schemas remain in the
+optional publishing extension (`v1.1.2`/`v1.1.3`) or consuming application:
 
 - first-run bootstrap state with one-time token proofs, setup fingerprints,
   public-origin validation, trusted-proxy/header policy, migration readiness,
@@ -964,14 +988,15 @@ metadata primitives, but `skrifheim` must keep them generic and policy-bound:
 - first-owner or first-administrator challenge metadata that binds to origin,
   device context, policy epoch, expiry, and single-use consumption without
   storing setup secrets as ordinary facts or audit payloads,
-- site/instance identity settings, public origins, public aliases, descriptor
-  metadata, private/maintenance mode, and search visibility as audited facts
-  under `skrifheim` policy,
+- core instance/endpoint identity and explicit trust origins, without site
+  titles, logos, locale, robots, feeds, sitemaps or search visibility fields in
+  the mandatory catalog,
 - strict separation between public serving aliases and administrative,
   passkey/WebAuthn, bootstrap, API, and trusted internal origins,
-- scheduled operations such as publish-due, descriptor rebuilds, cache purge or
-  warm actions, and maintenance tasks as private authenticated operations with
-  replay guards and audit binding,
+- private authenticated maintenance and projection-cache operations with
+  bounded retries, replay guards, authority revalidation and audit binding;
+  publish-due, descriptor rebuilds and URL/asset cache controls compose these
+  generic operations in the optional publishing extension,
 - read-only configuration export that helps recovery while explicitly excluding
   credentials, sessions, bootstrap tokens, recovery codes, key material, and
   other secrets.

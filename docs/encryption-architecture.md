@@ -189,10 +189,14 @@ The current scaffold models these as metadata-only blast-radius boundaries in
 purpose, tenant, region, classification, compartment, world or branch, and
 segment identity must match before two encrypted surfaces can be treated as the
 same domain. Durable encryption and key derivation are still planned work.
-`v0.18.3` turns those domains into associated-data and key-derivation inputs
-for WAL and segment bodies; projection, backup, export, AI artifact, and audit
-body encryption must reuse the same domain-separation contract in their later
-milestones.
+`v0.18.3` binds these domains in generic AEAD associated data; it does not
+implement persistent keys, a KDF, or WAL/segment body encryption. `v0.18.9`
+implements admitted derivation/wrapping and a real scoped persistent-key
+provider, including restart-safe nonce and usage accounting. `v0.18.11` and
+`v0.18.12` then instantiate concrete block/segment and WAL envelopes.
+Projection, backup, export, AI artifact, and audit body encryption reuse the
+same domain-separation contract in their owning milestones. The provider
+boundary remains replaceable by a reviewed brynja adapter.
 
 ## Query-Result Classification
 

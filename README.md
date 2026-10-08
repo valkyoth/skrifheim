@@ -32,9 +32,9 @@ CMS-style publishing, messenger, forum, forge, and other application-family
 support is planned as optional compiled-in extension crates over the core world
 database primitives.
 
-The `v0.18.3` production digest and AEAD engine admission milestone has passed
-maintainer pentest and local release checks; GitHub confirmation and tagging
-remain pending.
+The `v0.18.3` production digest and AEAD engine admission milestone is released
+as a signed tag after clean pentest and GitHub checks. The next implementation
+milestone is `v0.18.4`, early storage and crypto-boundary fuzzing.
 It is not a usable database engine.
 
 `skrifheim` is licensed under the European Union Public Licence 1.2.
@@ -88,7 +88,7 @@ It is not a usable database engine.
 | WAL replay and recovery | Scaffolded | `v0.16.0` adds header-driven replay reports for committed, aborted, and clean-EOF uncommitted transactions; full state recovery remains planned. |
 | Quantum-aware digest policy | Primitive implemented | Five SHA-3/SHAKE profiles compute full-width world/content/manifest digests. This is not a whole-database quantum-security claim. |
 | Immutable segment format | Scaffolded | `v0.17.0` adds policy-scoped immutable segment headers and footers with key epoch, encryption-domain, checksum, and algorithm-agile digest metadata. |
-| Immutable segment persistence | Scaffolded | `v0.18.0` adds fixed segment encoding plus host-file writer and reader scaffolds; manifests and indexes remain planned for `v0.19.0` through `v0.20.0`. |
+| Immutable segment persistence | Scaffolded | `v0.18.0` adds fixed segment encoding and host-file helpers; the authenticated storage spine starts at `v0.19.x`, with semantic recovery at `v0.23.5` and durable fact indexes at `v0.23.3`. |
 | Production storage encryption | Planned | `v0.18.3` implements generic digest/AEAD primitives only; concrete block/segment encryption lands with `v0.18.11`, and WAL-v2 encryption with `v0.18.12` before manifests or recovery claim tamper resistance. |
 | Early WAL/segment fuzzing | Planned | `v0.18.4` adds deterministic fuzz smoke for the hand-written storage byte parsers; the broader fuzz/property baseline remains later. |
 | Release evidence hardening | Planned | `v0.18.5` adds SBOM validation, dependency-tree snapshots, runtime/optional-boundary policy, and release-gate tests before durable storage claims harden. |
@@ -97,7 +97,7 @@ It is not a usable database engine.
 | Strict serializable transactions | Planned | `v0.21.0` through `v0.23.0`. |
 | Native query parser and execution | Planned | `v0.25.0` through `v0.28.0`. |
 | Approval-role authority model | Planned | `v0.26.2` defines executable roles and single-maintainer fallback policy for break-glass, law-pack admission, key ceremonies, declassification, backup restore, and release operations. |
-| Platform identity and product boundaries | Planned | `v0.26.3` separates identity authority, shared account/profile facts, operator/support/service identities, guardian consent, product-owned data, and minimal derived claims. |
+| Identity authority and service boundaries | Planned | `v0.26.3` separates issuers, operator/support/service authority and minimal derived claims; product account and guardian workflows remain extension/application-owned. |
 | Optional extension crate boundary | Planned | `v0.31.2` keeps product-family support in optional `skrifheim-ext-*` crates unless a feature is mandatory generic database core. |
 | Rebuildable projections and extension deferral | Planned | `v0.29.0` through `v0.32.1` adds graph/search/vector projection foundations and proves product-family extensions stay optional until after `v1.0.0`. |
 | Crypto-agile manifest and threshold signatures | Planned | `v0.33.0` signs manifests; `v0.33.1` defines the threshold-signature or bounded quorum multi-signature proof model before approval-sensitive operations depend on multi-party authority. |
