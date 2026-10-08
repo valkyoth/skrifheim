@@ -1,6 +1,6 @@
 # skrifheim Crypto Provider Contract
 
-Status: v0.18.3 primitive implementation; pending pentest. Concrete encrypted
+Status: v0.18.3 primitive implementation; maintainer pentest passed. Concrete encrypted
 storage, key persistence, authenticated recovery and production qualification
 are not delivered by this milestone.
 

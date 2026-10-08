@@ -272,6 +272,11 @@ suite migration, nonce/restart limits, erasure granularity, secret ownership
 and WAL-v1 retry semantics. Provider availability does not remove the later
 storage integration, freshness or production qualification gates.
 
+The implementation and six-finding pentest/retest chain are complete for this
+primitive scope. The [permanent pentest digest](../security/pentest/v0.18.3.md)
+records verification and residual risks; GitHub confirmation and explicit tag
+approval remain the release stop.
+
 The storage crypto boundary must also handle log splicing and metadata
 confidentiality. WAL frames need database/log generation, LSN, transaction
 ordinal, previous-frame digest, and commit-root binding so valid encrypted

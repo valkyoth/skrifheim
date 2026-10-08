@@ -32,8 +32,9 @@ CMS-style publishing, messenger, forum, forge, and other application-family
 support is planned as optional compiled-in extension crates over the core world
 database primitives.
 
-The project is currently implementing `v0.18.3` production digest and AEAD
-engine admission.
+The `v0.18.3` production digest and AEAD engine admission milestone has passed
+maintainer pentest and local release checks; GitHub confirmation and tagging
+remain pending.
 It is not a usable database engine.
 
 `skrifheim` is licensed under the European Union Public Licence 1.2.
@@ -63,9 +64,9 @@ It is not a usable database engine.
 | Index and projection encryption policy | Scaffolded | Secondary, graph, search, vector, columnar, cache, and compaction projection surfaces require projection encryption domains and reject incompatible domain mixing. |
 | Memory secrecy boundary | Scaffolded | Secret material enters crypto APIs through bounded non-clone redacted `SecretBytes` wrappers backed by admitted `sanitization` clear-on-drop storage. |
 | Identity and audit events | Scaffolded | Typed identities, attestation evidence references, break-glass event shape, signed/encrypted audit-log metadata, and actor-attribution checks. |
-| Crypto provider primitives | Implemented, pending pentest | Optional SHA3-256/384/512, SHAKE256-256/512, and XChaCha20-Poly1305 providers use skrifheim-owned interfaces. OS entropy is separate. Future brynja replacement must preserve the tested transcripts and envelopes. See [provider contract](docs/crypto-provider-contract.md). |
+| Crypto provider primitives | Implemented, pentest passed | Optional SHA3-256/384/512, SHAKE256-256/512, and XChaCha20-Poly1305 providers use skrifheim-owned interfaces. OS entropy is separate. Future brynja replacement must preserve the tested transcripts and envelopes. See [provider contract](docs/crypto-provider-contract.md). |
 | Crypto-agile metadata | Scaffolded | Epochs, signature sets, key hierarchy/lifecycle and encryption domains remain separate from provider primitives. Key descendants now retain deployment and region scope. |
-| WAL append hardening | Implemented, pending retest | Domain-bound writers, fixed-memory replay preflight, hard per-file byte/frame scan budgets, whole-transaction capacity reservation, explicit durability outcomes, poisoned writers after I/O errors, and single-batch retry/status scaffolding. Budget exhaustion stops writes pending checkpoint/rotation; WAL-v1 remains unauthenticated. |
+| WAL append hardening | Implemented, pentest passed | Domain-bound writers, fixed-memory replay preflight, hard per-file byte/frame scan budgets, whole-transaction capacity reservation, explicit durability outcomes, poisoned writers after I/O errors, and single-batch retry/status scaffolding. Budget exhaustion stops writes pending checkpoint/rotation; WAL-v1 remains unauthenticated. |
 | Storage metadata | Scaffolded | Immutable segment headers and footers validate magic, version, transaction range, policy, encryption key, crypto epoch, encryption domain, body length, CRC presence, and content digest presence; fixed segment encoding, host-file staged write/read, redacted publication diagnostics, staging cleanup, CRC verification, v2 footer/header kind binding, explicit v1 legacy-unbound footer parsing rejected on normal reads, host memory caps, and verifier injection exist for opaque encrypted segment bodies; WAL frame headers validate fixed append-only encrypted-frame metadata, non-zero CRC presence, expected-domain binding, host-file append/read smoke coverage, and header-driven replay/recovery state transitions. |
 | Query planning primitives | Scaffolded | Query requests become policy decision plans for early read, causality, simulation, and context intents. |
 

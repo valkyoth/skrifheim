@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.18.3
+
+- Completed the local release checks and maintainer pentest/retest chain. All
+  six findings are resolved; GitHub confirmation and explicit tag approval
+  remain required before tagging.
 - Fixed the v0.18.3 retest's WAL resource regression with a shared fixed-memory
   replay validator, EOF limit checks and per-file byte/frame budgets. Whole
   transactions are admitted before their first write; oversized scans request
@@ -29,8 +34,8 @@
   with `default-features = false` and only the `alloc` feature enabled.
 - Updated CI checkout pinning from `actions/checkout` `v7.0.0` to the reviewed
   `v7.0.1` commit SHA.
-- Re-checked Rust and Cargo on 2026-07-21; the active project toolchain is
-  pinned to Rust stable `1.97.1`.
+- Re-checked Rust and Cargo on 2026-07-21; at that review the project toolchain
+  was pinned to Rust stable `1.97.1`, superseded by the update above.
 - Re-checked direct security tooling and crate versions; `cargo-deny` `0.20.2`
   and `cargo-audit` `0.22.2` remain current, and `cargo update` refreshed
   transitive `cc` and `libc` versions.

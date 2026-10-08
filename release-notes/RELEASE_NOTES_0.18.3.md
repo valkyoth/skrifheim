@@ -1,6 +1,6 @@
 # skrifheim v0.18.3
 
-Status: implementation candidate; first pentest and resource-exhaustion retest remediated, awaiting maintainer retest.
+Status: release preparation complete; maintainer pentest passed, awaiting GitHub confirmation and explicit tag approval.
 
 ## Scope
 
@@ -20,7 +20,7 @@ Status: implementation candidate; first pentest and resource-exhaustion retest r
 - First pentest fixes: canonical replay validation before transactional append
   and status, domain-bound WAL writers, fixed-size redacted key-control/WAL-body/
   world-preflight diagnostics and release-gate regression coverage. See the
-  [pending-retest digest](../security/pentest/v0.18.3.md).
+  [permanent pentest digest](../security/pentest/v0.18.3.md).
 - Retest fix: fixed-memory replay validation sharing the report transition
   engine, EOF checks after candidate preflight, and hard 128 MiB/8,192-frame
   per-file scan limits. Whole-transaction reservation fails before any write;
@@ -48,6 +48,12 @@ The implementation gate is `sh scripts/release_0_18_3_gate.sh`.
 The post-pentest release gate adds `--release` and requires the permanent
 pentest report through the existing release-readiness check.
 
+The final maintainer retest of `71c0d790ae13f122bde3ab5919333ebe60a0feb7`
+confirmed all six findings resolved with no new Critical, High, Medium or Low
+code vulnerabilities found. Local verification passed 288 unit tests, two
+compile-fail doctests, debug and release workspace suites, Clippy with warnings
+denied, formatting, repository gates, cargo-deny and cargo-audit.
+
 Coverage includes five FIPS 202 known-answer profiles, the XChaCha draft
 vector, a generic envelope fixture independently reproduced with libsodium,
 context isolation, every-byte envelope mutation/truncation, allocation bounds,
@@ -60,12 +66,13 @@ Resource regression tests compare generated validator/report histories, cover
 one million closed transactions plus an incomplete tail, checked-counter
 overflow, sparse oversized files, and exact/over-budget writes and reopen.
 
-Native Linux tests and core/provider checks cover formatting, clippy,
-dependency/advisory policy and all features. Cross-target compile evidence
-covers Windows MSVC, macOS/AArch64, FreeBSD, RISC-V Linux, big-endian PowerPC
-Linux and bare-metal Thumb no_std. Cross-compilation is not runtime
-qualification. Rootless normal and Alpine/musl container checks are included
-in the local verification pass.
+Native Linux tests and core/provider checks cover all features. Crypto-provider
+and entropy compile evidence covers Windows MSVC, macOS/AArch64, FreeBSD,
+RISC-V Linux and big-endian PowerPC Linux; pure crypto/storage core checks also
+cover bare-metal Thumb no_std. Storage-host compile checks cover those Unix
+targets only: Windows storage-host compilation remains deliberately blocked
+by the existing Unix-only file-hardening boundary. Cross-compilation is not
+runtime qualification. Rootless normal and Alpine/musl container checks passed.
 
 ## Limits
 
@@ -84,6 +91,7 @@ workflow. WAL receipts are local observations, not signed commit proofs.
 
 ## Release Stop
 
-Run the maintainer pentest on the committed implementation. Resolve findings
-and retest until green, then commit the permanent digest and wait for GitHub
-green. A signed tag is created and pushed only on explicit instruction.
+The maintainer pentest is green and the permanent digest records PASS. Commit
+the release metadata and final digest, then wait for GitHub green. No tag or
+push is part of this preparation. A signed tag is created and pushed only on
+explicit instruction after GitHub confirmation.

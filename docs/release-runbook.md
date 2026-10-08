@@ -37,8 +37,12 @@ Do not tag at this stop.
 7. Repeat if a new `PENTEST.md` is provided.
 8. When the maintainer reports the pentest is green, write or update the
    permanent digest at `security/pentest/<tag>.md`.
-9. Commit the implementation fixes, release metadata, and permanent pentest
-   digest together.
+9. Commit any final documentation-only release metadata, then commit the
+   permanent pentest digest alone as required by the readiness gate. Record
+   the exact externally retested implementation commit separately when the
+   digest's parent includes locally reviewed documentation-only preparation.
+   Source, dependency, tooling or workflow changes require renewed relevant
+   verification and must not be presented as documentation-only preparation.
 10. Wait for GitHub Actions.
 
 ## GitHub Result

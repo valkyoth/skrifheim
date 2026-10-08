@@ -511,6 +511,10 @@ Deliverables:
 
 ## v0.18.3 - Production Digest And AEAD Engine Admission
 
+Status: implementation and maintainer pentest complete; awaiting GitHub
+confirmation and explicit tag approval. This completes the primitive admission
+scope, not production storage encryption or database qualification.
+
 Implementation contract: [Crypto Provider Contract](crypto-provider-contract.md).
 The optional software provider is replaceable by a reviewed brynja adapter;
 the same golden fixtures and negative tests apply to both providers. Current
