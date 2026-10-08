@@ -3,19 +3,21 @@ use skrifheim_core::{FactId, Result, SkrifheimError, WorldId};
 
 use crate::World;
 
+mod debug;
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum WorldConflictKind {
     AddedAndHiddenSameFact,
     ReintroducesParentHiddenFact,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub struct WorldConflict {
     pub kind: WorldConflictKind,
     pub fact_id: FactId,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct WorldDiff {
     pub from: WorldId,
     pub to: WorldId,
@@ -39,7 +41,7 @@ impl WorldDiff {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct PromotionPreflight {
     pub diff: WorldDiff,
     pub conflicts: Vec<WorldConflict>,
@@ -82,7 +84,7 @@ impl PromotionPreflight {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct RollbackPreflight {
     pub from: WorldId,
     pub to: WorldId,

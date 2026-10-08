@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Addressed the first v0.18.3 pentest: transaction append/status validate global
+  WAL replay state, writers bind every frame to one expected domain, and key
+  control metadata, WAL bodies and world preflights have fixed-size redacted
+  diagnostics. Added regression tests and sensitive-derive gate fixtures.
 - Implemented v0.18.3 optional digest/AEAD providers behind skrifheim-owned
   interfaces, with future brynja replacement compatibility, OS entropy,
   canonical transcripts, sealed verification results and purpose-specific

@@ -4,10 +4,18 @@ use skrifheim_core::{Result, SkrifheimError, TenantId};
 
 use crate::{CryptoEpoch, key_hierarchy::is_valid_parent};
 
+mod debug;
+
 macro_rules! nonzero_key_id {
     ($name:ident) => {
-        #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+        #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash)]
         pub struct $name(NonZeroU128);
+
+        impl core::fmt::Debug for $name {
+            fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+                f.write_str(concat!(stringify!($name), "(<redacted>)"))
+            }
+        }
 
         impl $name {
             #[must_use]
@@ -37,7 +45,7 @@ nonzero_key_id!(RegionKeyId);
 nonzero_key_id!(CompartmentKeyId);
 nonzero_key_id!(SegmentKeyId);
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub enum KeyScope {
     RootTrust,
     Deployment {
@@ -74,7 +82,7 @@ pub enum KeyScope {
     },
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub enum KeyLifecycleState {
     Created,
     Active,
@@ -86,7 +94,7 @@ pub enum KeyLifecycleState {
     CryptoErased,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub enum KeyErasureReason {
     Rotation,
     Expiration,
@@ -94,7 +102,7 @@ pub enum KeyErasureReason {
     OperatorApproved,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct KeyLifecycleEventSequence(u64);
 
 impl KeyLifecycleEventSequence {
@@ -114,7 +122,7 @@ impl KeyLifecycleEventSequence {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub struct KeyErasureMetadata {
     key_id: KeyId,
     scope: KeyScope,
@@ -150,7 +158,7 @@ impl KeyErasureMetadata {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Eq, PartialEq)]
 pub struct KeyRotationPreflight {
     current_key: KeyId,
     candidate_key: KeyId,
@@ -186,7 +194,7 @@ impl KeyRotationPreflight {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Eq, PartialEq)]
 pub struct KeyMetadata {
     key_id: KeyId,
     parent: Option<KeyId>,

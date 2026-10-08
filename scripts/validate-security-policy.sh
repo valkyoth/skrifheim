@@ -138,6 +138,16 @@ check_no_sensitive_derive crates/skrifheim-storage/src/wal.rs WalFrameHeaderInpu
 check_no_sensitive_derive crates/skrifheim-world/src/lib.rs WorldMetadata Debug
 check_no_sensitive_derive crates/skrifheim-world/src/lib.rs World Debug
 
+for type_name in KeyScope KeyLifecycleState KeyErasureReason KeyLifecycleEventSequence KeyErasureMetadata KeyRotationPreflight KeyMetadata; do
+    check_no_sensitive_derive crates/skrifheim-crypto/src/key.rs "$type_name" Debug
+done
+# Key identifiers are declared through the nonzero_key_id macro.
+check_no_sensitive_derive crates/skrifheim-crypto/src/key.rs '[$]name' Debug
+check_no_sensitive_derive crates/skrifheim-storage-host/src/wal.rs WalFileFrame Debug
+for type_name in WorldDiff WorldConflict PromotionPreflight RollbackPreflight; do
+    check_no_sensitive_derive crates/skrifheim-world/src/diff.rs "$type_name" Debug
+done
+
 for derive_name in Debug Clone PartialEq Eq; do
     check_no_sensitive_derive crates/skrifheim-crypto/src/secret.rs SecretBytes "$derive_name"
 done

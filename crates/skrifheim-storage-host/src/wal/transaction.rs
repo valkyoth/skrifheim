@@ -8,7 +8,7 @@ use skrifheim_core::TxId;
 use skrifheim_crypto::EncryptionDomain;
 use skrifheim_storage::{
     BodyChecksum, WAL_FRAME_HEADER_BYTES, WalFrameHeader, WalFrameHeaderInput, WalRecordKind,
-    wal_body_crc64,
+    WalReplay, wal_body_crc64,
 };
 use std::io::{Read, Seek, SeekFrom};
 
@@ -48,7 +48,7 @@ impl WalFileWriter {
         if self.state.is_poisoned() {
             return Err(WalFileError::Poisoned);
         }
-        batch.validate()?;
+        batch.validate_for_domain(self.expected_domain)?;
         super::validate_body_len(batch, body)?;
         super::verify_body_crc(batch, body)?;
         if batch.record_kind() != WalRecordKind::FactBatch
@@ -102,15 +102,19 @@ impl WalFileWriter {
         if self.state.is_poisoned() {
             return Err(WalFileError::Poisoned);
         }
+        if !domain.structurally_equal_ct(&self.expected_domain) {
+            return Err(invalid_retry());
+        }
         // Recheck the complete file before interpreting a status. No truncation
         // or partial scan may turn an ambiguous append into permission to retry.
-        if let Err(error) = super::scan::validate_tail(&mut self.file) {
+        if let Err(error) = super::scan::validate_tail(&mut self.file, self.expected_domain) {
             self.state.poison();
             return Err(error);
         }
         self.file.seek(SeekFrom::Start(0))?;
         let mut state = 0;
         let mut key_context = None;
+        let mut replay = WalReplay::new();
         loop {
             let mut encoded = [0; WAL_FRAME_HEADER_BYTES];
             if matches!(
@@ -119,7 +123,12 @@ impl WalFileWriter {
             ) {
                 break;
             }
-            let header = WalFrameHeader::parse(&encoded)?;
+            let header = WalFrameHeader::parse_for_domain(&encoded, self.expected_domain)?;
+            // Validate every transaction, including those unrelated to the retry.
+            if let Err(error) = replay.process_header(&header) {
+                self.state.poison();
+                return Err(error.into());
+            }
             let len = header.encrypted_body_len();
             if header.tx_id() != tx_id || header.tenant_id() != domain.tenant_id() {
                 self.file.seek(SeekFrom::Current(len as i64))?;
@@ -173,6 +182,15 @@ impl WalFileWriter {
             } else {
                 self.file.seek(SeekFrom::Current(len as i64))?;
             }
+        }
+        if state == 0
+            && let Some((batch, _)) = expected
+        {
+            // Preflight the entire candidate before the first durable byte.
+            // Do not finish replay: that would discard an incomplete tail.
+            replay.process_header(&marker(batch, WalRecordKind::TransactionBegin)?)?;
+            replay.process_header(batch)?;
+            replay.process_header(&marker(batch, WalRecordKind::TransactionCommit)?)?;
         }
         Ok(match state {
             0 => WalCommitStatus::Absent,

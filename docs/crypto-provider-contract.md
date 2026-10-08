@@ -177,19 +177,29 @@ key-release enforcement remains the scheduled production authority boundary.
 
 ## WAL V1 Stopgap
 
-Opening a writer holds the file lock and scans every header/body CRC with 8 KiB
-scratch before append. It does not truncate evidence. Appends distinguish
+Opening a writer binds it to one expected encryption domain, holds the file
+lock and scans every header/body CRC with 8 KiB scratch before append. Every
+existing and incoming frame must match that domain. It does not truncate
+evidence. Appends distinguish
 buffered, durable, pre-write rejection and ambiguous I/O failure. Partial
 writes, flush or sync failure poison the writer until explicit reopen/recovery.
 Offsets are checked for exhaustion. Receipts are local byte ranges, not global
 LSNs, manifest generation proofs or proof against copied-disk rollback.
 
 Single-batch `append_transaction_once` retains (domain, TxId) as its retry key.
+A full-file canonical `WalReplay` pass checks global transaction ordering,
+nesting, key/epoch consistency and replay limits for both status and retry.
+New begin/batch/commit headers must pass that same replay state before any
+bytes are written; incomplete unrelated tails, non-advancing transaction IDs
+and regressing crypto epochs fail without changing the WAL. Invalid existing
+replay state poisons the writer. Domain rejection and invalid new candidates
+do not poison otherwise valid state.
 A completed retry must match every batch/marker byte and syncs before reporting
 AlreadyDurable. Incomplete/conflicting attempts cannot automatically append.
 `transaction_status` inspects only the locked local WAL; absence is not proof
 against rollback. Raw `append_frame` remains low-level and does not implement
-transaction idempotency. Multi-batch transactions, ordering commitments,
+transaction idempotency or global replay validation on individual frame writes;
+it must not be used as a transaction commit API. Multi-batch transactions, ordering commitments,
 authoritative LSN/incarnation and authenticated status belong to WAL v2.
 
 Versioned diagnostic outcome bytes are version 1, outcome byte (0 buffered,

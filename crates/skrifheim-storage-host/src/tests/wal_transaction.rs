@@ -8,7 +8,8 @@ fn retry_is_idempotent_across_reopen_and_conflicts_do_not_write() -> WalResult<(
     let body = b"encrypted fact";
     let header = header(101, body)?;
     {
-        let mut writer = WalFileWriter::open_append(&path, WalAppendOptions::default())?;
+        let mut writer =
+            WalFileWriter::open_append(&path, wal_domain()?, WalAppendOptions::default())?;
         assert_eq!(
             writer.transaction_status(header.encryption_domain(), header.tx_id())?,
             WalCommitStatus::Absent
@@ -24,7 +25,8 @@ fn retry_is_idempotent_across_reopen_and_conflicts_do_not_write() -> WalResult<(
     }
     let before = fs::read(&path)?;
     {
-        let mut writer = WalFileWriter::open_append(&path, WalAppendOptions::default())?;
+        let mut writer =
+            WalFileWriter::open_append(&path, wal_domain()?, WalAppendOptions::default())?;
         assert_eq!(
             writer.append_transaction_once(&header, body)?,
             WalTransactionOutcome::AlreadyDurable
@@ -48,7 +50,8 @@ fn interrupted_transaction_is_never_automatically_retried() -> WalResult<()> {
     let body = b"encrypted fact";
     let header = header(102, body)?;
     {
-        let mut writer = WalFileWriter::open_append(&path, WalAppendOptions::default())?;
+        let mut writer =
+            WalFileWriter::open_append(&path, wal_domain()?, WalAppendOptions::default())?;
         assert_eq!(
             writer.append_transaction_once(&header, body)?,
             WalTransactionOutcome::Durable
@@ -59,7 +62,8 @@ fn interrupted_transaction_is_never_automatically_retried() -> WalResult<()> {
     for length in [121, 121 + 120 + body.len()] {
         fs::write(&path, &bytes[..length])?;
         {
-            let mut writer = WalFileWriter::open_append(&path, WalAppendOptions::default())?;
+            let mut writer =
+                WalFileWriter::open_append(&path, wal_domain()?, WalAppendOptions::default())?;
             assert_eq!(
                 writer.transaction_status(header.encryption_domain(), header.tx_id())?,
                 WalCommitStatus::Incomplete
@@ -78,7 +82,8 @@ fn status_rejects_key_epoch_changes_and_noncanonical_markers() -> WalResult<()> 
     let body = b"encrypted fact";
     let header = header(103, body)?;
     {
-        let mut writer = WalFileWriter::open_append(&path, WalAppendOptions::default())?;
+        let mut writer =
+            WalFileWriter::open_append(&path, wal_domain()?, WalAppendOptions::default())?;
         assert_eq!(
             writer.append_transaction_once(&header, body)?,
             WalTransactionOutcome::Durable
@@ -94,7 +99,8 @@ fn status_rejects_key_epoch_changes_and_noncanonical_markers() -> WalResult<()> 
         }
         fs::write(&path, &bytes)?;
         {
-            let mut writer = WalFileWriter::open_append(&path, WalAppendOptions::default())?;
+            let mut writer =
+                WalFileWriter::open_append(&path, wal_domain()?, WalAppendOptions::default())?;
             assert!(
                 writer
                     .transaction_status(header.encryption_domain(), header.tx_id())

@@ -10,5 +10,6 @@ scripts/validate-engineering-policy.sh
 sh scripts/check_crypto_provider_boundary.sh
 scripts/validate-modularity-policy.sh
 scripts/validate-security-policy.sh
+sh scripts/check_security_derive_tests.sh
 cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
 cargo test --locked --workspace --all-features

@@ -1,6 +1,6 @@
 # skrifheim v0.18.3
 
-Status: implementation candidate; awaiting maintainer pentest.
+Status: implementation candidate; first pentest remediated, awaiting maintainer retest.
 
 ## Scope
 
@@ -17,6 +17,10 @@ Status: implementation candidate; awaiting maintainer pentest.
 - WAL-v1 existing-tail scans, explicit durability outcomes, poisoned writers
   after write/flush/sync errors, local byte-range receipts, single-batch
   idempotency/status scaffolding and diagnostic golden records.
+- First pentest fixes: canonical replay validation before transactional append
+  and status, domain-bound WAL writers, fixed-size redacted key-control/WAL-body/
+  world-preflight diagnostics and release-gate regression coverage. See the
+  [pending-retest digest](../security/pentest/v0.18.3.md).
 - [Provider contract](../docs/crypto-provider-contract.md) records suite
   lifecycle, resumable migration, metadata privacy, erasure granularity,
   domain-separated KDF requirements and production non-claims.
@@ -44,6 +48,9 @@ vector, a generic envelope fixture independently reproduced with libsodium,
 context isolation, every-byte envelope mutation/truncation, allocation bounds,
 entropy failure, key-use exhaustion, tail corruption, append failures at every
 byte/flush/sync boundary, ambiguous outcomes and duplicate/conflicting retries.
+Pentest regressions cover unrelated incomplete transactions, regressing IDs
+and epochs, invalid/interleaved logs, reader/writer domain agreement, and
+constant-size debug formatting at maximum WAL-body/world-list sizes.
 
 Native Linux tests and core/provider checks cover formatting, clippy,
 dependency/advisory policy and all features. Cross-target compile evidence

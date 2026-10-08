@@ -18,6 +18,8 @@ use skrifheim_storage::{WAL_FRAME_HEADER_BYTES, WalFrameHeader, wal_body_crc64};
 use crate::common::{add_no_follow, fsync_parent_dir, require_explicit_parent};
 
 mod append;
+#[cfg(test)]
+mod debug_tests;
 mod scan;
 mod transaction;
 use append::AppendState;
@@ -98,12 +100,17 @@ impl From<SkrifheimError> for WalFileError {
 
 pub struct WalFileWriter {
     file: File,
+    expected_domain: EncryptionDomain,
     options: WalAppendOptions,
     state: AppendState,
 }
 
 impl WalFileWriter {
-    pub fn open_append(path: impl AsRef<Path>, options: WalAppendOptions) -> Result<Self> {
+    pub fn open_append(
+        path: impl AsRef<Path>,
+        expected_domain: EncryptionDomain,
+        options: WalAppendOptions,
+    ) -> Result<Self> {
         let path = path.as_ref();
         require_explicit_parent(path)?;
         let mut file = open_wal_for_append(path)?;
@@ -113,7 +120,7 @@ impl WalFileWriter {
             )));
         }
         lock_wal_writer(&file)?;
-        let next_offset = scan::validate_tail(&mut file)?;
+        let next_offset = scan::validate_tail(&mut file, expected_domain)?;
         file.seek(SeekFrom::End(0))?;
         #[cfg(unix)]
         {
@@ -122,6 +129,7 @@ impl WalFileWriter {
         }
         Ok(Self {
             file,
+            expected_domain,
             options,
             state: AppendState::new(next_offset),
         })
@@ -136,7 +144,7 @@ impl WalFileWriter {
             return Err(WalFileError::Poisoned);
         }
         validate_body_len(header, encrypted_body)?;
-        header.validate()?;
+        header.validate_for_domain(self.expected_domain)?;
         verify_body_crc(header, encrypted_body)?;
         self.state.append(
             &mut self.file,
@@ -196,10 +204,15 @@ impl WalFileReader {
     }
 }
 
-#[derive(Debug)]
 pub struct WalFileFrame {
     header: WalFrameHeader,
     encrypted_body: Vec<u8>,
+}
+
+impl fmt::Debug for WalFileFrame {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("WalFileFrame(<redacted>)")
+    }
 }
 
 impl WalFileFrame {
