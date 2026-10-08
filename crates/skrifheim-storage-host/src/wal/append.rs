@@ -80,6 +80,9 @@ pub(super) struct AppendState {
 }
 
 impl AppendState {
+    pub(super) const fn next_offset(&self) -> u64 {
+        self.next_offset
+    }
     pub(super) fn poison(&mut self) {
         self.poisoned = true;
     }

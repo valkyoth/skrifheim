@@ -16,6 +16,6 @@ pub use wal::{
     WAL_BODY_CRC64_ECMA_POLY, WAL_FRAME_BODY_MAX_BYTES, WAL_FRAME_HEADER_BYTES, WAL_FRAME_MAGIC,
     WAL_FRAME_VERSION_MAX, WAL_REPLAY_MAX_TRANSACTIONS, WalFrameHeader, WalFrameHeaderInput,
     WalRecordKind, WalRecoveredTransaction, WalRecoveryOutcome, WalRecoveryReport, WalReplay,
-    WalReplayStop, WalRollbackReason, WalRolledBackTransaction, wal_body_crc64,
+    WalReplayStop, WalReplayValidator, WalRollbackReason, WalRolledBackTransaction, wal_body_crc64,
     wal_body_crc64_update,
 };

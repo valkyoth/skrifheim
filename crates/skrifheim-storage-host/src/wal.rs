@@ -18,6 +18,8 @@ use skrifheim_storage::{WAL_FRAME_HEADER_BYTES, WalFrameHeader, wal_body_crc64};
 use crate::common::{add_no_follow, fsync_parent_dir, require_explicit_parent};
 
 mod append;
+mod limits;
+pub use limits::{WAL_FILE_MAX_BYTES, WAL_FILE_MAX_FRAMES, WalFileLimits};
 #[cfg(test)]
 mod debug_tests;
 mod scan;
@@ -29,12 +31,23 @@ pub use transaction::{WalCommitStatus, WalTransactionOutcome};
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct WalAppendOptions {
     durability: DurabilityMode,
+    limits: WalFileLimits,
 }
 
 impl WalAppendOptions {
     #[must_use]
     pub const fn new(durability: DurabilityMode) -> Self {
-        Self { durability }
+        Self {
+            durability,
+            limits: WalFileLimits::maximum(),
+        }
+    }
+
+    /// Lower the per-file operational budget. Existing data is never truncated.
+    #[must_use]
+    pub const fn with_limits(mut self, limits: WalFileLimits) -> Self {
+        self.limits = limits;
+        self
     }
 
     #[must_use]
@@ -56,6 +69,7 @@ pub enum WalFileError {
     BodyLengthMismatch,
     PartialFrame,
     Poisoned,
+    RotationRequired,
     Ambiguous { receipt: WalReceipt },
 }
 
@@ -67,6 +81,10 @@ impl fmt::Display for WalFileError {
             Self::BodyLengthMismatch => write!(f, "WAL frame body length mismatch"),
             Self::PartialFrame => write!(f, "WAL file ended inside a frame"),
             Self::Poisoned => write!(f, "WAL writer requires recovery"),
+            Self::RotationRequired => write!(
+                f,
+                "WAL operational limit reached; checkpoint/rotation required"
+            ),
             Self::Ambiguous { .. } => {
                 write!(f, "WAL append durability is unknown; recovery required")
             }
@@ -103,6 +121,7 @@ pub struct WalFileWriter {
     expected_domain: EncryptionDomain,
     options: WalAppendOptions,
     state: AppendState,
+    frame_count: u64,
 }
 
 impl WalFileWriter {
@@ -120,7 +139,8 @@ impl WalFileWriter {
             )));
         }
         lock_wal_writer(&file)?;
-        let next_offset = scan::validate_tail(&mut file, expected_domain)?;
+        let (next_offset, frame_count) =
+            scan::validate_tail(&mut file, expected_domain, options.limits)?;
         file.seek(SeekFrom::End(0))?;
         #[cfg(unix)]
         {
@@ -132,6 +152,7 @@ impl WalFileWriter {
             expected_domain,
             options,
             state: AppendState::new(next_offset),
+            frame_count,
         })
     }
 
@@ -146,12 +167,31 @@ impl WalFileWriter {
         validate_body_len(header, encrypted_body)?;
         header.validate_for_domain(self.expected_domain)?;
         verify_body_crc(header, encrypted_body)?;
-        self.state.append(
+        self.require_append_capacity(
+            WAL_FRAME_HEADER_BYTES as u64 + encrypted_body.len() as u64,
+            1,
+        )?;
+        let outcome = self.state.append(
             &mut self.file,
             self.options.durability(),
             header,
             encrypted_body,
-        )
+        )?;
+        self.frame_count += 1; // Bounded by require_append_capacity before writing.
+        Ok(outcome)
+    }
+
+    fn require_append_capacity(&self, bytes: u64, frames: u64) -> Result<()> {
+        let bytes = self
+            .state
+            .next_offset()
+            .checked_add(bytes)
+            .ok_or(WalFileError::RotationRequired)?;
+        let frames = self
+            .frame_count
+            .checked_add(frames)
+            .ok_or(WalFileError::RotationRequired)?;
+        self.options.limits.require(bytes, frames)
     }
 
     #[must_use]

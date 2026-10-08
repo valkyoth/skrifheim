@@ -1,4 +1,6 @@
-use super::{ReadState, Result, WalFileError, map_partial_read, read_exact_or_clean_eof};
+use super::{
+    ReadState, Result, WalFileError, WalFileLimits, map_partial_read, read_exact_or_clean_eof,
+};
 use skrifheim_crypto::EncryptionDomain;
 use skrifheim_storage::{WAL_FRAME_HEADER_BYTES, WalFrameHeader, wal_body_crc64_update};
 use std::{
@@ -8,19 +10,33 @@ use std::{
 
 /// Validate every byte under the exclusive writer lock, with bounded scratch.
 /// CRC is structural only; WAL-v1 cannot prove authenticity or ordering.
-pub(super) fn validate_tail(file: &mut File, expected_domain: EncryptionDomain) -> Result<u64> {
+pub(super) fn validate_tail(
+    file: &mut File,
+    expected_domain: EncryptionDomain,
+    limits: WalFileLimits,
+) -> Result<(u64, u64)> {
+    limits.require(file.metadata()?.len(), 0)?;
     file.seek(SeekFrom::Start(0))?;
     let mut scratch = [0; 8192];
+    let mut frame_count = 0_u64;
     loop {
         let mut bytes = [0; WAL_FRAME_HEADER_BYTES];
         if matches!(
             read_exact_or_clean_eof(file, &mut bytes)?,
             ReadState::CleanEof
         ) {
-            return Ok(file.stream_position()?);
+            return Ok((file.stream_position()?, frame_count));
         }
         let header = WalFrameHeader::parse_for_domain(&bytes, expected_domain)?;
         let mut remaining = header.encrypted_body_len();
+        frame_count = frame_count
+            .checked_add(1)
+            .ok_or(WalFileError::RotationRequired)?;
+        let end = file
+            .stream_position()?
+            .checked_add(remaining)
+            .ok_or(WalFileError::RotationRequired)?;
+        limits.require(end, frame_count)?;
         let mut crc = 0;
         while remaining != 0 {
             let size = remaining.min(scratch.len() as u64) as usize;

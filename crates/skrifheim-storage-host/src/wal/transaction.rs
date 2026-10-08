@@ -8,7 +8,7 @@ use skrifheim_core::TxId;
 use skrifheim_crypto::EncryptionDomain;
 use skrifheim_storage::{
     BodyChecksum, WAL_FRAME_HEADER_BYTES, WalFrameHeader, WalFrameHeaderInput, WalRecordKind,
-    WalReplay, wal_body_crc64,
+    WalReplayStop, WalReplayValidator, wal_body_crc64,
 };
 use std::io::{Read, Seek, SeekFrom};
 
@@ -71,6 +71,8 @@ impl WalFileWriter {
             WalCommitStatus::Incomplete => return Err(invalid_retry()),
             WalCommitStatus::Absent => {}
         }
+        // Reserve the complete transaction before emitting even its begin frame.
+        self.require_append_capacity(3 * WAL_FRAME_HEADER_BYTES as u64 + body.len() as u64 + 2, 3)?;
         for (header, body) in [
             (
                 marker(batch, WalRecordKind::TransactionBegin)?,
@@ -107,14 +109,27 @@ impl WalFileWriter {
         }
         // Recheck the complete file before interpreting a status. No truncation
         // or partial scan may turn an ambiguous append into permission to retry.
-        if let Err(error) = super::scan::validate_tail(&mut self.file, self.expected_domain) {
+        let observed = match super::scan::validate_tail(
+            &mut self.file,
+            self.expected_domain,
+            self.options.limits,
+        ) {
+            Ok(observed) => observed,
+            Err(WalFileError::RotationRequired) => return Err(WalFileError::RotationRequired),
+            Err(error) => {
+                self.state.poison();
+                return Err(error);
+            }
+        };
+        if observed != (self.state.next_offset(), self.frame_count) {
             self.state.poison();
-            return Err(error);
+            return Err(invalid_retry());
         }
         self.file.seek(SeekFrom::Start(0))?;
         let mut state = 0;
         let mut key_context = None;
-        let mut replay = WalReplay::new();
+        let mut replay = WalReplayValidator::new();
+        let mut scanned_frames = 0_u64;
         loop {
             let mut encoded = [0; WAL_FRAME_HEADER_BYTES];
             if matches!(
@@ -124,6 +139,15 @@ impl WalFileWriter {
                 break;
             }
             let header = WalFrameHeader::parse_for_domain(&encoded, self.expected_domain)?;
+            scanned_frames = scanned_frames
+                .checked_add(1)
+                .ok_or(WalFileError::RotationRequired)?;
+            let end = self
+                .file
+                .stream_position()?
+                .checked_add(header.encrypted_body_len())
+                .ok_or(WalFileError::RotationRequired)?;
+            self.options.limits.require(end, scanned_frames)?;
             // Validate every transaction, including those unrelated to the retry.
             if let Err(error) = replay.process_header(&header) {
                 self.state.poison();
@@ -183,6 +207,10 @@ impl WalFileWriter {
                 self.file.seek(SeekFrom::Current(len as i64))?;
             }
         }
+        if (self.file.stream_position()?, scanned_frames) != observed {
+            self.state.poison();
+            return Err(invalid_retry());
+        }
         if state == 0
             && let Some((batch, _)) = expected
         {
@@ -191,6 +219,10 @@ impl WalFileWriter {
             replay.process_header(&marker(batch, WalRecordKind::TransactionBegin)?)?;
             replay.process_header(batch)?;
             replay.process_header(&marker(batch, WalRecordKind::TransactionCommit)?)?;
+        }
+        if let Err(error) = replay.finish(WalReplayStop::CleanEof) {
+            self.state.poison();
+            return Err(error.into());
         }
         Ok(match state {
             0 => WalCommitStatus::Absent,

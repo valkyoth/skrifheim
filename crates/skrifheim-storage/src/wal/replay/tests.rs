@@ -5,6 +5,7 @@ use skrifheim_crypto::{CryptoEpoch, EncryptionDomain, KeyId, RegionKeyId};
 
 use super::*;
 use crate::{BodyChecksum, WalFrameHeaderInput};
+mod validator;
 
 fn id<T>(id: Option<T>) -> Result<T> {
     id.ok_or(SkrifheimError::InvalidIdentifier)
@@ -22,7 +23,7 @@ fn domain() -> Result<EncryptionDomain> {
     ))
 }
 
-fn header(kind: WalRecordKind, tx: u128) -> Result<WalFrameHeader> {
+pub(super) fn header(kind: WalRecordKind, tx: u128) -> Result<WalFrameHeader> {
     header_with_epoch(kind, tx, 5)
 }
 

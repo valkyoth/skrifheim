@@ -187,8 +187,11 @@ Offsets are checked for exhaustion. Receipts are local byte ranges, not global
 LSNs, manifest generation proofs or proof against copied-disk rollback.
 
 Single-batch `append_transaction_once` retains (domain, TxId) as its retry key.
-A full-file canonical `WalReplay` pass checks global transaction ordering,
+A full-file fixed-memory `WalReplayValidator` pass checks global transaction ordering,
 nesting, key/epoch consistency and replay limits for both status and retry.
+The validator and report-producing `WalReplay` share one transition engine;
+validation retains no transaction-summary vectors. EOF validation runs after
+candidate preflight and counts any incomplete tail against the same limit.
 New begin/batch/commit headers must pass that same replay state before any
 bytes are written; incomplete unrelated tails, non-advancing transaction IDs
 and regressing crypto epochs fail without changing the WAL. Invalid existing
@@ -201,6 +204,25 @@ against rollback. Raw `append_frame` remains low-level and does not implement
 transaction idempotency or global replay validation on individual frame writes;
 it must not be used as a transaction commit API. Multi-batch transactions, ordering commitments,
 authoritative LSN/incarnation and authenticated status belong to WAL v2.
+
+Writer admission, raw append and transactional scans have hard operational
+ceilings of 128 MiB and 8,192 frames per file. `WalFileLimits` may lower, never
+disable or raise, these budgets. Oversized files return `RotationRequired`,
+not a corruption diagnosis. Byte limits are checked before scanning bodies;
+frame limits are enforced while streaming with fixed scratch. A new transaction
+reserves all three frames and their bytes before writing its begin record.
+Limits survive reopen because file counters are reconstructed. Existing status
+and exact retries at the ceiling remain available without growing the file.
+
+These ceilings bound each scan, not total service load: appending still costs
+O(current WAL bytes), and repeated appends are quadratic within a bounded file.
+There is no automatic rotation, truncation or evidence deletion in this
+scaffold. At the ceiling, writes stop until an explicit recovery/checkpoint
+workflow is available; simply starting another file does not preserve global
+commit authority. WAL v2 in v0.18.12 must introduce generation-linked rotation
+before operational ceilings, with manifest-authorized checkpoint/pruning and
+end-to-end bounded multi-generation recovery completed by v0.19.1. The streaming
+reader remains available for offline inspection of files above a writer budget.
 
 Versioned diagnostic outcome bytes are version 1, outcome byte (0 buffered,
 1 durable, 2 ambiguous), start/end u64 LE and TxId u128 LE. They are sensitive

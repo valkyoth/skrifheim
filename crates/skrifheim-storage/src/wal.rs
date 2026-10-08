@@ -12,7 +12,7 @@ mod replay;
 
 pub use replay::{
     WAL_REPLAY_MAX_TRANSACTIONS, WalRecoveredTransaction, WalRecoveryOutcome, WalRecoveryReport,
-    WalReplay, WalReplayStop, WalRollbackReason, WalRolledBackTransaction,
+    WalReplay, WalReplayStop, WalReplayValidator, WalRollbackReason, WalRolledBackTransaction,
 };
 
 pub const WAL_FRAME_MAGIC: [u8; 8] = *b"SKRIFWAL";

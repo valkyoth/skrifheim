@@ -603,6 +603,10 @@ Deliverables:
 - durable LSN receipt, transaction idempotency key, and commit-status lookup
   scaffold so ambiguous sync results can be retried without duplicating a
   transaction before WAL v2 exists,
+- fixed-memory shared replay validation for append/status, EOF capacity checks
+  after candidate preflight, and hard per-file byte/frame scan budgets with
+  explicit rotation-required backpressure; no automatic evidence deletion or
+  unanchored generation rollover in the WAL-v1 scaffold,
 - tests proving production paths fail closed when entropy is unavailable,
   deterministic test RNGs cannot be compiled into production profiles, and
   generated nonces cannot repeat across restart/crash scenarios covered by the
@@ -1081,6 +1085,11 @@ Deliverables:
   number of WAL generations scanned, and foreground startup budget; exhaustion
   enters resumable recovery, offline recovery, or read-only diagnostic mode
   instead of classifying otherwise authenticated WAL as corrupt,
+- generation-linked WAL rotation before operational byte/frame ceilings,
+  retaining cross-generation transaction ordering and idempotency/status
+  evidence; manifest-authorized checkpoint/pruning must be exercised in the
+  v0.19.1 storage spine so rotation bounds cumulative append/recovery cost
+  without discarding unresolved or protected transactions,
 - runtime memory limits for replay buffers and verified offsets that may force
   streaming, spilling, resumable recovery, or offline recovery but do not mark
   authenticated WAL corrupt when the WAL stays within canonical format maxima,

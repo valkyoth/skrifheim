@@ -10,8 +10,9 @@ pub use segment::{
     cleanup_staged_segments,
 };
 pub use wal::{
-    DurabilityMode, WalAppendOptions, WalAppendOutcome, WalCommitStatus, WalFileError,
-    WalFileFrame, WalFileReader, WalFileWriter, WalReceipt, WalTransactionOutcome,
+    DurabilityMode, WAL_FILE_MAX_BYTES, WAL_FILE_MAX_FRAMES, WalAppendOptions, WalAppendOutcome,
+    WalCommitStatus, WalFileError, WalFileFrame, WalFileLimits, WalFileReader, WalFileWriter,
+    WalReceipt, WalTransactionOutcome,
 };
 
 #[cfg(test)]

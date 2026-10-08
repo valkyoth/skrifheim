@@ -95,7 +95,9 @@ pub(super) fn wal_to_segment_error(error: WalFileError) -> SegmentFileError {
         WalFileError::InvalidFrame(error) => SegmentFileError::InvalidSegment(error),
         WalFileError::BodyLengthMismatch => SegmentFileError::BodyLengthMismatch,
         WalFileError::PartialFrame => SegmentFileError::PartialSegment,
-        WalFileError::Poisoned | WalFileError::Ambiguous { .. } => {
+        WalFileError::Poisoned
+        | WalFileError::Ambiguous { .. }
+        | WalFileError::RotationRequired => {
             SegmentFileError::Io(std::io::Error::other("WAL recovery required"))
         }
     }

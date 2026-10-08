@@ -5,6 +5,8 @@ use skrifheim_core::{Result, SkrifheimError, TxId};
 use skrifheim_crypto::{CryptoEpoch, EncryptionDomain, KeyId};
 
 use super::{WalFrameHeader, WalRecordKind};
+mod state;
+use state::{ReplayEvent, ReplayState};
 
 pub const WAL_REPLAY_MAX_TRANSACTIONS: usize = 1_000_000;
 
@@ -170,12 +172,7 @@ impl WalRecoveryReport {
 }
 
 pub struct WalReplay {
-    active: Option<ActiveTransaction>,
-    last_closed_tx: Option<TxId>,
-    max_observed_epoch: Option<CryptoEpoch>,
-    replayed_frame_count: u64,
-    checkpoint_count: u64,
-    transaction_limit: usize,
+    state: ReplayState,
     committed_transactions: Vec<WalRecoveredTransaction>,
     rolled_back_transactions: Vec<WalRolledBackTransaction>,
 }
@@ -189,10 +186,10 @@ impl Default for WalReplay {
 impl fmt::Debug for WalReplay {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("WalReplay")
-            .field("has_active_transaction", &self.active.is_some())
+            .field("has_active_transaction", &self.state.active.is_some())
             .field("last_closed_tx", &"<redacted>")
-            .field("replayed_frame_count", &self.replayed_frame_count)
-            .field("checkpoint_count", &self.checkpoint_count)
+            .field("replayed_frame_count", &self.state.replayed_frame_count)
+            .field("checkpoint_count", &self.state.checkpoint_count)
             .field("committed_count", &self.committed_transactions.len())
             .field("rolled_back_count", &self.rolled_back_transactions.len())
             .finish()
@@ -208,227 +205,89 @@ impl WalReplay {
     #[must_use]
     pub const fn new_with_transaction_limit(transaction_limit: usize) -> Self {
         Self {
-            active: None,
-            last_closed_tx: None,
-            max_observed_epoch: None,
-            replayed_frame_count: 0,
-            checkpoint_count: 0,
-            transaction_limit,
+            state: ReplayState::new(transaction_limit),
             committed_transactions: Vec::new(),
             rolled_back_transactions: Vec::new(),
         }
     }
 
     pub fn process_header(&mut self, header: &WalFrameHeader) -> Result<()> {
-        header.validate()?;
-        let next_replayed_frame_count = self
-            .replayed_frame_count
-            .checked_add(1)
-            .ok_or_else(|| invalid_replay("WAL replay frame count overflow"))?;
-        match header.record_kind() {
-            WalRecordKind::TransactionBegin => self.begin_transaction(header),
-            WalRecordKind::FactBatch => self.record_fact_batch(header),
-            WalRecordKind::TransactionCommit => self.commit_transaction(header),
-            WalRecordKind::TransactionAbort => self.abort_transaction(header),
-            WalRecordKind::Checkpoint => self.record_checkpoint(),
-        }?;
-        self.replayed_frame_count = next_replayed_frame_count;
+        let mut next = self.state;
+        match next.process_header(header)? {
+            ReplayEvent::None => {}
+            ReplayEvent::Committed(transaction) => {
+                self.committed_transactions
+                    .try_reserve(1)
+                    .map_err(|_| invalid_replay("WAL report allocation failed"))?;
+                self.committed_transactions.push(transaction);
+            }
+            ReplayEvent::RolledBack(transaction) => {
+                self.rolled_back_transactions
+                    .try_reserve(1)
+                    .map_err(|_| invalid_replay("WAL report allocation failed"))?;
+                self.rolled_back_transactions.push(transaction);
+            }
+        }
+        self.state = next;
         Ok(())
     }
 
     pub fn finish(mut self, stop: WalReplayStop) -> Result<WalRecoveryReport> {
-        if stop == WalReplayStop::TruncatedFrame {
-            return Err(invalid_replay(
-                "WAL replay stopped inside a truncated frame",
-            ));
-        }
-        let mut outcome = WalRecoveryOutcome::Clean;
-        if let Some(active) = self.active.take() {
-            self.require_transaction_capacity()?;
-            outcome = WalRecoveryOutcome::RecoveredUncommittedTail;
+        let (state, outcome, tail) = self.state.finish(stop)?;
+        if let Some(tail) = tail {
             self.rolled_back_transactions
-                .push(active.into_rollback(WalRollbackReason::UncommittedTail));
+                .try_reserve(1)
+                .map_err(|_| invalid_replay("WAL report allocation failed"))?;
+            self.rolled_back_transactions.push(tail);
         }
         Ok(WalRecoveryReport {
             outcome,
-            replayed_frame_count: self.replayed_frame_count,
-            checkpoint_count: self.checkpoint_count,
+            replayed_frame_count: state.replayed_frame_count,
+            checkpoint_count: state.checkpoint_count,
             committed_transactions: self.committed_transactions,
             rolled_back_transactions: self.rolled_back_transactions,
         })
     }
+}
 
-    fn begin_transaction(&mut self, header: &WalFrameHeader) -> Result<()> {
-        if self.active.is_some() {
-            return Err(invalid_replay("WAL transaction began before prior close"));
-        }
-        self.require_advancing_tx(header.tx_id())?;
-        self.require_non_regressing_epoch(header.crypto_epoch())?;
-        self.max_observed_epoch = Some(header.crypto_epoch());
-        self.active = Some(ActiveTransaction::new(header));
-        Ok(())
-    }
+/// Fixed-memory validation using the same transition engine as report replay.
+/// No per-transaction summary is retained. Call finish after any candidate
+/// preflight to validate clean EOF and count an uncommitted tail against limits.
+pub struct WalReplayValidator {
+    state: ReplayState,
+}
 
-    fn record_fact_batch(&mut self, header: &WalFrameHeader) -> Result<()> {
-        let active = self
-            .active
-            .as_mut()
-            .ok_or_else(|| invalid_replay("WAL fact batch is outside transaction"))?;
-        active.require_matching_header(header)?;
-        active.record_fact_batch()
-    }
-
-    fn commit_transaction(&mut self, header: &WalFrameHeader) -> Result<()> {
-        let active = self
-            .active
-            .as_ref()
-            .ok_or_else(|| invalid_replay("WAL commit is outside transaction"))?;
-        active.require_matching_header(header)?;
-        self.require_transaction_capacity()?;
-        let committed = active.to_commit()?;
-        self.last_closed_tx = Some(active.tx_id);
-        self.committed_transactions.push(committed);
-        self.active = None;
-        Ok(())
-    }
-
-    fn abort_transaction(&mut self, header: &WalFrameHeader) -> Result<()> {
-        let active = self
-            .active
-            .as_ref()
-            .ok_or_else(|| invalid_replay("WAL abort is outside transaction"))?;
-        active.require_matching_header(header)?;
-        self.require_transaction_capacity()?;
-        let rollback = active.to_rollback(WalRollbackReason::AbortRecord);
-        self.last_closed_tx = Some(active.tx_id);
-        self.rolled_back_transactions.push(rollback);
-        self.active = None;
-        Ok(())
-    }
-
-    fn record_checkpoint(&mut self) -> Result<()> {
-        if self.active.is_some() {
-            return Err(invalid_replay("WAL checkpoint is inside transaction"));
-        }
-        self.checkpoint_count = self
-            .checkpoint_count
-            .checked_add(1)
-            .ok_or_else(|| invalid_replay("WAL checkpoint count overflow"))?;
-        Ok(())
-    }
-
-    fn require_advancing_tx(&self, tx_id: TxId) -> Result<()> {
-        if let Some(last_closed) = self.last_closed_tx
-            && tx_id.get() <= last_closed.get()
-        {
-            return Err(invalid_replay("WAL transaction identifier did not advance"));
-        }
-        Ok(())
-    }
-
-    fn require_non_regressing_epoch(&self, crypto_epoch: CryptoEpoch) -> Result<()> {
-        if let Some(max_observed_epoch) = self.max_observed_epoch
-            && crypto_epoch.get() < max_observed_epoch.get()
-        {
-            return Err(invalid_replay("WAL crypto epoch regressed"));
-        }
-        Ok(())
-    }
-
-    fn require_transaction_capacity(&self) -> Result<()> {
-        let closed_transactions = self
-            .committed_transactions
-            .len()
-            .checked_add(self.rolled_back_transactions.len())
-            .ok_or_else(|| invalid_replay("WAL replay transaction count overflow"))?;
-        if closed_transactions >= self.transaction_limit {
-            return Err(invalid_replay("WAL replay transaction limit exceeded"));
-        }
-        Ok(())
+impl Default for WalReplayValidator {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
-struct ActiveTransaction {
-    tx_id: TxId,
-    frame_count: u32,
-    fact_batch_count: u32,
-    encryption_key_id: KeyId,
-    crypto_epoch: CryptoEpoch,
-    encryption_domain: EncryptionDomain,
+impl fmt::Debug for WalReplayValidator {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("WalReplayValidator(<redacted>)")
+    }
 }
 
-impl ActiveTransaction {
-    const fn new(header: &WalFrameHeader) -> Self {
+impl WalReplayValidator {
+    pub const fn new() -> Self {
+        Self::new_with_transaction_limit(WAL_REPLAY_MAX_TRANSACTIONS)
+    }
+
+    pub const fn new_with_transaction_limit(transaction_limit: usize) -> Self {
         Self {
-            tx_id: header.tx_id(),
-            frame_count: 1,
-            fact_batch_count: 0,
-            encryption_key_id: header.encryption_key_id(),
-            crypto_epoch: header.crypto_epoch(),
-            encryption_domain: header.encryption_domain(),
+            state: ReplayState::new(transaction_limit),
         }
     }
 
-    fn require_matching_header(&self, header: &WalFrameHeader) -> Result<()> {
-        if header.tx_id() != self.tx_id {
-            return Err(invalid_replay("WAL transaction identifier mismatch"));
-        }
-        if header.encryption_key_id() != self.encryption_key_id {
-            return Err(invalid_replay("WAL transaction key mismatch"));
-        }
-        if header.crypto_epoch() != self.crypto_epoch {
-            return Err(invalid_replay("WAL transaction crypto epoch mismatch"));
-        }
-        if !header
-            .encryption_domain()
-            .structurally_equal_ct(&self.encryption_domain)
-        {
-            return Err(invalid_replay("WAL transaction encryption domain mismatch"));
-        }
-        Ok(())
+    pub fn process_header(&mut self, header: &WalFrameHeader) -> Result<()> {
+        self.state.process_header(header).map(|_| ())
     }
 
-    fn record_fact_batch(&mut self) -> Result<()> {
-        self.frame_count = self
-            .frame_count
-            .checked_add(1)
-            .ok_or_else(|| invalid_replay("WAL transaction frame count overflow"))?;
-        self.fact_batch_count = self
-            .fact_batch_count
-            .checked_add(1)
-            .ok_or_else(|| invalid_replay("WAL fact batch count overflow"))?;
-        Ok(())
-    }
-
-    fn to_commit(&self) -> Result<WalRecoveredTransaction> {
-        let frame_count = self
-            .frame_count
-            .checked_add(1)
-            .ok_or_else(|| invalid_replay("WAL transaction frame count overflow"))?;
-        Ok(WalRecoveredTransaction {
-            tx_id: self.tx_id,
-            frame_count,
-            fact_batch_count: self.fact_batch_count,
-            encryption_key_id: self.encryption_key_id,
-            crypto_epoch: self.crypto_epoch,
-            encryption_domain: self.encryption_domain,
-        })
-    }
-
-    fn to_rollback(&self, reason: WalRollbackReason) -> WalRolledBackTransaction {
-        WalRolledBackTransaction {
-            tx_id: self.tx_id,
-            reason,
-            frame_count: self.frame_count,
-            fact_batch_count: self.fact_batch_count,
-        }
-    }
-
-    fn into_rollback(self, reason: WalRollbackReason) -> WalRolledBackTransaction {
-        self.to_rollback(reason)
+    pub fn finish(self, stop: WalReplayStop) -> Result<WalRecoveryOutcome> {
+        self.state.finish(stop).map(|(_, outcome, _)| outcome)
     }
 }
-
 fn invalid_replay(reason: &'static str) -> SkrifheimError {
     SkrifheimError::InvalidWalFrame(reason.into())
 }

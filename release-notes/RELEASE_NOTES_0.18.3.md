@@ -1,6 +1,6 @@
 # skrifheim v0.18.3
 
-Status: implementation candidate; first pentest remediated, awaiting maintainer retest.
+Status: implementation candidate; first pentest and resource-exhaustion retest remediated, awaiting maintainer retest.
 
 ## Scope
 
@@ -21,6 +21,11 @@ Status: implementation candidate; first pentest remediated, awaiting maintainer 
   and status, domain-bound WAL writers, fixed-size redacted key-control/WAL-body/
   world-preflight diagnostics and release-gate regression coverage. See the
   [pending-retest digest](../security/pentest/v0.18.3.md).
+- Retest fix: fixed-memory replay validation sharing the report transition
+  engine, EOF checks after candidate preflight, and hard 128 MiB/8,192-frame
+  per-file scan limits. Whole-transaction reservation fails before any write;
+  `RotationRequired` is backpressure, not corruption or permission to discard
+  data. Automatic checkpoint/rotation remains later storage work.
 - [Provider contract](../docs/crypto-provider-contract.md) records suite
   lifecycle, resumable migration, metadata privacy, erasure granularity,
   domain-separated KDF requirements and production non-claims.
@@ -51,6 +56,9 @@ byte/flush/sync boundary, ambiguous outcomes and duplicate/conflicting retries.
 Pentest regressions cover unrelated incomplete transactions, regressing IDs
 and epochs, invalid/interleaved logs, reader/writer domain agreement, and
 constant-size debug formatting at maximum WAL-body/world-list sizes.
+Resource regression tests compare generated validator/report histories, cover
+one million closed transactions plus an incomplete tail, checked-counter
+overflow, sparse oversized files, and exact/over-budget writes and reopen.
 
 Native Linux tests and core/provider checks cover formatting, clippy,
 dependency/advisory policy and all features. Cross-target compile evidence

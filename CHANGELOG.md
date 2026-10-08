@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Fixed the v0.18.3 retest's WAL resource regression with a shared fixed-memory
+  replay validator, EOF limit checks and per-file byte/frame budgets. Whole
+  transactions are admitted before their first write; oversized scans request
+  checkpoint/rotation without truncating evidence. Added differential, million-
+  transaction, overflow and budget-boundary regression tests.
 - Addressed the first v0.18.3 pentest: transaction append/status validate global
   WAL replay state, writers bind every frame to one expected domain, and key
   control metadata, WAL bodies and world preflights have fixed-size redacted
