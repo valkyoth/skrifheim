@@ -299,6 +299,11 @@ generic error serialization on boundary paths as information-disclosure risks.
 
 ## Validator
 
+Test and verification development follows the
+[testing strategy](testing-strategy.md). Its versioned rollout adds tests of
+public boundaries and the checkers themselves without importing a separate
+release approval or remote-evidence system.
+
 `scripts/validate-engineering-policy.sh` enforces the current baseline:
 
 - every library under `crates/` has `#![no_std]`,

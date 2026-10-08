@@ -26,6 +26,11 @@ Every release must have:
 - release notes,
 - no hidden dependency on one developer machine.
 
+The [testing strategy](testing-strategy.md) assigns lightweight public-consumer,
+checker and fault-injection tests, plus later bounded assurance, to the existing
+milestones below. These are development/local-gate responsibilities, not extra
+manual push steps or additional release approvals.
+
 ## Dependency And Completion Rule
 
 The target remains a standalone world database at `v1.0.0`, optional
@@ -706,6 +711,14 @@ Deliverables:
 - differential sequence tests between fixed-memory `WalReplayValidator` and
   report-producing replay, including rejected-transition atomicity, EOF,
   incomplete tails, frame/byte budgets, and writer reopen counters,
+- public-consumer integration fixtures for facade/provider transcript and
+  envelope behavior plus storage validation, using frozen expected values and
+  negative context/length cases; do not rely only on private helpers or
+  round-trip agreement from the same implementation,
+- focused runners verify nonzero expected test/case execution and reject
+  unknown selectors, missing cases, unexpected ignores and timeouts as
+  incomplete, not passed. Ordinary workspace crates with no tests are not
+  confused with an empty selected assurance run,
 - seed corpus from existing malformed WAL and segment fixtures,
 - bounded allocation assertions for body lengths and file lengths,
 - CI/local gate mode that runs a deterministic short fuzz smoke without
@@ -739,6 +752,18 @@ Deliverables:
   whenever dependency, toolchain, or GitHub Actions versions change,
 - tests for the release-readiness gate and dependency-policy scripts so the
   gate itself cannot silently regress,
+- valid-fixture positive controls and deliberate negative fixtures for crypto
+  provider isolation, sensitive derives, unsafe policy, release readiness and
+  version-plan validation, asserting the intended rejection rather than any
+  process failure; include post-1.0 headings in version-plan cases,
+- production normal/build dependency checks excluding deterministic entropy,
+  permissive authority and fault fixtures across supported feature combinations,
+- cheap build/test coverage for the default facade, each independent optional
+  provider feature and their supported combination; an all-features build alone
+  does not prove feature isolation. Use existing Cargo and gate entry points,
+- document affected expensive checks and any unchanged evidence reused in the
+  existing report; retain source/tool/target/feature identity and never label
+  reuse as a fresh run. No new approval tokens or GitHub control requirements,
 - practical release provenance covering source commit, toolchain, dependency
   lockfile, container image digests, SBOM, release gate output, pentest digest,
   and GitHub Actions status, with bit-for-bit reproducibility explicitly
@@ -773,6 +798,9 @@ Deliverables:
   incompatible host contract,
 - fail-closed unsupported-platform behavior for any host adapter that cannot
   provide equivalent security semantics,
+- compile/run the public-consumer fixtures on the admitted target matrix,
+  recording native, cross-compiled and emulated outcomes separately; do not
+  copy a historical multi-compiler matrix into a latest-stable-only policy,
 - release-gate check rejecting `target_arch`, `target_feature`, `std::arch`,
   or `core::arch` use in database crates unless a portable baseline and
   optional fast-path admission record exists,
@@ -1028,6 +1056,10 @@ Deliverables:
 - real-provider integration tests proving a process with one scoped proof
   cannot unwrap keys for another tenant, compartment, policy epoch, purpose, or
   workload,
+- public-consumer contract tests for entropy underfill/error, denied key use,
+  restart, exhausted reservations and revocation, asserting no partial key or
+  plaintext release; keep deterministic faults dev-only and run the same
+  acceptance contract for each admitted provider implementation,
 - documentation that key hierarchy metadata alone is not least privilege unless
   key release is enforced outside the main database process.
 
@@ -1264,6 +1296,12 @@ Deliverables:
 - deterministic failpoint harness for writes, vectored writes, short writes,
   interrupted syscalls, sync, link/rename, manifest swap, WAL truncation,
   directory fsync, ENOSPC, quota exhaustion, EIO, and fsync failure,
+- share deterministic fault helpers for storage, clocks and providers only
+  where needed, in test-only modules or unpublished dev-only support; cover
+  cancellation, partial completion and near-exhaustion without enormous loops,
+- each fault case asserts state after rejection, output suppression,
+  poison/retry behavior and preservation of acknowledged data, rather than
+  accepting an error return as sufficient evidence,
 - database-directory lease rule covering active writers, staged-file cleanup,
   manifest changes, migration, checkpointing, and obsolete-file deletion so
   cleanup cannot race a writer or publisher,
@@ -1534,6 +1572,13 @@ Deliverables:
 - dudect-style or equivalent timing harness for policy-token equality,
 - `DigestValue::structurally_equal_ct` timing evidence,
 - encryption-domain equality timing evidence,
+- reviewed emitted-code checks and compiler/target/profile provenance for
+  sensitive comparison callers, plus intentionally variable-time controls
+  demonstrating harness sensitivity; a noisy or underpowered measurement is
+  inconclusive, not a pass,
+- run statistical campaigns in the local assurance gate with a documented
+  environment and budget, not as flaky timing thresholds on every shared
+  GitHub runner; correctness tests remain in the normal gate,
 - release-gate integration for timing-sensitive authorization and storage-root
   comparisons.
 
@@ -2047,6 +2092,10 @@ Deliverables:
   rotation,
 - linearizability or serializability history checker for generated concurrent
   transaction histories,
+- named, bounded model obligations with recorded scheduling/state-space
+  limits, a valid baseline and intentionally broken ordering/publication
+  fixtures that the checker must reject; bounded exploration is not a proof
+  for arbitrary schedules beyond its model,
 - tests for lock-order inversion, publication race, stale snapshot deletion,
   compaction liveness race, group-commit race, and key-rotation race.
 
@@ -2233,6 +2282,8 @@ Verification: inherited gates plus reference-model histories spanning fork,
 concurrent edits, conflicting promotion, visibility/tombstones, commit, failed
 fsync, publication, anchor failure, crash, restart and retry. Run the actual
 storage/provider path; fixtures for later API/legal layers must be test-only.
+Include a public-consumer integration fixture that cannot use crate-private
+constructors to bypass normal fact, world or transaction admission.
 
 Exit Criteria: acknowledged world operations recover consistently, retries do
 not duplicate effects, stale heads cannot publish, and unsupported paths deny.
@@ -3613,6 +3664,16 @@ Deliverables:
 - cross-version and differential storage testing against the reference model,
 - ASan, UBSan, TSan, Miri, or platform-equivalent sanitizer/evidence runs where
   applicable to host-boundary and parser crates,
+- bounded safety-obligation cases for initialization, bounds, ownership,
+  failure, cancellation, cleanup and concurrency, with named case completion
+  and no zero-test, ignored-case or timeout-as-success acceptance,
+- routine affected-surface campaigns and extended release-candidate campaigns
+  have explicit coverage and tool identities; retain full native regression
+  tests and never replace production behavior with test-only no-ops or disable
+  interpreter safety checks merely to shorten a run,
+- deliberate parser, bounds and state-transition mutants in isolated fixtures
+  prove the relevant oracle detects known defects; require a passing unmodified
+  control and distinguish infrastructure failure from detected regression,
 - allocation, recursion, nesting, decoded-size, and execution-time limits for
   every parser and decoder, with fuzz targets asserting those limits,
 - release-candidate fuzz threshold policy defining required campaign duration
@@ -3787,6 +3848,10 @@ Deliverables:
   on drop, while absolute immediate removal from registers, historical stack
   copies, optimizer-created copies, swap, process dumps, and privileged
   snapshots cannot be guaranteed without stronger platform profiles,
+- exercise cleanup through actual engine/provider callers and optimized
+  success/error/cancellation paths, not only isolated wipe helpers. Review
+  unwind versus abort behavior and distinguish owned-buffer clearing from
+  register, compiler-spill, swap or crash-dump claims,
 - shutdown/restart-storm failure-injection evidence for active writes,
   background compaction/scrub/deletion, audit emission, anchor advancement,
   manifest publication, checkpointing, and lease release,
@@ -3943,6 +4008,10 @@ Deliverables:
   crate, public entry point, real provider, persistent state, recovery path,
   denial tests and operator command; absence of an implementation blocks the
   dependent claim, rather than being silently accepted as planned work,
+- downstream/public-consumer acceptance for each claimed capability, including
+  its denial, failure and recovery paths; package-extraction checks apply when
+  package distribution is claimed, without making unpublished fixture crates
+  production dependencies,
 - complete snapshot creation, retention/pinning, historical inspection,
   recovery-world restore and authorized promotion over `v0.35.x` protected
   roots, preserving current erasure, audit and freshness authority,
@@ -4096,6 +4165,11 @@ Deliverables:
 - rerun the `v0.55.1` capability matrix against the exact candidate with real
   providers and public entry points; there must be no required capability
   satisfied only by a model, metadata, mock or unimplemented hook,
+- record exact case/target coverage and fresh, reused, deferred or failed
+  status for specialized assurance; reuse never relabels old captures as new,
+  and incomplete or deferred required candidate checks block qualification.
+  Keep this in the normal release evidence without adding a second maintainer
+  approval or push workflow,
 - rootless Podman release gate,
 - final performance and durability rerun after legal, placement, and backup
   qualification, including required 24-hour endurance and target 72-hour

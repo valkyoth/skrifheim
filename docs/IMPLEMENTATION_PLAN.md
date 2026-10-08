@@ -1086,6 +1086,11 @@ The control plane may propose movement. Local compliance-law kernels can veto it
 
 ## Test Strategy
 
+Use the [testing strategy](testing-strategy.md) for public consumer tests,
+checker regression tests, deterministic faults and bounded assurance. Its
+version assignments reuse the existing release process and do not add manual
+push or approval steps.
+
 Required layers:
 
 - unit tests for every crate,
