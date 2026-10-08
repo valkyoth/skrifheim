@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Started v0.18.3 and refreshed tooling on 2026-10-08: Rust 1.99.0,
+  sanitization 2.1.0, blake3 1.8.7, current compatible transitive dependencies,
+  and multi-platform Rust/distroless container image pins. Checkout 7.0.1,
+  cargo-deny 0.20.2, cargo-audit 0.22.2, and cargo-sbom 0.10.0 remain current.
 - Updated the admitted `sanitization` dependency from `1.2.4` to `2.0.2`
   with `default-features = false` and only the `alloc` feature enabled.
 - Updated CI checkout pinning from `actions/checkout` `v7.0.0` to the reviewed

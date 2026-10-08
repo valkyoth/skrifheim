@@ -193,8 +193,8 @@ if ! grep -q 'cargo install --locked --version 0.22.2 cargo-audit' .github/workf
     exit 1
 fi
 
-if ! grep -q 'docker.io/library/rust@sha256:606f3248aa86ce49e0b98d9e0bbffde042adeb18982320f97bcc218615de1c99' Containerfile; then
-    echo "0.18.2 requires pinned Rust 1.97 container digest" >&2
+if ! grep -q 'docker.io/library/rust@sha256:2c3a22f0a5533ea2dd5a16627bc841228151faa2d4de2644ac9987e4a2f1f2fa' Containerfile; then
+    echo "0.18.2 requires pinned Rust 1.99 container digest" >&2
     exit 1
 fi
 
@@ -203,13 +203,13 @@ if ! grep -q 'cargo build --release --locked -p skrifheim' Containerfile; then
     exit 1
 fi
 
-if ! grep -q 'gcr.io/distroless/cc-debian12@sha256:66aa873a4a14fb164aa01296058efd8253744606d72715e45acface073359faa' Containerfile; then
+if ! grep -q 'gcr.io/distroless/cc-debian12@sha256:9dac0a79194e45a7da0158a9c6da57b217585af0786db3845d1f0ec1a0dd182f' Containerfile; then
     echo "0.18.2 requires pinned distroless runtime digest" >&2
     exit 1
 fi
 
-if ! grep -q 'docker.io/library/rust@sha256:ec9c91e77119ce498cd1e87d96d77e0f75b2cee21655a29bc2bf75a51a2b20a4' containers/Containerfile.alpine; then
-    echo "0.18.2 requires pinned Alpine Rust 1.97 container digest" >&2
+if ! grep -q 'docker.io/library/rust@sha256:0cce0a5e0e8ba67b455257a3a02a1d99005f382748789d6464460028810f1627' containers/Containerfile.alpine; then
+    echo "0.18.2 requires pinned Alpine Rust 1.99 container digest" >&2
     exit 1
 fi
 

@@ -109,7 +109,7 @@ Removal condition:
 
 Current external dependency exceptions:
 
-- Crate: `sanitization` `2.0.2`
+- Crate: `sanitization` `2.1.0`
   Used by: `skrifheim-crypto`
   Scope: `SecretBytes` clear-on-drop heap secret storage for memory-secrecy
   scaffolding.
@@ -131,7 +131,7 @@ Current external dependency exceptions:
   Removal condition: remove or replace if the crate adds mandatory transitive
   dependencies, changes license posture, loses no-std support, or if a narrower
   admitted local unsafe boundary is approved.
-- Crate: `blake3` `1.8.5`
+- Crate: `blake3` `1.8.7`
   Used by: `skrifheim-world`
   Scope: deterministic tenant-scoped world identity derivation for scaffold
   compact handles.
@@ -154,7 +154,7 @@ Current external dependency exceptions:
   Unsafe, SIMD, and C backend details remain inside the dependency; no unsafe
   Rust is added to `skrifheim` core crates.
   Transitive dependency review: selected no-default feature graph is limited to
-  `arrayref`, `arrayvec`, `cfg-if`, `constant_time_eq`, `cpufeatures`, and
+  `arrayvec`, `cfg-if`, `constant_time_eq`, `cpufeatures`, and
   `cc` as the build dependency used by `blake3`; no `std`, `serde`, `zeroize`,
   mmap, rayon, or digest features are enabled by `skrifheim`.
   License: `CC0-1.0 OR Apache-2.0 OR Apache-2.0 WITH LLVM-exception`; accepted

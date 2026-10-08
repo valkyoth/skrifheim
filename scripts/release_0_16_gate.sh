@@ -58,8 +58,8 @@ if ! grep -q 'actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1' .github
     exit 1
 fi
 
-if ! grep -q 'sanitization = { version = "2.0.2", default-features = false, features = \["alloc"\] }' crates/skrifheim-crypto/Cargo.toml; then
-    echo "0.16 requires sanitization 2.0.2 with only alloc enabled" >&2
+if ! grep -q 'sanitization = { version = "2.1.0", default-features = false, features = \["alloc"\] }' crates/skrifheim-crypto/Cargo.toml; then
+    echo "0.16 requires sanitization 2.1.0 with only alloc enabled" >&2
     exit 1
 fi
 

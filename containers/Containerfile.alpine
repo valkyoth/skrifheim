@@ -1,4 +1,5 @@
-FROM docker.io/library/rust@sha256:ec9c91e77119ce498cd1e87d96d77e0f75b2cee21655a29bc2bf75a51a2b20a4
+# Rust 1.99.0 Alpine 3.24, multi-platform index reviewed 2026-10-08.
+FROM docker.io/library/rust@sha256:0cce0a5e0e8ba67b455257a3a02a1d99005f382748789d6464460028810f1627
 WORKDIR /workspace
 COPY . .
 RUN cargo test --workspace --locked

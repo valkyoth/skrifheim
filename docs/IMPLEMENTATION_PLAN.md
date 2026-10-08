@@ -64,7 +64,7 @@ or client-provided evidence path is used.
 
 ## Non-Negotiable Engineering Rules
 
-- Rust stable `1.97.1`, edition 2024, workspace resolver `3`.
+- Rust stable `1.99.0`, edition 2024, workspace resolver `3`.
 - Latest stable Rust and dependency versions are re-checked before dependency/toolchain changes.
 - Core library crates use `#![no_std]` where possible.
 - External crates are exceptional: discuss, verify, document, and test before use. Prefer local implementation.
