@@ -34,7 +34,8 @@ database primitives.
 
 The `v0.18.3` production digest and AEAD engine admission milestone is released
 as a signed tag after clean pentest and GitHub checks. The current implementation,
-`v0.18.4`, adds early storage and crypto-boundary fuzzing and awaits pentest.
+`v0.18.4`, adds early storage and crypto-boundary fuzzing and passed maintainer
+review with no findings. It is not yet tagged.
 It is not a usable database engine.
 
 `skrifheim` is licensed under the European Union Public Licence 1.2.

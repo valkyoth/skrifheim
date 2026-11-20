@@ -1,6 +1,10 @@
 # skrifheim v0.18.4
 
-Status: implementation candidate; maintainer pentest pending. No signed tag.
+Status: maintainer pentest clean for implementation `ba4d8b63609f`. No signed tag.
+
+The supplied static review found no reportable vulnerabilities. It repeated
+the workspace, corpus and dependency checks, but not the ASan campaigns or
+container builds. The latter are separate local implementation-gate evidence.
 
 ## What changed
 
