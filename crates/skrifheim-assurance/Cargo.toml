@@ -1,0 +1,14 @@
+[package]
+name = "skrifheim-assurance"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Development-only public-consumer assurance harnesses for skrifheim."
+
+[dependencies]
+skrifheim = { path = "../skrifheim", version = "0.18.4", features = ["rustcrypto-provider"] }
+
+[lints]
+workspace = true

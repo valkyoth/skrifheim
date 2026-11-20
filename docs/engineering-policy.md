@@ -161,7 +161,9 @@ Current external dependency exceptions:
   Review deadline: every entropy/provider change and before persistent key use.
   Removal condition: a reviewed brynja platform adapter meets the same failure,
   fork/restart and platform requirements.
-- Crate: `sanitization` `2.1.0`
+- Crate: `sanitization` `2.2.0`
+- Update review: the wipe module is unchanged from 2.1.0; the admitted
+  feature set remains alloc-only.
   Used by: `skrifheim-crypto`
   Scope: `SecretBytes` clear-on-drop heap secret storage for memory-secrecy
   scaffolding.

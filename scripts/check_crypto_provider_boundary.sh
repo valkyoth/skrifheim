@@ -19,6 +19,12 @@ if printf '%s\n' "$tree" | grep -E '^(skrifheim-crypto-rustcrypto|skrifheim-entr
     exit 1
 fi
 
+graph="$(cargo tree --locked --all-features -p skrifheim -p skrifheim-storage-host --edges normal,build --prefix none)"
+if printf '%s\n' "$graph" | grep -E '^(skrifheim-assurance|skrifheim-fuzz|libfuzzer-sys) '; then
+    echo "development assurance must not enter production builds" >&2
+    exit 1
+fi
+
 for crate in sha3 shake chacha20poly1305 poly1305; do
     if ! grep -E "^$crate = .*default-features = false, features = \[\"zeroize\"\]" \
         crates/skrifheim-crypto-rustcrypto/Cargo.toml >/dev/null; then

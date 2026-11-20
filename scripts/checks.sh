@@ -13,3 +13,5 @@ scripts/validate-security-policy.sh
 sh scripts/check_security_derive_tests.sh
 cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
 cargo test --locked --workspace --all-features
+python3 scripts/assurance_tests.py
+python3 scripts/assurance.py smoke all

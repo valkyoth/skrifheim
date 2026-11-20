@@ -1,4 +1,8 @@
 target
+crates/skrifheim-fuzz/target
+crates/skrifheim-fuzz/artifacts
+crates/skrifheim-fuzz/corpus
+scripts/__pycache__
 .git
 .cargo-deny-advisory-dbs
 PENTEST.md

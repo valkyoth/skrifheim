@@ -1,4 +1,8 @@
 /target/
+/scripts/__pycache__/
+/crates/skrifheim-fuzz/target/
+/crates/skrifheim-fuzz/artifacts/
+/crates/skrifheim-fuzz/corpus/
 /.cargo-deny-advisory-dbs/
 /sbom.spdx.json
 /PENTEST.md

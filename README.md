@@ -33,8 +33,8 @@ support is planned as optional compiled-in extension crates over the core world
 database primitives.
 
 The `v0.18.3` production digest and AEAD engine admission milestone is released
-as a signed tag after clean pentest and GitHub checks. The next implementation
-milestone is `v0.18.4`, early storage and crypto-boundary fuzzing.
+as a signed tag after clean pentest and GitHub checks. The current implementation,
+`v0.18.4`, adds early storage and crypto-boundary fuzzing and awaits pentest.
 It is not a usable database engine.
 
 `skrifheim` is licensed under the European Union Public Licence 1.2.
@@ -45,12 +45,12 @@ It is not a usable database engine.
 
 | Capability | Status | Notes |
 | --- | --- | --- |
-| Rust workspace | Active | Edition 2024, resolver `3`, Rust stable `1.99.0` pinned. |
+| Rust workspace | Active | Edition 2024, resolver `3`, Rust stable `1.100.0` pinned. |
 | Core crate split | Active | Focused crates for core types, facts, worlds, policy, crypto envelopes, storage metadata, query planning, and CLI orchestration. |
 | `no_std` core policy | Active | Library crates under `crates/` use `#![no_std]` and `#![forbid(unsafe_code)]`. |
 | Dependency policy | Active | `cargo deny` policy denies wildcard external dependencies and unknown sources. |
 | Security reporting | Active | Private-first vulnerability process in `SECURITY.md`. |
-| Release notes | Active | `release-notes/RELEASE_NOTES_0.18.3.md` records the current implementation scope, verification, and non-claims. |
+| Release notes | Active | [v0.18.4 notes](release-notes/RELEASE_NOTES_0.18.4.md) record scope, verification and limitations. |
 
 ### Initial Models
 
@@ -90,7 +90,7 @@ It is not a usable database engine.
 | Immutable segment format | Scaffolded | `v0.17.0` adds policy-scoped immutable segment headers and footers with key epoch, encryption-domain, checksum, and algorithm-agile digest metadata. |
 | Immutable segment persistence | Scaffolded | `v0.18.0` adds fixed segment encoding and host-file helpers; the authenticated storage spine starts at `v0.19.x`, with semantic recovery at `v0.23.5` and durable fact indexes at `v0.23.3`. |
 | Production storage encryption | Planned | `v0.18.3` implements generic digest/AEAD primitives only; concrete block/segment encryption lands with `v0.18.11`, and WAL-v2 encryption with `v0.18.12` before manifests or recovery claim tamper resistance. |
-| Early WAL/segment fuzzing | Planned | `v0.18.4` adds deterministic fuzz smoke for the hand-written storage byte parsers; the broader fuzz/property baseline remains later. |
+| Early storage and crypto fuzzing | Active | Six bounded targets share deterministic CI fixtures and a local coverage-guided campaign. The broader property baseline remains at v0.44.0. |
 | Release evidence hardening | Planned | `v0.18.5` adds SBOM validation, dependency-tree snapshots, runtime/optional-boundary policy, and release-gate tests before durable storage claims harden. |
 | Cross-platform portability baseline | Planned | `v0.18.6` adds Linux, Windows, macOS, BSD, x86_64, AArch64, and future RISC-V portability checks before manifests and recovery depend on host I/O behavior. |
 | Early performance and API integration smoke | Planned | `v0.20.2`, `v0.23.2`, and `v0.24.2` collect storage, recovery, transaction, policy-token, and authenticated planner-boundary evidence while the design is still cheap to change. |
@@ -157,7 +157,7 @@ cargo run -p skrifheim
 Expected output:
 
 ```text
-skrifheim 0.18.3
+skrifheim 0.18.4
 ```
 
 Run the normal local checks:

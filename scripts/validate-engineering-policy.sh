@@ -19,7 +19,7 @@ for lib in crates/*/src/lib.rs; do
     fi
 done
 
-if rg -n '\bstd::|extern crate std|use std' crates --glob '*.rs' --glob '!*/src/main.rs' --glob '!crates/skrifheim-storage-host/**'; then
+if rg -n '\bstd::|extern crate std|use std' crates --glob '*.rs' --glob '!crates/skrifheim-assurance/src/main.rs' --glob '!crates/skrifheim/src/main.rs' --glob '!crates/skrifheim-storage-host/**'; then
     echo "core crates must not import std; use core/alloc or move host-only code into an explicit host-boundary crate" >&2
     failed=1
 fi
@@ -29,7 +29,7 @@ if rg -n 'target_arch|target_feature|std::arch|core::arch' crates --glob '*.rs';
     failed=1
 fi
 
-if rg -n 'zeroize' Cargo.toml crates --glob '!crates/skrifheim-crypto-rustcrypto/Cargo.toml'; then
+if rg -n 'zeroize' Cargo.toml crates --glob '*.toml' --glob '*.rs' --glob '!crates/skrifheim-crypto-rustcrypto/Cargo.toml'; then
     echo "zeroize is restricted to admitted RustCrypto feature flags; project buffers use sanitization" >&2
     failed=1
 fi

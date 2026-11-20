@@ -43,9 +43,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.6.0"
+version = "1.11.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f74872d07caf508b30a21f6836e7d7016a2eaf7d9ff4f48deaa58cd8a0407630"
+checksum = "02f0e023adb368345ce0ca6cdfc0f24a06554468d0e8503e14a0841de79bfa69"
 dependencies = [
  "find-msvc-tools",
  "shlex",
@@ -125,9 +125,9 @@ dependencies = [
 
 [[package]]
 name = "ctutils"
-version = "0.4.3"
+version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "03bb0e1cc970d482d121d9a1744999169b69a07470b3d644a7894e53fcaf4574"
+checksum = "261af4dc7a06ea8a527a8717d8cbba3417530d6ea14e1edb3de6b67806be474f"
 dependencies = [
  "cmov",
 ]
@@ -145,9 +145,9 @@ dependencies = [
 
 [[package]]
 name = "find-msvc-tools"
-version = "0.1.14"
+version = "0.1.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "aedcfb3409746eddb02b9e19ebda1c3394f759a152e48ee875a0844d1b955484"
+checksum = "1c66915cc5391097de7a2b0b972e8505aa33c0df401fd3a6811dbdb32881ba48"
 
 [[package]]
 name = "getrandom"
@@ -171,9 +171,9 @@ dependencies = [
 
 [[package]]
 name = "inout"
-version = "0.2.2"
+version = "0.2.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4250ce6452e92010fdf7268ccc5d14faa80bb12fc741938534c58f16804e03c7"
+checksum = "3a580c13f0ffc335ef42dd3f6b1a41b726051c5e1656d9a3aa6fddb3c5dfbbf9"
 dependencies = [
  "hybrid-array",
 ]
@@ -190,9 +190,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.190"
+version = "0.2.191"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce5d3ddc6d3fa000eb1536d85e147bfe31aacaba692ed6a876f95cb7c855be78"
+checksum = "65cd87c9a6d60536580b316ad985726104730a5151c99845f2490428ef91240a"
 
 [[package]]
 name = "poly1305"
@@ -213,9 +213,9 @@ checksum = "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf"
 
 [[package]]
 name = "sanitization"
-version = "2.1.0"
+version = "2.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c395c5164295d69016c014a3c2dd69d28a84b7e89ba971c1e81b17acc41e411"
+checksum = "943128f5d9f0bff679610a0026f198aff9f03db88fd6957975bc1d3ccb3c211c"
 
 [[package]]
 name = "sha3"
@@ -247,7 +247,7 @@ checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
 
 [[package]]
 name = "skrifheim"
-version = "0.18.3"
+version = "0.18.4"
 dependencies = [
  "skrifheim-audit",
  "skrifheim-core",
@@ -262,8 +262,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "skrifheim-assurance"
+version = "0.18.4"
+dependencies = [
+ "skrifheim",
+]
+
+[[package]]
 name = "skrifheim-audit"
-version = "0.18.3"
+version = "0.18.4"
 dependencies = [
  "skrifheim-core",
  "skrifheim-crypto",
@@ -271,14 +278,14 @@ dependencies = [
 
 [[package]]
 name = "skrifheim-core"
-version = "0.18.3"
+version = "0.18.4"
 dependencies = [
  "subtle",
 ]
 
 [[package]]
 name = "skrifheim-crypto"
-version = "0.18.3"
+version = "0.18.4"
 dependencies = [
  "sanitization",
  "skrifheim-core",
@@ -287,7 +294,7 @@ dependencies = [
 
 [[package]]
 name = "skrifheim-crypto-rustcrypto"
-version = "0.18.3"
+version = "0.18.4"
 dependencies = [
  "chacha20poly1305",
  "poly1305",
@@ -301,7 +308,7 @@ dependencies = [
 
 [[package]]
 name = "skrifheim-entropy-host"
-version = "0.18.3"
+version = "0.18.4"
 dependencies = [
  "getrandom",
  "skrifheim-crypto",
@@ -309,7 +316,7 @@ dependencies = [
 
 [[package]]
 name = "skrifheim-fact"
-version = "0.18.3"
+version = "0.18.4"
 dependencies = [
  "skrifheim-core",
  "skrifheim-crypto",
@@ -317,14 +324,14 @@ dependencies = [
 
 [[package]]
 name = "skrifheim-policy"
-version = "0.18.3"
+version = "0.18.4"
 dependencies = [
  "skrifheim-core",
 ]
 
 [[package]]
 name = "skrifheim-query"
-version = "0.18.3"
+version = "0.18.4"
 dependencies = [
  "skrifheim-core",
  "skrifheim-policy",
@@ -332,7 +339,7 @@ dependencies = [
 
 [[package]]
 name = "skrifheim-storage"
-version = "0.18.3"
+version = "0.18.4"
 dependencies = [
  "skrifheim-core",
  "skrifheim-crypto",
@@ -340,7 +347,7 @@ dependencies = [
 
 [[package]]
 name = "skrifheim-storage-host"
-version = "0.18.3"
+version = "0.18.4"
 dependencies = [
  "skrifheim-core",
  "skrifheim-crypto",
@@ -349,7 +356,7 @@ dependencies = [
 
 [[package]]
 name = "skrifheim-world"
-version = "0.18.3"
+version = "0.18.4"
 dependencies = [
  "blake3",
  "skrifheim-core",
@@ -388,10 +395,10 @@ dependencies = [
 
 [[package]]
 name = "xtask"
-version = "0.18.3"
+version = "0.18.4"
 
 [[package]]
 name = "zeroize"
-version = "1.9.1"
+version = "1.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e13084392c5e4bc371903e2935a5eaeed24905a7511356b883835e18a78f6879"
+checksum = "85ccff8a4805aba1eaa4cd4afcd49f7557dd2cf5fd79ffc37f8959466effc5aa"

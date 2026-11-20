@@ -13,15 +13,17 @@ members = [
     "crates/skrifheim-storage",
     "crates/skrifheim-query",
     "crates/skrifheim-storage-host",
+    "crates/skrifheim-assurance",
     "tools/xtask",
 ]
+exclude = ["crates/skrifheim-fuzz"]
 
 [workspace.package]
-version = "0.18.3"
+version = "0.18.4"
 edition = "2024"
 license = "EUPL-1.2"
 repository = "https://github.com/valkyoth/skrifheim"
-rust-version = "1.99"
+rust-version = "1.100"
 
 [workspace.lints.rust]
 unsafe_op_in_unsafe_fn = "forbid"

@@ -38,6 +38,8 @@ release-notes/RELEASE_NOTES_0.18.0.md
 release-notes/RELEASE_NOTES_0.18.1.md
 release-notes/RELEASE_NOTES_0.18.2.md
 release-notes/RELEASE_NOTES_0.18.3.md
+release-notes/RELEASE_NOTES_0.18.4.md
+security/pentest/v0.18.3.md
 security/pentest/v0.1.0.md
 security/pentest/v0.2.0.md
 security/pentest/v0.3.0.md
@@ -67,8 +69,8 @@ for path in $required; do
     fi
 done
 
-if ! grep -q 'channel = "1.99.0"' rust-toolchain.toml; then
-    echo "rust-toolchain.toml must pin Rust stable 1.99.0" >&2
+if ! grep -q 'channel = "1.100.0"' rust-toolchain.toml; then
+    echo "rust-toolchain.toml must pin Rust stable 1.100.0" >&2
     exit 1
 fi
 

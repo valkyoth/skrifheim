@@ -430,13 +430,7 @@ fn verify_segment_body_crc(header: &SegmentHeader, encrypted_body: &[u8]) -> Seg
 }
 
 fn verify_segment_file_len(file: &File, header: &SegmentHeader) -> SegmentResult<()> {
-    let expected_len = (SEGMENT_HEADER_BYTES as u64)
-        .checked_add(header.body_len())
-        .and_then(|value| value.checked_add(SEGMENT_FOOTER_BYTES as u64))
-        .ok_or_else(|| {
-            SegmentFileError::Io(io::Error::other("segment file length overflows u64"))
-        })?;
-    if file.metadata()?.len() != expected_len {
+    if !skrifheim_storage::segment_file_length_matches(header.body_len(), file.metadata()?.len()) {
         return Err(SegmentFileError::FileLengthMismatch);
     }
     Ok(())

@@ -42,3 +42,10 @@ RustCrypto utilities/CPU backends and getrandom OS interfaces. See
 [Engineering Policy](engineering-policy.md) and
 [Crypto Provider Contract](crypto-provider-contract.md). Optional providers do
 not relax `forbid(unsafe_code)` in any project crate.
+
+The maintainer admitted cargo-fuzz 0.13.2 and libfuzzer-sys 0.4.13 strictly
+for local development. The latter builds LLVM C++ via cc and supplies unsafe
+FFI in the upstream runtime. Only the unpublished, excluded fuzz workspace
+links it. The NCSA license exception is scoped to that crate in its own deny
+policy. Synthetic keys, corpora and diagnostic artifacts are never customer
+data. The existing CI checks the all-features production dependency boundary.

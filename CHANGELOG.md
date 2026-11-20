@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 0.18.4 (unreleased)
+
+- Added isolated storage and crypto fuzzing, public-consumer wire fixtures and
+  independent WAL replay checks. GitHub runs a deterministic corpus, not the
+  nightly engine. See the [milestone notes](release-notes/RELEASE_NOTES_0.18.4.md).
+- Updated Rust, container builders, sanitization, transitive dependencies and CI security tools.
+
 ## 0.18.3
 
 - Completed the local release checks and maintainer pentest/retest chain. All

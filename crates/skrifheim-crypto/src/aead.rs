@@ -44,7 +44,8 @@ impl fmt::Debug for PublicNonce {
 }
 
 /// Only admitted entropy providers belong in a production composition.
-/// Deterministic implementations belong exclusively under cfg(test).
+/// Deterministic implementations belong under cfg(test) or in the isolated,
+/// unpublished assurance tooling, never in a production dependency graph.
 pub trait EntropySource {
     fn fill(&mut self, destination: &mut [u8]) -> CryptoResult<()>;
 }

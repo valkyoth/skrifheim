@@ -9,7 +9,7 @@ entropy providers do not yet provide final authenticated storage or recovery.
 
 | Area | Control | Current Status | Evidence |
 | --- | --- | --- | --- |
-| Toolchain | Rust stable `1.99.0` pinned | Active | `rust-toolchain.toml` |
+| Toolchain | Rust stable `1.100.0` pinned | Active | `rust-toolchain.toml` |
 | Release arithmetic | Release profile keeps overflow checks enabled | Active | `Cargo.toml` |
 | Core runtime | Core library crates are `no_std` | Active | `scripts/validate-engineering-policy.sh` |
 | Portability baseline | Core crates avoid OS and architecture APIs, durable formats use explicit encodings and endianness, host-specific behavior stays behind explicit adapters, and architecture-specific fast paths require a portable baseline first | Active / Planned | `docs/engineering-policy.md`, `docs/VERSION_PLAN.md` |

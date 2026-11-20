@@ -1,0 +1,16 @@
+[licenses]
+allow = ["EUPL-1.2", "MIT", "Apache-2.0", "BSD-3-Clause", "Apache-2.0 WITH LLVM-exception"]
+exceptions = [{ name = "libfuzzer-sys", allow = ["NCSA"] }]
+
+[advisories]
+db-path = "../../.cargo-deny-advisory-dbs"
+ignore = []
+
+[bans]
+multiple-versions = "deny"
+wildcards = "deny"
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-git = []

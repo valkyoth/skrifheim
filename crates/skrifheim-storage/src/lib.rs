@@ -3,8 +3,11 @@
 
 extern crate alloc;
 
+mod layout;
 mod segment;
 mod wal;
+
+pub use layout::segment_file_length_matches;
 
 pub use segment::{
     BodyChecksum, SEGMENT_BODY_MAX_BYTES, SEGMENT_FOOTER_BYTES, SEGMENT_FOOTER_MAGIC,

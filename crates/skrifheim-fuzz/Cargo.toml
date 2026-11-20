@@ -1,0 +1,61 @@
+[package]
+name = "skrifheim-fuzz"
+version = "0.18.4"
+edition = "2021"
+license = "EUPL-1.2"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "=0.4.13"
+skrifheim-assurance = { path = "../skrifheim-assurance", version = "0.18.4" }
+
+[workspace]
+members = ["."]
+
+[profile.release]
+overflow-checks = true
+
+[[bin]]
+name = "wal_header"
+path = "fuzz_targets/wal_header.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "wal_replay"
+path = "fuzz_targets/wal_replay.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "segment_metadata"
+path = "fuzz_targets/segment_metadata.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "segment_layout"
+path = "fuzz_targets/segment_layout.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "aead_envelope"
+path = "fuzz_targets/aead_envelope.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "transcript"
+path = "fuzz_targets/transcript.rs"
+test = false
+doc = false
+bench = false
